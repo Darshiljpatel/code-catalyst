@@ -270,3 +270,8 @@
 .draft-import label { display: block; margin: var(--space-2) 0; }
 .draft-import input[type="file"] { max-width: 100%; }
 .draft-import__actions { display: flex; gap: var(--space-2); flex-wrap: wrap; margin-top: var(--space-3); }
+.source-dialog-fields { border: 0; padding: 0; margin: 0; min-width: 0; }
+.source-authoring-dialog .rule-editor-box { min-width: 0; }
+@media (max-width: 680px) {
+  .source-authoring-dialog .form-row, .source-authoring-dialog .source-rule-controls, .source-authoring-dialog .source-rule-values { grid-template-columns: minmax(0, 1fr) !important; }
+}

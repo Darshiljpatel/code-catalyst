@@ -251,3 +251,29 @@ has zero violations in that state. No provider calls were used.
 Next candidate: source editing dialogs have unlabelled rule controls, fixed-width
 rows and incomplete keyboard focus handling. Improve guideline authoring for
 keyboard and small-screen use, then verify it alongside timezone submission.
+
+## Overnight iteration 11: accessible guideline authoring and explicit activation
+
+Both guideline creation and activation dialogs now contain and restore keyboard
+focus, support Escape when idle, and lock controls during a pending request.
+Rule controls have accessible names and narrow screens use single-column rule
+fields. The shared focus helper recognizes controls disabled by a parent fieldset.
+Rule creation chooses an unused ID after removals; duplicate IDs get a specific
+validation message. Input lengths match the API limits, and source text retains
+whitespace around literal evidence quotes.
+
+Activation starts with no stock rationale and no pre-checked verification. The
+manager must enter a rationale and explicitly confirm review against the active
+guidelines before submitting. Existing server permissions/version guards remain
+unchanged.
+
+Verification: production build and lint passed. Six source/timezone checks passed:
+creation keyboard containment/focus restoration, narrow-screen reflow and scoped
+Axe scan, unique IDs after add/remove, explicit activation and pending-save lock,
+literal source-text preservation and the three time zones. The wider focused UI
+regression also passed: 23 tests spanning queue, discussion, dispositions, export,
+intake recovery, manual review, conflicts, bounded diff, text import and sources.
+
+Next candidate: finding lists grow unwieldy on drafts with many findings. Add
+explicit category/severity/disposition filtering and useful result counts without
+letting a filtered view conceal the overall approval blockers.
