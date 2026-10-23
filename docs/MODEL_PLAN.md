@@ -1,6 +1,6 @@
 # Model selection from the team's purchased catalogue
 
-Updated 23 October 2026 using `models.txt`. The team reports purchased access; the file is a catalogue snapshot, not a successful API connection or evidence that a dedicated deployment is provisioned. Provider name, API base URL, credentials, exact endpoint model IDs and account quotas still need to be obtained from the team's console at implementation. Keep credentials out of this file and the repository.
+Updated 23 October 2026 using `models.txt`. The team reports purchased access; the file is a catalogue snapshot, not a successful API connection or evidence that a dedicated deployment is provisioned. The team has now identified Nebius Token Factory and supplied the API example: base URL `https://api.tokenfactory.nebius.com/v1/`, primary ID `Qwen/Qwen3-235B-A22B-Instruct-2507`, key environment variable `NEBIUS_API_KEY`. Exact account access, quotas and fallback ID still need verification. No live request has been made. Use a replacement key supplied through the environment after revoking the key exposed in chat. Keep credentials out of this file and the repository.
 
 ## Proposed selection
 
@@ -45,3 +45,5 @@ Illustrative arithmetic from the supplied catalogue, without caching: at 6,000 i
 This changes the Round 1 preference for a locally hosted model: Round 2 now plans a hosted candidate using existing purchased access, eliminating local GPU provisioning from the critical path. Local deterministic processing stays the default until external provider policy is enabled. Before external analysis, disclose what leaves the deployment and obtain workspace-admin opt-in; this is an application control from the original proposal, not a request for the team to purchase another service.
 
 Configuration names to add during implementation: `MODEL_PROVIDER`, `MODEL_BASE_URL`, `MODEL_PRIMARY_ID`, optional `MODEL_FALLBACK_ID`, `MODEL_API_KEY`, `MODEL_TIMEOUT_SECONDS`, `MODEL_MAX_INPUT_TOKENS`, `MODEL_MAX_OUTPUT_TOKENS`, and `MODEL_DAILY_BUDGET_USD`. Use exact console/API values for IDs. Make fallback disabled by default. Do not create a pretend working endpoint in `.env.example`.
+
+Provider reference: [Nebius API introduction](https://docs.tokenfactory.nebius.com/api-reference/introduction), checked 23 October 2026, documents the OpenAI-compatible base URL and environment-key pattern. `.env.example` records only non-secret configuration placeholders; the S3 adapter is not implemented by S2.

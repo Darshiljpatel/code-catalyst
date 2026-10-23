@@ -5,7 +5,8 @@ from fastapi.testclient import TestClient
 from sqlalchemy import delete, select
 from sqlalchemy.orm import Session
 from brandguard.main import create_app, Settings, passwords, digest
-from brandguard.models import Brand, Organisation, User, Membership, SessionRecord, LoginAttempt
+from brandguard.models import (Brand, Organisation, User, Membership, SessionRecord, LoginAttempt,
+    AuditEvent, RunSource, Job, ReviewRun, ContentRevision, ContentItem, SourceVersion)
 
 @pytest.fixture()
 def setup():
@@ -15,7 +16,8 @@ def setup():
     app = create_app(Settings(url, 'https://testserver', 'test'))
     engine = app.state.engine
     with Session(engine) as db:
-        for cls in (SessionRecord, LoginAttempt, Brand, Membership, User, Organisation):
+        for cls in (AuditEvent, RunSource, Job, ReviewRun, ContentRevision, ContentItem, SourceVersion,
+                    SessionRecord, LoginAttempt, Brand, Membership, User, Organisation):
             db.execute(delete(cls))
         orgs = [Organisation(name='One'), Organisation(name='Two')]
         db.add_all(orgs); db.flush()

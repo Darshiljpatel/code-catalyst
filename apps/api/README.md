@@ -1,6 +1,6 @@
-# BrandGuard API — Sanath phase S1
+# BrandGuard API — Sanath phases S1–S2
 
-Implemented: identity/tenant schema, versioned migration, Argon2 credentials, eight-hour opaque hashed sessions, origin + CSRF mutation checks, persistent login throttling, manager-only brand creation and tenant-scoped brand reads. Each identity currently has one role per workspace. Review/source/job schema belongs to S2; no approval or AI functionality is implemented yet.
+Implemented: identity/tenant schema, versioned migration, Argon2 credentials, eight-hour opaque hashed sessions, origin + CSRF mutation checks, persistent login throttling, manager-only brand creation and tenant-scoped brand reads. Each identity currently has one role per workspace. S2 adds versioned sources, verified activation, immutable revisions and atomic review-run/job enqueue. See [S2 handoff](../../docs/S2_HANDOFF.md) for the API sequence and worker boundary. No approval, analysis worker or AI inference is implemented yet.
 
 ## Local setup (from repository root)
 
@@ -22,7 +22,7 @@ export PYTHONPATH=apps/api
 
 Seed creates four synthetic identities (`creator`, `manager`, `reviewer`, `admin` at `lumadesk.test`) and prints the workspace ID. It refuses to overwrite existing identities. Supply email, password and that `org_id` to `POST /api/v1/sessions`; browser requests must carry the exact `Origin`. Store returned `csrf_token` in memory and send `X-CSRF-Token` on mutations. Session cookies are HTTP-only, same-site strict and secure outside development. No bearer token or frontend-selected role is accepted. Production requires HTTPS. Keep API and web same-origin behind the future proxy.
 
-Frontend contract: `contracts/openapi.json`. Currently published endpoints cover sessions, `/me`, brands and health only. Health readiness validates the S1 migration and explicitly excludes a worker. No migrations run implicitly at server startup.
+Frontend contract: `contracts/openapi.json`. Published endpoints cover sessions, `/me`, brands, source curation, content revisions, queued review runs and health. Health readiness validates the S2 migration and explicitly excludes a worker. No migrations run implicitly at server startup.
 
 ```bash
 # Create a separate UTF-8 database named brandguard_s1_test and migrate it first.
