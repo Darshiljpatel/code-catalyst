@@ -67,7 +67,7 @@ test('creator stages multiple fixes and manual edits, saves one revision, then s
   await creator.evaluate(() => window.scrollTo({ top: 0, behavior: 'instant' }));
   await creator.screenshot({ path: '/tmp/brandguard-batch-draft.png' });
   await creator.getByRole('button', { name: 'Save all & recheck', exact: true }).click();
-  await expect(creator.getByText('No compliance violations detected', { exact: false })).toBeVisible({ timeout: 25000 });
+  await expect(creator.getByText('No findings were returned. Review coverage is incomplete;', { exact: false })).toBeVisible({ timeout: 25000 });
   expect(revisionWrites).toBe(1);
   await expect(creator.getByRole('button', { name: 'Rev #2 (Current)' })).toBeVisible();
   await expect(creator.locator('#document-preview-container')).toHaveText(corrected);

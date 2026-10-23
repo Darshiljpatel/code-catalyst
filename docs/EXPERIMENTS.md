@@ -380,3 +380,33 @@ rejects over-budget requests before any outbound request.
 
 Next investigation: make analysis failures easier to recover from by displaying
 actionable explanations for provider/coverage failures in the results view.
+
+## Overnight iteration 16: honest results and recovery guidance
+
+Zero findings with failed or missing category checks no longer reads as a clean
+compliance result. A visible coverage notice names the remaining categories and
+gives recovery guidance for input limits, missing provider configuration,
+authentication, rate limits, timeouts and source changes. Unknown reasons get
+safe general guidance rather than raw error text. Pending analysis retains its
+pending state. Coverage and submission readiness now use the same category
+helper, including categories absent from a run response.
+
+The notice directs assigned reviewers to manual category review and other users
+to their reviewer; stale runs require a recheck first. It adds no automatic retry
+or paid request.
+
+Verification: build and lint passed. Five browser checks passed for failed,
+missing, pending and complete coverage, duplicate reason grouping, unknown
+reasons, scoped accessibility, external input guidance, finding triage and manual
+review regressions. The new test initially used a campaign without a latest run;
+its fixture was corrected to load the run and effective check evidence.
+All 7 real-service batch/workflow/import journeys also passed (1.1 minutes),
+including the actual worker, manual reviews, approval, exact exports and insights.
+Their local-only expectations now require the incomplete-coverage message rather
+than the old misleading clean result. An overlapping initial browser run collided
+on Playwright's trace directory; final runs use separate output directories and
+passed without that artifact error. No Nebius calls were made.
+
+Next investigation: the campaign already protects ordinary links, page reloads
+and revision switching while edits are unsaved. Check the remaining browser-back
+and sign-out paths without persisting confidential copy in browser storage.

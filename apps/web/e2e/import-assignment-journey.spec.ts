@@ -28,7 +28,8 @@ test('real imported draft → later manager assignment → manual review → app
   await creator.getByRole('button', { name: 'Replace draft with imported text' }).click();
   await creator.locator('#btn-submit-review').click();
   await expect(creator).toHaveURL(/\/content\//);
-  await expect(creator.getByText('No compliance violations detected.', { exact: false })).toBeVisible({ timeout: 25000 });
+  await expect(creator.getByText('No findings were returned. Review coverage is incomplete;', { exact: false })).toBeVisible({ timeout: 25000 });
+  await expect(creator.getByRole('region', { name: 'Incomplete check coverage' })).toContainText('Tone, Messaging, Claims');
   const url = creator.url();
   expect(creations).toBe(1);
 

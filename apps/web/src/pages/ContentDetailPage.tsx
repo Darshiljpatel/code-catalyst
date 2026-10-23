@@ -6,7 +6,8 @@ import { AssignReviewerModal } from '../components/AssignReviewerModal';
 import { resolutionActions } from '../api/resolutionActions';
 import React from 'react';
 import { workingDraft, changeDraftText, stageDraftEdit, projectDraftRange, undoDraftChange } from '../api/draftEdits';
-import { submissionIssues } from '../api/reviewReadiness';
+import { incompleteCategories, submissionIssues } from '../api/reviewReadiness';
+import { CoverageNotice } from '../components/CoverageNotice';
 import { useParams, useNavigate, useLocation } from 'react-router-dom';
 import {
   getContent,
@@ -718,6 +719,8 @@ export function ContentDetailPage() {
                 ))}
               </div>
 
+              <CoverageNotice run={run} canRecordManual={user?.membership_id === content.reviewer_id && !['approved', 'changes_requested'].includes(content.state)} />
+
               {run.stale && (
                 <div style={{ marginBottom: 'var(--space-4)' }}>
                   <Alert kind="warning">
@@ -732,7 +735,7 @@ export function ContentDetailPage() {
               <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-3)' }}>
                 {run.findings.length === 0 ? (
                   <div style={{ textAlign: 'center', padding: 'var(--space-6)', color: 'var(--text-secondary)' }}>
-                    {['queued', 'running'].includes(run.status) ? 'Analysis is pending.' : 'No compliance violations detected. Check category coverage before approval.'}
+                    {['queued', 'running'].includes(run.status) ? 'Analysis is pending.' : incompleteCategories(run).length ? 'No findings were returned. Review coverage is incomplete; this is not a clean compliance result.' : 'No compliance violations detected in completed checks. Human approval is still required.'}
                   </div>
                 ) : visibleFindings.length === 0 ? <p className="draft-findings-note">No findings match these filters. Clear finding filters to see the complete review.</p> : (
                   visibleFindings.map(finding => {

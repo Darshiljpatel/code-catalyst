@@ -39,7 +39,7 @@ test('real creator → worker → manual reviewer → approval → exact export,
   const corrected = '✨ LumaDesk offers a 14-day free trial.  ';
   await creator.getByLabel('Copy Text', { exact: true }).fill(corrected);
   await creator.getByRole('button', { name: 'Save all & recheck' }).click();
-  await expect(creator.getByText('No compliance violations detected', { exact: false })).toBeVisible({ timeout: 25000 });
+  await expect(creator.getByText('No findings were returned. Review coverage is incomplete;', { exact: false })).toBeVisible({ timeout: 25000 });
   await login(reviewer, 'reviewer');
   await reviewer.goto(url);
   await expect(reviewer.getByRole('heading', { name: 'Manual category review' })).toBeVisible();
