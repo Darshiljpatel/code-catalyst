@@ -11,6 +11,7 @@ import React from 'react';
 import ReactDOM from 'react-dom/client';
 import './index.css';
 import './components.css';
+import './studio.css';
 import { App } from './App';
 import { setTransport } from './api/client';
 

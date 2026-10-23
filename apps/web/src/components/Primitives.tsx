@@ -1,3 +1,4 @@
+import { categoryLabel } from './categoryLabel';
 /** Spinner — accessible loading indicator */
 interface SpinnerProps {
   size?: 'sm' | 'md' | 'lg';
@@ -82,7 +83,7 @@ export function CheckStatusChip({
       title={title}
       style={{ display: 'inline-flex', alignItems: 'center', gap: '4px' }}
     >
-      {name && <strong style={{ textTransform: 'capitalize' }}>{name}:</strong>}
+      {name && <strong>{categoryLabel(name)}:</strong>}
       <span>{label}</span>
     </span>
   );

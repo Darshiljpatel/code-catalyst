@@ -1,3 +1,4 @@
+import { categoryLabel } from '../components/categoryLabel';
 import React from 'react';
 import { replaceLocatedText } from '../api/textEdits';
 import { useParams, useNavigate } from 'react-router-dom';
@@ -136,6 +137,16 @@ export function ContentDetailPage() {
 
   const currentRevision: RevisionOut | undefined =
     content?.revisions[selectedRevIndex];
+
+  const cancelEditing = () => {
+    if (currentRevision) {
+      setDraftText(currentRevision.text);
+      setDraftChannel(currentRevision.channel);
+      setDraftAudience(currentRevision.audience);
+      setDraftPurpose(currentRevision.purpose);
+    }
+    setIsEditing(false);
+  };
 
   // Initialize or update fields when switching revisions
   const handleSelectRevision = (index: number) => {
@@ -290,7 +301,7 @@ export function ContentDetailPage() {
       const { start, end } = finding.location;
       if (typeof start !== 'number' || typeof end !== 'number' || start < cursor || end <= start || end > points.length) continue;
       segments.push(points.slice(cursor, start).join(''));
-      segments.push(<button type="button" key={finding.id} className="located-finding" onClick={() => setActiveFinding(finding)} aria-label={`${finding.category}: ${points.slice(start, end).join('')}`}>
+      segments.push(<button type="button" key={finding.id} className={`located-finding located-finding--${finding.severity}`} onClick={() => setActiveFinding(finding)} aria-label={`${categoryLabel(finding.category)}: ${points.slice(start, end).join('')}`}>
         {points.slice(start, end).join('')}
       </button>);
       cursor = end;
@@ -319,24 +330,24 @@ export function ContentDetailPage() {
   }
 
   return (
-    <main className="page-container" id="main-content">
+    <main className="page-container review-workspace" id="main-content">
       {error && <Alert kind="error">{error}</Alert>}
       {/* Top Header */}
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: 'var(--space-4)', marginBottom: 'var(--space-6)' }}>
+      <div className="workspace-header">
         <div>
           <button className="btn btn--ghost btn--sm" onClick={() => navigate('/')} style={{ marginBottom: 'var(--space-2)' }}>
             ← Back to campaigns
           </button>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-3)' }}>
+          <div className="workspace-title">
             <h1 style={{ margin: 0, fontSize: '1.75rem' }}>{content.title}</h1>
             <span className="badge badge--neutral">{content.state.toUpperCase()}</span>
           </div>
-          <div style={{ fontSize: '0.8125rem', color: 'var(--text-secondary)', marginTop: '4px' }}>
-            Current Revision: <strong>#{content.current_revision}</strong> • Item ID: <code>{content.id}</code>
+          <div className="workspace-subtitle">
+            Campaign studio <span aria-hidden="true">/</span> Revision <strong>#{content.current_revision}</strong>
           </div>
         </div>
 
-        <div style={{ display: 'flex', gap: 'var(--space-3)', alignItems: 'center', flexWrap: 'wrap' }}>
+        <div className="workspace-actions">
           {content.revisions.length > 1 && (
             <button
               className={`btn ${showDiff ? 'btn--secondary' : 'btn--ghost'}`}
@@ -352,7 +363,7 @@ export function ContentDetailPage() {
             onClick={handleRunAnalysis}
             disabled={analysing || isEditing || user?.membership_id !== content.creator_id || content.state === 'approved'}
           >
-            {analysing ? 'Analysing…' : '✦ Run Compliance Check'}
+            {analysing ? 'Analysing…' : 'Run Compliance Check'}
           </button>
 
           {/* Workflow Action 1: Creator Submit for Review */}
@@ -418,6 +429,7 @@ export function ContentDetailPage() {
           <button
             key={rev.id}
             className={`filter-btn ${selectedRevIndex === idx ? 'filter-btn--active' : ''}`}
+            aria-pressed={selectedRevIndex === idx}
             onClick={() => handleSelectRevision(idx)}
           >
             Rev #{rev.number} {idx === content.revisions.length - 1 ? '(Current)' : ''}
@@ -454,16 +466,19 @@ export function ContentDetailPage() {
       )}
 
       {/* Split Workspace */}
-      <div className="workspace-grid" style={{ display: 'grid', gridTemplateColumns: 'minmax(340px, 1.1fr) minmax(340px, 0.9fr)', gap: 'var(--space-6)', alignItems: 'start' }}>
+      <div className="workspace-grid">
         {/* Left Column: Interactive Copy Editor / Annotated Preview */}
-        <div className="card" style={{ padding: 'var(--space-6)' }}>
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 'var(--space-4)' }}>
+        <div className="document-panel">
+          <div className="panel-heading">
             <h2 style={{ margin: 0, fontSize: '1.125rem' }}>
               Draft Copy (Rev #{currentRevision?.number})
             </h2>
             <button
               className="btn btn--ghost btn--sm"
-              onClick={() => setIsEditing(!isEditing)}
+              onClick={() => {
+                if (isEditing) cancelEditing();
+                else setIsEditing(true);
+              }}
               disabled={user?.membership_id !== content.creator_id}
             >
               {isEditing ? 'Cancel Edit' : 'Edit Copy / Save Revision'}
@@ -471,10 +486,11 @@ export function ContentDetailPage() {
           </div>
 
           {isEditing ? (
-            <form onSubmit={e => handleSaveRevision(e)}>
+            <form className="document-editor" onSubmit={e => handleSaveRevision(e)}>
               <div className="form-group" style={{ marginBottom: 'var(--space-4)' }}>
-                <label className="form-label">Copy Text</label>
+                <label htmlFor="edit-copy" className="form-label">Copy Text</label>
                 <textarea
+                  id="edit-copy"
                   className="input"
                   rows={8}
                   value={draftText}
@@ -483,10 +499,11 @@ export function ContentDetailPage() {
                 />
               </div>
 
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 'var(--space-3)', marginBottom: 'var(--space-4)' }}>
+              <div className="document-editor__metadata">
                 <div>
-                  <label className="form-label" style={{ fontSize: '0.75rem' }}>Channel</label>
+                  <label htmlFor="edit-channel" className="form-label" style={{ fontSize: '0.75rem' }}>Channel</label>
                   <input
+                    id="edit-channel"
                     type="text"
                     className="input input--sm"
                     value={draftChannel}
@@ -495,8 +512,9 @@ export function ContentDetailPage() {
                   />
                 </div>
                 <div>
-                  <label className="form-label" style={{ fontSize: '0.75rem' }}>Audience</label>
+                  <label htmlFor="edit-audience" className="form-label" style={{ fontSize: '0.75rem' }}>Audience</label>
                   <input
+                    id="edit-audience"
                     type="text"
                     className="input input--sm"
                     value={draftAudience}
@@ -505,8 +523,9 @@ export function ContentDetailPage() {
                   />
                 </div>
                 <div>
-                  <label className="form-label" style={{ fontSize: '0.75rem' }}>Purpose</label>
+                  <label htmlFor="edit-purpose" className="form-label" style={{ fontSize: '0.75rem' }}>Purpose</label>
                   <input
+                    id="edit-purpose"
                     type="text"
                     className="input input--sm"
                     value={draftPurpose}
@@ -520,7 +539,7 @@ export function ContentDetailPage() {
                 <button
                   type="button"
                   className="btn btn--ghost btn--sm"
-                  onClick={() => setIsEditing(false)}
+                  onClick={cancelEditing}
                 >
                   Cancel
                 </button>
@@ -534,7 +553,9 @@ export function ContentDetailPage() {
               </div>
             </form>
           ) : (
-            <div>
+            <div className="document-canvas">
+              <div className="document-canvas__masthead"><span>CAMPAIGN COPY</span><span>NO. {String(currentRevision?.number || 1).padStart(2, '0')}</span></div>
+              <p className="document-canvas__hint">{run?.findings.some(f => typeof f.location.start === 'number' && typeof f.location.end === 'number') ? 'Select an underlined phrase to follow the evidence.' : 'Your words. Ready for a closer look.'}</p>
               {renderAnnotatedDocument()}
 
               <div style={{ display: 'flex', flexWrap: 'wrap', gap: 'var(--space-4)', fontSize: '0.8125rem', color: 'var(--text-secondary)', marginTop: 'var(--space-4)' }}>
@@ -556,9 +577,9 @@ export function ContentDetailPage() {
         </div>
 
         {/* Right Column: Findings & Compliance Results */}
-        <div className="card" style={{ padding: 'var(--space-6)' }}>
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 'var(--space-4)' }}>
-            <h2 style={{ margin: 0, fontSize: '1.125rem' }}>Compliance Findings</h2>
+        <section className="findings-panel" aria-labelledby="findings-heading">
+          <div className="panel-heading">
+            <div><p className="eyebrow">A CLOSER LOOK</p><h2 id="findings-heading" style={{ margin: 0, fontSize: '1.125rem' }}>Compliance Findings {run && <span className="finding-count">{run.findings.length}</span>}</h2></div>
             <ProcessingMode isExternal={Boolean(policy?.enabled && consent)} />
           </div>
 
@@ -579,7 +600,7 @@ export function ContentDetailPage() {
           {run ? (
             <div>
               {/* Check Status Chips */}
-              <div style={{ display: 'flex', flexWrap: 'wrap', gap: 'var(--space-2)', marginBottom: 'var(--space-5)' }}>
+              <div className="check-coverage">
                 {run.checks.map(c => (
                   <CheckStatusChip
                     key={c.category}
@@ -593,7 +614,7 @@ export function ContentDetailPage() {
               {run.stale && (
                 <div style={{ marginBottom: 'var(--space-4)' }}>
                   <Alert kind="warning">
-                    Source guidelines changed since this run (stale epoch). Re-run analysis for newest standards.
+                    Source guidelines changed since this run. Re-run analysis for the latest standards.
                   </Alert>
                 </div>
               )}
@@ -619,15 +640,15 @@ export function ContentDetailPage() {
                         }}
                         onClick={() => setActiveFinding(finding)}
                       >
-                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '6px' }}>
+                        <div className="finding-card__header">
                           <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-2)', flexWrap: 'wrap' }}>
                             <SeverityBadge severity={finding.severity} />
-                            <span className="badge badge--neutral">{finding.category}</span>
+                            <span className="badge badge--neutral">{categoryLabel(finding.category)}</span>
                             <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>
                               [{finding.origin}]
                             </span>
                           </div>
-                          <div style={{ display: 'flex', gap: 'var(--space-2)' }}>
+                          <div className="finding-card__actions">
                             <button
                               className="btn btn--secondary btn--sm"
                               onClick={e => {
@@ -661,11 +682,11 @@ export function ContentDetailPage() {
                         )}
 
                         {finding.suggested_edit && (
-                          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 'var(--space-2)', marginTop: '8px', paddingTop: '6px', borderTop: '1px solid var(--border-subtle)' }}>
+                          <div className="finding-suggestion">
                             <div style={{ fontSize: '0.8125rem', color: 'var(--color-success)' }}>
                               Suggestion: <code>{finding.suggested_edit}</code>
                             </div>
-                            <div style={{ display: 'flex', gap: 'var(--space-2)' }}>
+                            <div className="finding-card__actions">
                               <button
                                 type="button"
                                 className="btn btn--ghost btn--sm"
@@ -698,11 +719,11 @@ export function ContentDetailPage() {
             </div>
           ) : (
             <div style={{ textAlign: 'center', padding: 'var(--space-10)', color: 'var(--text-secondary)' }}>
-              <div style={{ fontSize: '2rem', marginBottom: 'var(--space-2)' }}>✦</div>
+              <div className="review-empty-mark" aria-hidden="true">[ / ]</div>
               <p>Click "Run Compliance Check" to evaluate this revision against approved guidelines.</p>
             </div>
           )}
-        </div>
+        </section>
       </div>
 
       {/* Evidence Drawer */}

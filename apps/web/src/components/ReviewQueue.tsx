@@ -61,29 +61,31 @@ export function ReviewQueue({ onItemSelect }: ReviewQueueProps) {
   };
 
   return (
-    <div className="review-queue-card card" style={{ padding: 'var(--space-6)', marginTop: 'var(--space-6)' }}>
+    <div className="review-queue-card">
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 'var(--space-4)', marginBottom: 'var(--space-4)' }}>
         <div>
-          <h2 style={{ margin: 0, fontSize: '1.25rem' }}>Campaign Review Queue</h2>
+          <p className="eyebrow">FROM DRAFT TO SIGN-OFF</p>
+          <h2 style={{ margin: 0 }}>Campaigns</h2>
           <div style={{ fontSize: '0.8125rem', color: 'var(--text-secondary)', marginTop: '2px' }}>
-            Human review workflow & revision governance
+            The work in progress. And the work ready to go.
           </div>
         </div>
 
         <div style={{ display: 'flex', gap: 'var(--space-3)', alignItems: 'center', flexWrap: 'wrap' }}>
           <input
             type="search"
+            aria-label="Filter campaigns by title or ID"
             className="input input--sm"
-            placeholder="Filter by title or ID…"
+            placeholder="Search campaigns…"
             value={searchQuery}
             onChange={e => setSearchQuery(e.target.value)}
             style={{ width: '220px' }}
           />
           <button
-            className="btn btn--primary btn--sm"
+            className="btn btn--ghost btn--sm"
             onClick={() => navigate('/review/new')}
           >
-            ＋ New Campaign
+            + New campaign
           </button>
         </div>
       </div>
@@ -100,6 +102,7 @@ export function ReviewQueue({ onItemSelect }: ReviewQueueProps) {
           <button
             key={tab.id}
             className={`filter-btn ${activeTab === tab.id ? 'filter-btn--active' : ''}`}
+            aria-pressed={activeTab === tab.id}
             onClick={() => setActiveTab(tab.id)}
           >
             {tab.label}
@@ -115,15 +118,16 @@ export function ReviewQueue({ onItemSelect }: ReviewQueueProps) {
         </div>
       ) : filteredItems.length === 0 ? (
         <EmptyState
-          icon="📥"
+          icon="[ / ]"
           title="No campaigns found"
           description={activeTab === 'all'
             ? 'No campaigns exist yet in this workspace. Create the first campaign to start review.'
             : `No campaigns currently in "${activeTab}" status.`}
+          action={activeTab === 'all' ? <button className="btn btn--primary" onClick={() => navigate('/review/new')}>Start your first review ↗</button> : undefined}
         />
       ) : (
         <div style={{ overflowX: 'auto' }}>
-          <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '0.875rem' }}>
+          <table className="campaign-table" style={{ width: '100%', borderCollapse: 'collapse', fontSize: '0.875rem' }}>
             <thead>
               <tr style={{ borderBottom: '1px solid var(--border-subtle)', textAlign: 'left', color: 'var(--text-secondary)' }}>
                 <th style={{ padding: '10px 12px' }}>Campaign Title</th>
@@ -147,14 +151,11 @@ export function ReviewQueue({ onItemSelect }: ReviewQueueProps) {
                   className="queue-row"
                 >
                   <td style={{ padding: '12px' }}>
-                    <div style={{ fontWeight: 600 }}>{item.title}</div>
-                    <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>
-                      ID: <code>{item.id}</code>
-                    </div>
+                    <button className="campaign-title" onClick={e => { e.stopPropagation(); handleOpenItem(item.id); }}>{item.title}</button>
                   </td>
                   <td style={{ padding: '12px' }}>
                     <span className={`badge ${getStateBadgeClass(item.state)}`}>
-                      {item.state.toUpperCase()}
+                      {item.state.replace(/_/g, ' ')}
                     </span>
                     {item.approval_stale && (
                       <span className="badge badge--error" style={{ marginLeft: '6px' }} title="Guidelines updated since approval">
@@ -166,7 +167,7 @@ export function ReviewQueue({ onItemSelect }: ReviewQueueProps) {
                     Rev #{item.current_revision}
                   </td>
                   <td style={{ padding: '12px', fontSize: '0.8125rem', color: 'var(--text-secondary)' }}>
-                    {item.reviewer_id ? <code>{item.reviewer_id}</code> : <span style={{ color: 'var(--text-muted)' }}>Unassigned</span>}
+                    {item.reviewer_id ? <span title={item.reviewer_id}>Assigned</span> : <span style={{ color: 'var(--text-muted)' }}>Unassigned</span>}
                   </td>
                   <td style={{ padding: '12px', fontSize: '0.8125rem', color: 'var(--text-secondary)' }}>
                     {new Date(item.created_at).toLocaleDateString()}
@@ -179,7 +180,7 @@ export function ReviewQueue({ onItemSelect }: ReviewQueueProps) {
                         handleOpenItem(item.id);
                       }}
                     >
-                      Open Workspace →
+                      Open review ↗
                     </button>
                   </td>
                 </tr>

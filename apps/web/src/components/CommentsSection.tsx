@@ -69,7 +69,7 @@ export function CommentsSection({
     <section className="comments-section card" style={{ padding: 'var(--space-5)', marginTop: 'var(--space-6)' }} aria-labelledby="comments-heading">
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 'var(--space-4)', flexWrap: 'wrap', gap: 'var(--space-2)' }}>
         <h3 id="comments-heading" style={{ margin: 0, fontSize: '1.0625rem' }}>
-          Revision Discussions & Notes ({comments.length})
+          Discussion & notes ({comments.length})
         </h3>
 
         {activeFindingId && (
@@ -130,6 +130,7 @@ export function CommentsSection({
       {/* New Comment Input */}
       <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-2)' }}>
         <textarea
+          aria-label="Add a discussion note"
           className="input"
           rows={2}
           placeholder={
