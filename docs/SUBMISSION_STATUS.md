@@ -1,5 +1,7 @@
 # S6 submission coordination
 
+> Release remains blocked. See [INTEGRATION_REPORT.md](INTEGRATION_REPORT.md). The existing PDF and earlier D5/P4/P5 completion claims must be reconciled with executable evidence before submission.
+
 Prepared 23 October 2026 against implementation baseline `b5999b2`. **Not ready for final submission.** S6 preparation is implemented; final sign-off depends on the unfinished items below. No placeholder project URL or completed release tag is supplied.
 
 ## Seven required Round 2 items

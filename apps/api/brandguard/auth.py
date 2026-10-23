@@ -34,15 +34,22 @@ def login(body: Login, request: Request, response: Response, session: Session = 
     member = session.scalar(select(Membership).where(Membership.user_id == user.id, Membership.org_id == body.org_id)) if user and valid else None
     if member is None:
         raise Problem(401, 'invalid_credentials', 'Invalid credentials or workspace.')
-    token, csrf = secrets.token_urlsafe(32), secrets.token_urlsafe(32)
+    token = secrets.token_urlsafe(32)
+    csrf = digest('csrf:' + token)
     session.add(SessionRecord(token_hash=digest(token), csrf_hash=digest(csrf), membership_id=member.id, expires_at=now + timedelta(hours=8)))
     session.commit()
     response.set_cookie(COOKIE, token, httponly=True, secure=request.app.state.settings.environment != 'development', samesite='strict', max_age=28800, path='/')
     return dict(csrf_token=csrf, org_id=member.org_id, role=member.role)
 
 @router.get('/api/v1/me')
-def me(member=Depends(identity)):
-    return dict(user_id=member.user_id, org_id=member.org_id, role=member.role)
+def me(request: Request, member=Depends(identity), session: Session=Depends(db)):
+    token = request.cookies[COOKIE]
+    csrf = digest('csrf:' + token)
+    record = session.get(SessionRecord, digest(token))
+    if record.csrf_hash != digest(csrf):
+        record.csrf_hash = digest(csrf)
+        session.commit()
+    return dict(user_id=member.user_id, membership_id=member.id, org_id=member.org_id, role=member.role, csrf_token=csrf)
 
 @router.delete('/api/v1/sessions/current', status_code=204)
 def logout(request: Request, response: Response, member=Depends(identity), session: Session = Depends(db)):

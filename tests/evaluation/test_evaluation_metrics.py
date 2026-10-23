@@ -45,3 +45,31 @@ def test_evaluate_fixtures_structure_and_performance():
     assert metrics["precision"] >= 0.85
     assert metrics["recall"] >= 0.80
     assert metrics["citation_resolution_rate"] >= 0.90
+
+
+def test_wrong_rule_on_positive_case_is_both_false_positive_and_false_negative():
+    from evaluation.evaluate import match_findings
+    from review_engine.models import Finding
+    predicted = Finding(id='wrong', category='terminology', severity='blocker',
+        evidence_status='supported_violation', origin='deterministic',
+        location={'start_char': 0, 'end_char': 8}, rule_id='WRONG', source_version_id='source',
+        evidence_quote='Lumadesk', rationale='Wrong rule', suggested_edit=None)
+    label = {'category':'terminology', 'rule_id':'RIGHT', 'quote':'Lumadesk', 'evidence_status':'supported_violation'}
+    records, missed, unexpected = match_findings([label], [predicted], 'Lumadesk', [])
+    metrics = compute_metrics(records)
+    assert metrics['true_positives'] == 0
+    assert metrics['false_positives'] == metrics['false_negatives'] == 1
+    assert metrics['citation_resolution_rate'] == 0
+
+
+def test_duplicate_predictions_cannot_reuse_a_label():
+    from evaluation.evaluate import match_findings
+    from review_engine.models import Finding
+    predicted = Finding(id='one', category='terminology', severity='blocker',
+        evidence_status='supported_violation', origin='deterministic',
+        location={'start_char':0, 'end_char':8}, rule_id='R', source_version_id='S',
+        evidence_quote='Lumadesk', rationale='Use LumaDesk', suggested_edit='LumaDesk')
+    label = {'category':'terminology', 'rule_id':'R', 'quote':'Lumadesk', 'evidence_status':'supported_violation'}
+    records, _, _ = match_findings([label], [predicted, predicted], 'Lumadesk', [])
+    metrics = compute_metrics(records)
+    assert metrics['true_positives'] == 1 and metrics['false_positives'] == 1

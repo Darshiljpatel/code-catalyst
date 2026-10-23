@@ -51,6 +51,40 @@ def compute_metrics(results: List[Dict[str, Any]]) -> Dict[str, Any]:
     }
 
 
+def match_findings(expected, detected, text, sources):
+    """One-to-one matching: source/rule, category, status and located quote.
+
+    Each unmatched prediction is an FP, including on positive documents. Each
+    unmatched label is an FN; duplicate predictions cannot reuse a label.
+    """
+    rules = {(source["id"], rule["id"]): (source, rule)
+             for source in sources for rule in source.get("rules", [])}
+    remaining = list(expected)
+    records, unexpected = [], []
+    for finding in detected:
+        source_rule = rules.get((finding.source_version_id, finding.rule_id))
+        citation = bool(source_rule and source_rule[1].get("evidence_quote")
+                        and source_rule[1]["evidence_quote"] in source_rule[0].get("text", ""))
+        location = finding.location or {}
+        start, end = location.get("start_char"), location.get("end_char")
+        quote = text[start:end] if isinstance(start, int) and isinstance(end, int) and 0 <= start < end <= len(text) else ""
+        matched = next((label for label in remaining
+                        if label.get("category") == finding.category
+                        and label.get("rule_id") == finding.rule_id
+                        and label.get("source_version_id", finding.source_version_id) == finding.source_version_id
+                        and label.get("evidence_status") == finding.evidence_status
+                        and label.get("quote") and label["quote"] in quote), None)
+        if matched is not None:
+            remaining.remove(matched)
+        else:
+            unexpected.append(finding)
+        records.append(dict(category=finding.category, expected_violation=matched is not None,
+                            detected_violation=True, resolvable_citation=citation))
+    records.extend(dict(category=label["category"], expected_violation=True,
+                        detected_violation=False, resolvable_citation=False) for label in remaining)
+    return records, remaining, unexpected
+
+
 def percentile(values: List[float], p: float) -> float:
     """Calculates percentile from sorted values."""
     if not values:
@@ -81,92 +115,35 @@ def evaluate_dataset(dataset_path: Optional[str] = None) -> Dict[str, Any]:
         cases = json.load(f)
 
     all_evaluations = []
-    split_evaluations: Dict[str, List[Dict[str, Any]]] = {}
-    category_evaluations: Dict[str, List[Dict[str, Any]]] = {}
-    latencies: List[float] = []
+    split_evaluations = {}
+    category_evaluations = {}
+    latencies = []
     disagreements = []
-
+    template_splits = {}
     for case in cases:
-        case_id = case["id"]
+        template = case.get("template", case["id"])
         split = case.get("split", "dev")
+        if template in template_splits and template_splits[template] != split:
+            raise ValueError("A template appears in both development and test splits")
+        template_splits[template] = split
         text = case.get("text", "")
-        context = case.get("context", {})
         sources = case.get("sources", [])
-        expected_findings = case.get("expected_findings", [])
-        expected_has_violations = len(expected_findings) > 0
-
-        # Build rule ID lookup to verify citation resolvability
-        valid_rule_ids = {r["id"] for s in sources for r in s.get("rules", []) if "id" in r}
-
-        # Measure review engine execution latency
-        t0 = time.perf_counter()
-        extraction: ExtractionResult = extract(text.encode("utf-8"), "text/plain", {})
-        check_results: List[CheckResult] = check(extraction, context, sources)
-        latency_ms = (time.perf_counter() - t0) * 1000.0
-        latencies.append(latency_ms)
-
-        detected_findings = [f for cr in check_results for f in cr.findings]
-        detected_has_violations = len(detected_findings) > 0
-
-        # Verify citation resolvability
-        all_citations_resolvable = all(
-            f.rule_id in valid_rule_ids
-            for f in detected_findings
-            if f.rule_id is not None
-        )
-
-        eval_record = {
-            "case_id": case_id,
-            "split": split,
-            "expected_violation": expected_has_violations,
-            "detected_violation": detected_has_violations,
-            "resolvable_citation": all_citations_resolvable,
-            "latency_ms": round(latency_ms, 2)
-        }
-        all_evaluations.append(eval_record)
-
-        if split not in split_evaluations:
-            split_evaluations[split] = []
-        split_evaluations[split].append(eval_record)
-
-        # Track per-category results
-        for exp in expected_findings:
-            cat = exp.get("category", "general")
-            matched = any(
-                df.category == cat and (
-                    df.rule_id == exp.get("rule_id") or
-                    exp.get("quote", "") in df.evidence_quote or
-                    (isinstance(df.location, dict) and 
-                     0 <= df.location.get("start_char", 0) < df.location.get("end_char", 0) <= len(text) and 
-                     exp.get("quote", "") in text[df.location["start_char"]:df.location["end_char"]])
-                )
-                for df in detected_findings
-            )
-            cat_rec = {
-
-                "case_id": case_id,
-                "category": cat,
-                "expected_violation": True,
-                "detected_violation": matched,
-                "resolvable_citation": True
-            }
-            category_evaluations.setdefault(cat, []).append(cat_rec)
-
-        # Check for false alarms in negative cases
-        if not expected_has_violations and detected_has_violations:
-            disagreements.append({
-                "case_id": case_id,
-                "type": "false_positive",
-                "text": text,
-                "unexpected_findings": [f.model_dump() for f in detected_findings]
-            })
-        elif expected_has_violations and not detected_has_violations:
-            disagreements.append({
-                "case_id": case_id,
-                "type": "false_negative",
-                "text": text,
-                "missed_expected": expected_findings
-            })
+        started = time.perf_counter()
+        extraction = extract(text.encode("utf-8"), "text/plain", {})
+        detected = [f for cr in check(extraction, case.get("context", {}), sources) for f in cr.findings]
+        latencies.append((time.perf_counter() - started) * 1000)
+        records, missed, unexpected = match_findings(case.get("expected_findings", []), detected, text, sources)
+        for record in records:
+            record.update(case_id=case["id"], split=split)
+            all_evaluations.append(record)
+            split_evaluations.setdefault(split, []).append(record)
+            category_evaluations.setdefault(record["category"], []).append(record)
+        # Preserve empty split keys for all-negative datasets, without calling
+        # true negatives findings or inflating citation denominators.
+        split_evaluations.setdefault(split, [])
+        if missed or unexpected:
+            disagreements.append(dict(case_id=case["id"], missed_expected=missed,
+                                      unexpected_findings=[f.model_dump() for f in unexpected]))
 
     global_metrics = compute_metrics(all_evaluations)
 
@@ -188,6 +165,9 @@ def evaluate_dataset(dataset_path: Optional[str] = None) -> Dict[str, Any]:
 
     return {
         "dataset": str(dataset_path.name),
+        "dataset_sha256": __import__('hashlib').sha256(dataset_path.read_bytes()).hexdigest(),
+        "scope": "Deterministic engine synthetic fixture regression, finding-level metrics; not independent held-out or semantic-model evaluation",
+        "metric_unit": "finding",
         "total_cases": len(cases),
         "splits": list(split_evaluations.keys()),
         "metrics": global_metrics,

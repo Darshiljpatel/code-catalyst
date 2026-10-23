@@ -1,50 +1,5 @@
 {
-  "passed": true,
-  "steps": [
-    {
-      "step": "1. Brand Guidelines Curation",
-      "status": "passed",
-      "details": "Verified active guidelines for LumaDesk with terminology and claims rules"
-    },
-    {
-      "step": "2. Content Intake & Initial Draft (Rev #1)",
-      "status": "passed",
-      "details": "Draft created with non-compliant copy \"Lumadesk guarantees 10x...\""
-    },
-    {
-      "step": "3. Compliance Run Execution",
-      "status": "passed",
-      "details": "Detected 5 findings including 3 blockers preventing publication"
-    },
-    {
-      "step": "4. Evidence Inspection & Suggestion Patching",
-      "status": "passed",
-      "details": "Inspected authoritative quotes in drawer; applied verified replacement text"
-    },
-    {
-      "step": "5. Save Corrected Revision (Rev #2)",
-      "status": "passed",
-      "details": "Saved Revision #2 with parent rev-001; verified LCS word diff"
-    },
-    {
-      "step": "6. Re-analysis of Revision 2",
-      "status": "passed",
-      "details": "Re-analysis verified: 0 blockers remain in revision #2"
-    },
-    {
-      "step": "7. Submit Revision for Review",
-      "status": "passed",
-      "details": "Transitioned campaign to IN_REVIEW with assigned reviewer"
-    },
-    {
-      "step": "8. Reviewer Approval Decision",
-      "status": "passed",
-      "details": "Recorded decision APPROVED by reviewer with required 10+ char rationale"
-    },
-    {
-      "step": "9. Cryptographic Export & Certificate Verification",
-      "status": "passed",
-      "details": "Exported tamper-proof package with verified SHA-256 hash matching approved revision"
-    }
-  ]
+  "status": "invalidated",
+  "reason": "Previous runner emitted hardcoded passes without executing assertions. Use browser-results.json and integration regression evidence.",
+  "historical_artifact": "t11_journey"
 }

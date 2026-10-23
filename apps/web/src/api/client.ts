@@ -140,7 +140,9 @@ export async function logout(): Promise<void> {
 // ---------------------------------------------------------------------------
 
 export async function getMe(): Promise<MeResponse> {
-  return request<MeResponse>('GET', '/me');
+  const data = await request<MeResponse>('GET', '/me');
+  if (data.csrf_token) setCsrfToken(data.csrf_token);
+  return data;
 }
 
 // ---------------------------------------------------------------------------

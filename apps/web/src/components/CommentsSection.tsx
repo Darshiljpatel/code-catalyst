@@ -26,8 +26,7 @@ export function CommentsSection({
       const data = await getComments(revisionId);
       setComments(data);
     } catch {
-      // In dev mode with mock or empty
-      setComments([]);
+      setError('Comments could not be loaded. Retry before reviewing the discussion.');
     } finally {
       setLoading(false);
     }

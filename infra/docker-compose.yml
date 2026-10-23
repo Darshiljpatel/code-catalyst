@@ -1,63 +1,68 @@
+# Local stack. Run from the repository root with --env-file .env.
+x-runtime: &runtime
+  DATABASE_URL: postgresql+psycopg://brandguard:${POSTGRES_PASSWORD:?Set POSTGRES_PASSWORD in .env}@postgres:5432/brandguard
+  PUBLIC_ORIGIN: ${PUBLIC_ORIGIN:-http://localhost:3000}
+  APP_ENV: ${APP_ENV:-development}
+  NEBIUS_API_KEY: ${NEBIUS_API_KEY:-}
+  MODEL_PRIMARY_ID: ${MODEL_PRIMARY_ID:-Qwen/Qwen3-235B-A22B-Instruct-2507}
+  MODEL_TIMEOUT_SECONDS: ${MODEL_TIMEOUT_SECONDS:-40}
+  MODEL_DAILY_RUN_LIMIT: ${MODEL_DAILY_RUN_LIMIT:-100}
 services:
   postgres:
-    image: postgres:16-alpine
+    image: postgres:18-alpine
     restart: unless-stopped
     environment:
       POSTGRES_DB: brandguard
-      POSTGRES_USER: ${POSTGRES_USER:-brandguard}
-      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-postgres_dev_password}
-    ports:
-      - "5432:5432"
+      POSTGRES_USER: brandguard
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?Set POSTGRES_PASSWORD in .env}
     volumes:
-      - pgdata:/var/lib/postgresql/data
+      - pgdata:/var/lib/postgresql
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-brandguard} -d brandguard"]
+      test: ["CMD-SHELL", "pg_isready -U brandguard -d brandguard"]
       interval: 5s
       timeout: 5s
-      retries: 5
-
+      retries: 10
+  migrate:
+    build:
+      context: ..
+      dockerfile: infra/Dockerfile.api
+    environment: *runtime
+    command: ["alembic", "-c", "apps/api/alembic.ini", "upgrade", "head"]
+    depends_on:
+      postgres:
+        condition: service_healthy
   api:
     build:
       context: ..
       dockerfile: infra/Dockerfile.api
     restart: unless-stopped
-    environment:
-      DATABASE_URL: postgresql+psycopg://${POSTGRES_USER:-brandguard}:${POSTGRES_PASSWORD:-postgres_dev_password}@postgres:5432/brandguard
-      PUBLIC_ORIGIN: ${PUBLIC_ORIGIN:-http://localhost:3000}
-      PORT: 8000
+    environment: *runtime
     depends_on:
-      postgres:
-        condition: service_healthy
-    ports:
-      - "8000:8000"
+      migrate:
+        condition: service_completed_successfully
     healthcheck:
-      test: ["CMD-SHELL", "curl -f http://localhost:8000/api/v1/health/ready || exit 1"]
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8000/api/v1/health/ready', timeout=3)"]
       interval: 5s
       timeout: 5s
-      retries: 5
-
-
+      retries: 10
   worker:
     build:
       context: ..
       dockerfile: infra/Dockerfile.worker
     restart: unless-stopped
-    environment:
-      DATABASE_URL: postgresql+psycopg://${POSTGRES_USER:-brandguard}:${POSTGRES_PASSWORD:-postgres_dev_password}@postgres:5432/brandguard
-      PYTHONPATH: /app/packages:/app/apps/api:/app
+    environment: *runtime
     depends_on:
-      postgres:
-        condition: service_healthy
-
+      migrate:
+        condition: service_completed_successfully
   web:
     build:
       context: ..
       dockerfile: infra/Dockerfile.web
     restart: unless-stopped
     ports:
-      - "3000:80"
+      - "${WEB_BIND:-127.0.0.1}:${WEB_PORT:-3000}:80"
     depends_on:
-      - api
-
+      api:
+        condition: service_healthy
 volumes:
   pgdata:

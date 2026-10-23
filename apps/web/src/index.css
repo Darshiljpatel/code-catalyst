@@ -21,14 +21,15 @@
   --glass-border: hsla(224, 40%, 60%, 0.14);
 
   /* Accent — violet */
-  --accent:        hsl(258, 80%, 65%);
+  --accent:        hsl(258, 80%, 76%);
+  --accent-solid:  hsl(258, 70%, 53%);
   --accent-hover:  hsl(258, 80%, 72%);
   --accent-muted:  hsla(258, 80%, 65%, 0.18);
 
   /* Text */
   --text-primary:   hsl(220, 20%, 92%);
   --text-secondary: hsl(220, 14%, 60%);
-  --text-muted:     hsl(220, 12%, 40%);
+  --text-muted:     hsl(220, 12%, 68%);
   --text-on-accent: hsl(0, 0%, 100%);
 
   /* Semantic */
@@ -164,12 +165,12 @@ code, kbd {
 .btn:disabled { opacity: 0.45; cursor: not-allowed; }
 
 .btn--primary {
-  background: var(--accent);
+  background: var(--accent-solid);
   color: var(--text-on-accent);
   box-shadow: 0 0 16px hsla(258, 80%, 65%, 0.35);
 }
 .btn--primary:hover:not(:disabled) {
-  background: var(--accent-hover);
+  background: hsl(258, 70%, 58%);
   box-shadow: var(--shadow-accent);
 }
 
@@ -339,3 +340,5 @@ code, kbd {
   h2 { font-size: 1.25rem; }
   .page-container { padding: var(--space-5) var(--space-4); }
 }
+
+.located-finding { font: inherit; color: inherit; background: var(--color-warning-muted); border: 0; border-bottom: 2px solid var(--color-warning); cursor: pointer; white-space: pre-wrap; }

@@ -1,3 +1,4 @@
+import { useDialogFocus } from '../hooks/useDialogFocus';
 import React from 'react';
 import { getProcessingPolicy, updateProcessingPolicy, ApiResponseError } from '../api/client';
 import type { PolicyOut } from '../api/types';
@@ -14,6 +15,7 @@ export function PolicySettingsModal({
   onClose,
   onPolicyUpdated,
 }: PolicySettingsModalProps) {
+  const dialogRef = useDialogFocus(isOpen);
   const [policy, setPolicy] = React.useState<PolicyOut | null>(null);
   const [loading, setLoading] = React.useState(true);
   const [saving, setSaving] = React.useState(false);
@@ -79,7 +81,7 @@ export function PolicySettingsModal({
   };
 
   return (
-    <div className="modal-backdrop" role="dialog" aria-modal="true" aria-labelledby="policy-modal-title">
+    <div className="modal-backdrop" ref={dialogRef} tabIndex={-1} role="dialog" aria-modal="true" aria-labelledby="policy-modal-title">
       <div className="modal-card animate-scale-in">
         <div className="modal-header">
           <h2 id="policy-modal-title" style={{ fontSize: '1.25rem', margin: 0 }}>

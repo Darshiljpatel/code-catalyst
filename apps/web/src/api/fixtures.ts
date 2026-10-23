@@ -562,6 +562,7 @@ export const FIXTURE_REVIEW_RECORD: ReviewRecordOut = {
   workflow_version: 1,
   stale: false,
   evidence: {
+    effective_checks: FIXTURE_REVIEW_RUN.checks,
     rule_terminology_001: 'passed',
     rule_facts_trial: 'passed',
     rule_tone_calm: 'passed',

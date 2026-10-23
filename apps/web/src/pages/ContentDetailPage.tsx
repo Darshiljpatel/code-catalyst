@@ -1,7 +1,9 @@
 import React from 'react';
+import { replaceLocatedText } from '../api/textEdits';
 import { useParams, useNavigate } from 'react-router-dom';
 import {
   getContent,
+  getReviewRecord,
   getRun,
   createRevision,
   startAnalysis,
@@ -32,9 +34,9 @@ import { EditSuggestionModal } from '../components/EditSuggestionModal';
 import { SubmitReviewModal } from '../components/SubmitReviewModal';
 import { DecisionModal } from '../components/DecisionModal';
 import { ExportModal } from '../components/ExportModal';
+import { ManualChecks } from '../components/ManualChecks';
 import { ResolutionModal } from '../components/ResolutionModal';
 import { useAuth } from '../context/AuthContext';
-import { FIXTURE_FINDINGS, FIXTURE_REVIEW_RUN, FIXTURE_SOURCES } from '../api/fixtures';
 
 export function ContentDetailPage() {
   const { contentId } = useParams<{ contentId: string }>();
@@ -94,13 +96,20 @@ export function ContentDetailPage() {
       ]);
       setContent(item);
       setPolicy(pol);
-      setRun(item.latest_run_id ? await getRun(item.latest_run_id) : null);
+      if (item.latest_run_id) {
+        const latestRun = await getRun(item.latest_run_id);
+        if (!['queued', 'running'].includes(latestRun.status)) {
+          const record = await getReviewRecord(latestRun.revision_id);
+          latestRun.checks = record.evidence.effective_checks;
+        }
+        setRun(latestRun);
+      } else setRun(null);
 
       // Fetch sources for evidence drawer
       if (item.brand_id) {
         getSources(item.brand_id)
           .then(setSources)
-          .catch(() => setSources(FIXTURE_SOURCES));
+          .catch(() => { setSources([]); setError('Source evidence could not be loaded. Retry before reviewing.'); });
       }
       if (item.revisions && item.revisions.length > 0) {
         const latestIdx = item.revisions.length - 1;
@@ -157,7 +166,7 @@ export function ContentDetailPage() {
     try {
       const updated = await createRevision(content.id, {
         parent_revision_id: parentId,
-        text: draftText.trim(),
+        text: draftText,
         channel: draftChannel.trim(),
         audience: draftAudience.trim(),
         purpose: draftPurpose.trim(),
@@ -203,29 +212,23 @@ export function ContentDetailPage() {
       );
       setRun(newRun);
     } catch (err) {
-      if (import.meta.env.VITE_USE_MOCK_API === 'true') {
-        setRun({
-          ...FIXTURE_REVIEW_RUN,
-          revision_id: currentRevision.id,
-          findings: FIXTURE_FINDINGS,
-        });
-      } else {
-        setError(err instanceof ApiResponseError ? err.body.message : 'Analysis request failed. Your draft is saved; retry when the service is available.');
-      }
+      setError(err instanceof ApiResponseError ? err.body.message : 'Analysis request failed. Your draft is saved; retry when the service is available.');
     } finally {
       setAnalysing(false);
     }
   };
 
+  const pollingRunId = run?.id;
+  const pollingRunStatus = run?.status;
   React.useEffect(() => {
-    if (!run || !['queued', 'running'].includes(run.status)) return;
+    if (!pollingRunId || !pollingRunStatus || !['queued', 'running'].includes(pollingRunStatus)) return;
     let cancelled = false;
     let timer: ReturnType<typeof setTimeout> | undefined;
     let attempts = 0;
     setAnalysing(true);
     const poll = async () => {
       try {
-        const updated = await getRun(run.id);
+        const updated = await getRun(pollingRunId);
         if (cancelled) return;
         setRun(updated);
         if (['queued', 'running'].includes(updated.status)) {
@@ -247,7 +250,7 @@ export function ContentDetailPage() {
     };
     timer = setTimeout(poll, 500);
     return () => { cancelled = true; if (timer) clearTimeout(timer); };
-  }, [run?.id, run?.status, contentId]);
+  }, [pollingRunId, pollingRunStatus, contentId]);
 
   const applySuggestedEdit = (finding: FindingOut) => {
     if (!finding.suggested_edit || !currentRevision) return;
@@ -266,17 +269,12 @@ export function ContentDetailPage() {
   const handleApplySuggestion = (replacementText: string) => {
     if (!editingSuggestionFinding) return;
     const finding = editingSuggestionFinding;
-    setIsEditing(true);
-
-    // Apply replacement to draft text
-    if (finding.evidence_quote && draftText.includes(finding.evidence_quote)) {
-      setDraftText(draftText.replace(finding.evidence_quote, replacementText));
-    } else if (finding.location?.start !== undefined && finding.location?.end !== undefined) {
-      const before = draftText.slice(0, finding.location.start);
-      const after = draftText.slice(finding.location.end);
-      setDraftText(before + replacementText + after);
-    } else {
-      setDraftText(prev => prev + '\n' + replacementText);
+    try {
+      if (!currentRevision) return;
+      setDraftText(replaceLocatedText(draftText, currentRevision.text, finding.location?.start, finding.location?.end, replacementText));
+      setIsEditing(true);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Invalid suggestion location.');
     }
     setEditingSuggestionFinding(null);
   };
@@ -284,37 +282,21 @@ export function ContentDetailPage() {
   // Document preview rendering with interactive highlight marks
   const renderAnnotatedDocument = () => {
     if (!currentRevision) return null;
-    const textToRender = draftText;
-    const findingsList = run?.findings || [];
-
-    if (findingsList.length === 0) {
-      return (
-        <div className="document-preview-text">
-          {textToRender}
-        </div>
-      );
+    const points = Array.from(draftText);
+    const segments: React.ReactNode[] = [];
+    let cursor = 0;
+    const located = draftText === currentRevision.text ? [...(run?.findings || [])].sort((a, b) => Number(a.location.start) - Number(b.location.start)) : [];
+    for (const finding of located) {
+      const { start, end } = finding.location;
+      if (typeof start !== 'number' || typeof end !== 'number' || start < cursor || end <= start || end > points.length) continue;
+      segments.push(points.slice(cursor, start).join(''));
+      segments.push(<button type="button" key={finding.id} className="located-finding" onClick={() => setActiveFinding(finding)} aria-label={`${finding.category}: ${points.slice(start, end).join('')}`}>
+        {points.slice(start, end).join('')}
+      </button>);
+      cursor = end;
     }
-
-    // Build segments based on findings with quote or offsets
-    return (
-      <div className="document-preview-text" id="document-preview-container">
-        {textToRender}
-        {findingsList.map(f => {
-          const isSelected = activeFinding?.id === f.id;
-          return (
-            <div
-              key={f.id}
-              className={`annotation-marker annotation-marker--${f.severity} ${isSelected ? 'annotation-marker--selected' : ''}`}
-              onClick={() => setActiveFinding(f)}
-              title={`${f.severity.toUpperCase()}: ${f.rationale}`}
-            >
-              <span className="annotation-marker__badge">{f.category}</span>
-              <span className="annotation-marker__quote">"{f.evidence_quote || f.rationale}"</span>
-            </div>
-          );
-        })}
-      </div>
-    );
+    segments.push(points.slice(cursor).join(''));
+    return <div className="document-preview-text" id="document-preview-container">{segments}</div>;
   };
 
   if (loading) {
@@ -325,7 +307,7 @@ export function ContentDetailPage() {
     );
   }
 
-  if (error || !content) {
+  if (!content) {
     return (
       <main className="page-container" id="main-content">
         <Alert kind="error">{error || 'Campaign not found'}</Alert>
@@ -338,6 +320,7 @@ export function ContentDetailPage() {
 
   return (
     <main className="page-container" id="main-content">
+      {error && <Alert kind="error">{error}</Alert>}
       {/* Top Header */}
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: 'var(--space-4)', marginBottom: 'var(--space-6)' }}>
         <div>
@@ -367,25 +350,25 @@ export function ContentDetailPage() {
             id="btn-run-analysis"
             className="btn btn--secondary"
             onClick={handleRunAnalysis}
-            disabled={analysing || isEditing}
+            disabled={analysing || isEditing || user?.membership_id !== content.creator_id || content.state === 'approved'}
           >
             {analysing ? 'Analysing…' : '✦ Run Compliance Check'}
           </button>
 
           {/* Workflow Action 1: Creator Submit for Review */}
-          {(content.state === 'draft' || content.state === 'changes_requested') && (
+          {user?.membership_id === content.creator_id && ['draft', 'changes_requested', 'ready_for_review', 'needs_changes', 'incomplete'].includes(content.state) && (
             <button
               id="btn-submit-review"
               className="btn btn--primary"
               onClick={() => setShowSubmitModal(true)}
-              disabled={analysing || isEditing}
+              disabled={analysing || isEditing || user?.membership_id !== content.creator_id || content.state === 'approved'}
             >
               Submit for Review →
             </button>
           )}
 
           {/* Workflow Action 2: Reviewer Decisions */}
-          {(content.state === 'in_review' || user?.role === 'reviewer' || user?.role === 'manager') && content.state !== 'approved' && (
+          {content.state === 'in_review' && user?.membership_id === content.reviewer_id && (
             <div style={{ display: 'flex', gap: 'var(--space-2)' }}>
               <button
                 id="btn-request-changes"
@@ -401,7 +384,7 @@ export function ContentDetailPage() {
               <button
                 id="btn-approve-revision"
                 className="btn btn--primary"
-                style={{ background: 'var(--color-success)', borderColor: 'var(--color-success)' }}
+                style={{ background: 'var(--color-success)', borderColor: 'var(--color-success)', color: 'var(--bg-base)' }}
                 onClick={() => {
                   setDecisionKind('approved');
                   setShowDecisionModal(true);
@@ -417,7 +400,7 @@ export function ContentDetailPage() {
             <button
               id="btn-export-certificate"
               className="btn btn--primary"
-              style={{ background: 'var(--color-success)', borderColor: 'var(--color-success)' }}
+              style={{ background: 'var(--color-success)', borderColor: 'var(--color-success)', color: 'var(--bg-base)' }}
               onClick={() => setShowExportModal(true)}
             >
               ⬇ View Approved Export
@@ -481,6 +464,7 @@ export function ContentDetailPage() {
             <button
               className="btn btn--ghost btn--sm"
               onClick={() => setIsEditing(!isEditing)}
+              disabled={user?.membership_id !== content.creator_id}
             >
               {isEditing ? 'Cancel Edit' : 'Edit Copy / Save Revision'}
             </button>
@@ -614,11 +598,12 @@ export function ContentDetailPage() {
                 </div>
               )}
 
+              {user?.membership_id === content.reviewer_id && content.state !== 'approved' && <ManualChecks run={run} version={content.workflow_version} onSaved={loadContent} />}
               {/* Findings List */}
               <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-3)' }}>
                 {run.findings.length === 0 ? (
                   <div style={{ textAlign: 'center', padding: 'var(--space-6)', color: 'var(--text-secondary)' }}>
-                    ✓ No compliance violations detected in this revision.
+                    {['queued', 'running'].includes(run.status) ? 'Analysis is pending.' : 'No compliance violations detected. Check category coverage before approval.'}
                   </div>
                 ) : (
                   run.findings.map(finding => {
@@ -636,7 +621,7 @@ export function ContentDetailPage() {
                       >
                         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '6px' }}>
                           <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-2)', flexWrap: 'wrap' }}>
-                            <SeverityBadge severity={finding.severity as any} />
+                            <SeverityBadge severity={finding.severity} />
                             <span className="badge badge--neutral">{finding.category}</span>
                             <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>
                               [{finding.origin}]

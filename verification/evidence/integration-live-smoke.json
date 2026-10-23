@@ -1,0 +1,77 @@
+{
+  "scope": "Synthetic API/DB + real P1/P2 engine + live provider using test identities; no human-study, browser/deployment or accuracy claim",
+  "executed_at": "2026-10-23T08:47:16.450947+00:00",
+  "checks": [
+    "Original draft: real terminology/trial blockers plus grounded model claim finding",
+    "Corrected draft: separate reviewer approval and exact export; no manual substitutes"
+  ],
+  "reviews": [
+    {
+      "status": "complete",
+      "finding_count": 4,
+      "origins": [
+        "deterministic",
+        "model"
+      ],
+      "elapsed_ms": 5088,
+      "metadata": {
+        "deterministic": {
+          "version": "review-engine.p2.s5-bridge.v1",
+          "canonical_sha256": "d0de4072c67f020f057945d281b598930d5ed35d525fc05c6983a9e09f22b46f",
+          "unsupported_categories": []
+        },
+        "semantic": {
+          "provider": "nebius",
+          "requested_model": "Qwen/Qwen3-235B-A22B-Instruct-2507",
+          "returned_model": "Qwen/Qwen3-235B-A22B-Instruct-2507",
+          "prompt_version": "brandguard.semantic.v4",
+          "location_method": "exact_unique_quote",
+          "classification_policy": "source_rule.v1",
+          "output_limit": 1200,
+          "usage": {
+            "prompt_tokens": 1035,
+            "completion_tokens": 417,
+            "total_tokens": 1452
+          },
+          "error_code": null,
+          "input_bytes": 4343,
+          "latency_ms": 4373
+        }
+      }
+    },
+    {
+      "status": "complete",
+      "finding_count": 0,
+      "origins": [],
+      "elapsed_ms": 1556,
+      "metadata": {
+        "deterministic": {
+          "version": "review-engine.p2.s5-bridge.v1",
+          "canonical_sha256": "ed65c63ff91e02250dbeb8b9f70d6998e2c46c7ba34153d1c763163e032dca7a",
+          "unsupported_categories": []
+        },
+        "semantic": {
+          "provider": "nebius",
+          "requested_model": "Qwen/Qwen3-235B-A22B-Instruct-2507",
+          "returned_model": "Qwen/Qwen3-235B-A22B-Instruct-2507",
+          "prompt_version": "brandguard.semantic.v4",
+          "location_method": "exact_unique_quote",
+          "classification_policy": "source_rule.v1",
+          "output_limit": 1200,
+          "usage": {
+            "prompt_tokens": 1025,
+            "completion_tokens": 23,
+            "total_tokens": 1048
+          },
+          "error_code": null,
+          "input_bytes": 4311,
+          "latency_ms": 1030
+        }
+      }
+    }
+  ],
+  "status": "pass",
+  "fixture_sha256": "6808bc4719b86d5b246be3e4b1071904ebea18258b369b4ffa4eb773181273a5",
+  "commit_reference": "fd78a19ce98550df12a224a3e795d93492c48305",
+  "working_tree_dirty": true
+}

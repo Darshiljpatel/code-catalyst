@@ -1,3 +1,4 @@
+import { useDialogFocus } from '../hooks/useDialogFocus';
 import React from 'react';
 import type { FindingOut, SourceOut } from '../api/types';
 import { SeverityBadge } from './Primitives';
@@ -15,6 +16,7 @@ export function EvidenceDrawer({
   onClose,
   onJumpToText,
 }: EvidenceDrawerProps) {
+  const dialogRef = useDialogFocus(Boolean(finding));
   React.useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
       if (e.key === 'Escape') onClose();
@@ -27,7 +29,7 @@ export function EvidenceDrawer({
 
   // Find corresponding source
   const source = sources.find(
-    s => s.id === finding.source_version_id || s.rules.some(r => r.id === finding.rule_id)
+    s => s.id === finding.source_version_id
   );
 
   const matchedRule = source?.rules.find(r => r.id === finding.rule_id);
@@ -47,7 +49,7 @@ export function EvidenceDrawer({
   };
 
   return (
-    <div className="drawer-overlay" onClick={onClose} role="dialog" aria-modal="true" aria-labelledby="evidence-title">
+    <div className="drawer-overlay" onClick={onClose} ref={dialogRef} tabIndex={-1} role="dialog" aria-modal="true" aria-labelledby="evidence-title">
       <aside className="drawer-content animate-slide-in-right" onClick={e => e.stopPropagation()}>
         <div className="drawer-header">
           <div>
@@ -66,7 +68,7 @@ export function EvidenceDrawer({
         <div className="drawer-body">
           {/* Status & Severity */}
           <div style={{ display: 'flex', gap: 'var(--space-2)', alignItems: 'center', marginBottom: 'var(--space-4)', flexWrap: 'wrap' }}>
-            <SeverityBadge severity={finding.severity as any} />
+            <SeverityBadge severity={finding.severity} />
             <span className={`badge badge--${statusInfo.cls}`}>
               {statusInfo.label}
             </span>

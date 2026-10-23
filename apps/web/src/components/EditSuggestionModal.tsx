@@ -1,3 +1,4 @@
+import { useDialogFocus } from '../hooks/useDialogFocus';
 import React from 'react';
 import type { FindingOut } from '../api/types';
 
@@ -12,6 +13,7 @@ export function EditSuggestionModal({
   onApply,
   onClose,
 }: EditSuggestionModalProps) {
+  const dialogRef = useDialogFocus();
   const [editedSuggestion, setEditedSuggestion] = React.useState(
     finding.suggested_edit || ''
   );
@@ -23,7 +25,7 @@ export function EditSuggestionModal({
   };
 
   return (
-    <div className="modal-backdrop" role="dialog" aria-modal="true" aria-labelledby="suggestion-modal-title">
+    <div className="modal-backdrop" ref={dialogRef} tabIndex={-1} role="dialog" aria-modal="true" aria-labelledby="suggestion-modal-title">
       <div className="modal-card animate-scale-in">
         <div className="modal-header">
           <h2 id="suggestion-modal-title" style={{ margin: 0, fontSize: '1.2rem' }}>

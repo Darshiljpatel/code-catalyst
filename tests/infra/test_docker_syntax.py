@@ -186,6 +186,8 @@ def test_database_dump_and_restore_live(tmp_path):
     with target_engine.begin() as conn:
         conn.execute(text("CREATE TABLE brands (id TEXT PRIMARY KEY, name TEXT, source_epoch INT)"))
         conn.execute(text("CREATE TABLE content_revisions (id TEXT PRIMARY KEY, item_id TEXT, number INT, text TEXT, text_hash TEXT)"))
+    with target_engine.begin() as conn:
+        conn.execute(text("CREATE TABLE audit_events (id TEXT PRIMARY KEY, action TEXT, object_id TEXT, created_at TEXT, details TEXT)"))
     target_engine.dispose()
 
     res = restore_snapshot(snapshot_file, target_db_url=target_db_url, reapply_tombstones=True)
@@ -202,10 +204,42 @@ def test_database_dump_and_restore_live(tmp_path):
         assert "b-deleted" not in brand_ids
     target_verify_engine.dispose()
 
-    # Verify that restored approved export works and hashes survived (Case T18)
-    assert res["export"]["export_format"] == "brandguard_export_v1"
-    assert res["export"]["hashes_survived"] is True
-    assert res["export"]["text"] == text_content
+    # Row recovery does not establish that a revision was approved.
+    assert res["export"]["export_format"] == "brandguard_summary_v1"
+    assert res["export"]["approved_export_verified"] is False
 
 
+def test_failed_database_restore_is_not_success(tmp_path):
+    from infra.backup import create_backup
+    from infra.restore import restore_snapshot
+    snapshot = tmp_path / 'snapshot.json'
+    create_backup(snapshot, {'unknown_table': [{'id': 'x'}]})
+    result = restore_snapshot(snapshot, target_db_url=f'sqlite:///{tmp_path / "empty.db"}')
+    assert result['status'] == 'failed'
 
+
+def test_expired_snapshot_is_rejected(tmp_path):
+    import json
+    from infra.backup import create_backup, compute_sha256
+    from infra.restore import restore_snapshot
+    snapshot = tmp_path / 'snapshot.json'
+    data = create_backup(snapshot, {'brands': []})
+    data['payload']['expires_at'] = '2020-01-01T00:00:00+00:00'
+    data['metadata']['checksum_sha256'] = compute_sha256(json.dumps(data['payload'], sort_keys=True, indent=2).encode())
+    snapshot.write_text(json.dumps(data))
+    assert restore_snapshot(snapshot)['status'] == 'failed'
+
+
+def test_restore_rejects_parent_path_file(tmp_path):
+    import json
+    from infra.backup import create_backup, compute_sha256
+    from infra.restore import restore_snapshot
+    source = tmp_path / 'file.txt'
+    source.write_text('private')
+    snapshot = tmp_path / 'snapshot.json'
+    data = create_backup(snapshot, files_to_backup=[source])
+    data['payload']['files'][0]['filename'] = '../escape.txt'
+    data['metadata']['checksum_sha256'] = compute_sha256(json.dumps(data['payload'], sort_keys=True, indent=2).encode())
+    snapshot.write_text(json.dumps(data))
+    assert restore_snapshot(snapshot, target_dir=tmp_path / 'restored')['status'] == 'failed'
+    assert not (tmp_path / 'escape.txt').exists()

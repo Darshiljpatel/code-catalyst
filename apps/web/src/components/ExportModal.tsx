@@ -1,3 +1,4 @@
+import { useDialogFocus } from '../hooks/useDialogFocus';
 import React from 'react';
 import type { ExportOut } from '../api/types';
 import { exportRevision } from '../api/client';
@@ -9,6 +10,7 @@ interface ExportModalProps {
 }
 
 export function ExportModal({ revisionId, onClose }: ExportModalProps) {
+  const dialogRef = useDialogFocus();
   const [exportData, setExportData] = React.useState<ExportOut | null>(null);
   const [loading, setLoading] = React.useState(true);
   const [error, setError] = React.useState<string | null>(null);
@@ -49,18 +51,18 @@ export function ExportModal({ revisionId, onClose }: ExportModalProps) {
   };
 
   return (
-    <div className="modal-backdrop" onClick={onClose} role="dialog" aria-modal="true" aria-labelledby="export-modal-title">
+    <div className="modal-backdrop" onClick={onClose} ref={dialogRef} tabIndex={-1} role="dialog" aria-modal="true" aria-labelledby="export-modal-title">
       <div className="modal-content" style={{ maxWidth: '680px', width: '90%' }} onClick={e => e.stopPropagation()}>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 'var(--space-4)' }}>
           <h2 id="export-modal-title" style={{ margin: 0, fontSize: '1.25rem', display: 'flex', alignItems: 'center', gap: 'var(--space-2)' }}>
-            <span>✓</span> Approved Compliance Certificate & Export
+            <span>✓</span> Approved Revision Export
           </h2>
           <button className="btn btn--ghost btn--sm" onClick={onClose} aria-label="Close export modal">✕</button>
         </div>
 
         {loading ? (
           <div style={{ textAlign: 'center', padding: 'var(--space-10)' }}>
-            <Spinner size="lg" label="Generating export certificate…" />
+            <Spinner size="lg" label="Loading approved export…" />
           </div>
         ) : error ? (
           <Alert kind="error">{error}</Alert>
@@ -69,7 +71,7 @@ export function ExportModal({ revisionId, onClose }: ExportModalProps) {
             {/* Hash & Verification Stamp */}
             <div style={{ background: 'var(--accent-muted)', padding: 'var(--space-4)', borderRadius: 'var(--radius-sm)', marginBottom: 'var(--space-4)', borderLeft: '4px solid var(--color-success)' }}>
               <div style={{ fontSize: '0.75rem', fontWeight: 600, textTransform: 'uppercase', color: 'var(--text-secondary)', marginBottom: '4px' }}>
-                Cryptographic Approval Stamp
+                Approved text checksum
               </div>
               <div style={{ fontFamily: 'var(--font-mono)', fontSize: '0.8125rem', wordBreak: 'break-all', color: 'var(--text-primary)' }}>
                 SHA-256: <strong>{exportData.text_hash}</strong>
@@ -91,7 +93,7 @@ export function ExportModal({ revisionId, onClose }: ExportModalProps) {
                   className="btn btn--ghost btn--sm"
                   onClick={handleCopyText}
                 >
-                  {copied ? '✓ Copied to clipboard!' : '📋 Copy Copy'}
+                  {copied ? '✓ Copied to clipboard!' : 'Copy approved text'}
                 </button>
               </div>
               <div
@@ -135,7 +137,7 @@ export function ExportModal({ revisionId, onClose }: ExportModalProps) {
                 className="btn btn--primary"
                 onClick={handleDownloadJson}
               >
-                ⬇ Download Audit Certificate (.json)
+                ⬇ Download Audit Record (.json)
               </button>
             </div>
           </div>

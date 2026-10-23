@@ -1,3 +1,4 @@
+import { useDialogFocus } from '../hooks/useDialogFocus';
 import React from 'react';
 import type { FindingOut, ResolutionAction } from '../api/types';
 import { postResolution } from '../api/client';
@@ -16,6 +17,7 @@ export function ResolutionModal({
   onSuccess,
   onClose,
 }: ResolutionModalProps) {
+  const dialogRef = useDialogFocus();
   const [action, setAction] = React.useState<ResolutionAction>('confirm');
   const [rationale, setRationale] = React.useState('');
   const [exceptionTicket, setExceptionTicket] = React.useState('');
@@ -58,7 +60,7 @@ export function ResolutionModal({
   };
 
   return (
-    <div className="modal-backdrop" onClick={onClose} role="dialog" aria-modal="true" aria-labelledby="resolution-modal-title">
+    <div className="modal-backdrop" onClick={onClose} ref={dialogRef} tabIndex={-1} role="dialog" aria-modal="true" aria-labelledby="resolution-modal-title">
       <div className="modal-content" style={{ maxWidth: '520px', width: '90%' }} onClick={e => e.stopPropagation()}>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 'var(--space-4)' }}>
           <h2 id="resolution-modal-title" style={{ margin: 0, fontSize: '1.25rem' }}>

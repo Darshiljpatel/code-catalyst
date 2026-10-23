@@ -1,23 +1,5 @@
 {
-  "passed": true,
-  "tests": [
-    {
-      "testId": "T30-01",
-      "name": "Emoji Multibyte Code Point Replacement",
-      "status": "passed",
-      "details": "Safely extracted target word and replaced with LumaDesk preserving leading ✨ and trailing 🚀 without surrogate pair truncation."
-    },
-    {
-      "testId": "T30-02",
-      "name": "Diacritical Mark & NFC Normalization Safety",
-      "status": "passed",
-      "details": "Normalized text produces stable code point slicing without splitting accent diacritics."
-    },
-    {
-      "testId": "T30-03",
-      "name": "Zero-Width Joiner (ZWJ) Boundary Preservation",
-      "status": "passed",
-      "details": "Preserved complex multi-part ZWJ emoji sequence (👨‍💻) before targeted brand replacement."
-    }
-  ]
+  "status": "invalidated",
+  "reason": "Previous runner emitted hardcoded passes without executing assertions. Use browser-results.json and integration regression evidence.",
+  "historical_artifact": "t30_unicode"
 }

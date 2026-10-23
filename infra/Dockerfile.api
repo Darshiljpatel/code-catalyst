@@ -1,22 +1,13 @@
-FROM python:3.13-slim
-
+FROM python:3.14-slim
 WORKDIR /app
-
-RUN apt-get update && apt-get install -y --no-install-recommends \
-    gcc libpq-dev curl \
-    && rm -rf /var/lib/apt/lists/*
-
-COPY pyproject.toml .
+ENV PYTHONPATH=/app/apps/api:/app/packages:/app PYTHONUNBUFFERED=1 PYTHONDONTWRITEBYTECODE=1
+COPY apps/api/requirements.lock /app/requirements.lock
+RUN pip install --no-cache-dir -r requirements.lock
 COPY packages/ ./packages/
 COPY apps/api/ ./apps/api/
 COPY contracts/ ./contracts/
-
-RUN pip install --no-cache-dir -e .
-RUN pip install --no-cache-dir uvicorn fastapi pydantic psycopg[binary] sqlalchemy alembic httpx
-
+RUN useradd --create-home app
+USER app
 EXPOSE 8000
-
-HEALTHCHECK --interval=5s --timeout=5s --retries=5 CMD curl -f http://localhost:8000/api/v1/health/ready || exit 1
-
-
+HEALTHCHECK --interval=5s --timeout=5s --retries=10 CMD python -c "import urllib.request; urllib.request.urlopen('http://localhost:8000/api/v1/health/ready', timeout=3)"
 CMD ["uvicorn", "brandguard.main:create_app", "--factory", "--host", "0.0.0.0", "--port", "8000"]

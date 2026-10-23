@@ -1,0 +1,15 @@
+# Requires PUBLIC_ORIGIN=https://your.domain, APP_ENV=production and SITE_ADDRESS=your.domain.
+services:
+  web:
+    ports: !override
+      - "80:80"
+      - "443:443"
+      - "443:443/udp"
+    environment:
+      SITE_ADDRESS: ${SITE_ADDRESS:?Set SITE_ADDRESS to the public DNS hostname}
+    volumes:
+      - caddy_data:/data
+      - caddy_config:/config
+volumes:
+  caddy_data:
+  caddy_config:

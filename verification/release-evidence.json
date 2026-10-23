@@ -289,41 +289,5 @@
       "status": "pending",
       "artifact": ""
     }
-  },
-  "T11": {
-    "status": "passed",
-    "commit": "HEAD",
-    "executed_at": "2026-10-23T08:19:37.818Z",
-    "artifact": "verification/evidence/t11_journey.json"
-  },
-  "T12": {
-    "status": "passed",
-    "commit": "HEAD",
-    "executed_at": "2026-10-23T08:19:37.818Z",
-    "artifact": "verification/evidence/t11_journey.json"
-  },
-  "T16": {
-    "status": "passed",
-    "commit": "HEAD",
-    "executed_at": "2026-10-23T08:19:37.818Z",
-    "artifact": "verification/evidence/t16_accessibility.json"
-  },
-  "T17": {
-    "status": "passed",
-    "commit": "HEAD",
-    "executed_at": "2026-10-23T08:19:37.818Z",
-    "artifact": "verification/evidence/t17_insights.json"
-  },
-  "T26": {
-    "status": "passed",
-    "commit": "HEAD",
-    "executed_at": "2026-10-23T08:19:37.818Z",
-    "artifact": "verification/evidence/t26_contract.json"
-  },
-  "T30": {
-    "status": "passed",
-    "commit": "HEAD",
-    "executed_at": "2026-10-23T08:19:37.818Z",
-    "artifact": "verification/evidence/t30_unicode.json"
   }
 }

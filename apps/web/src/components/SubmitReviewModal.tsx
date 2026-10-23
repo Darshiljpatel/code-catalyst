@@ -1,3 +1,4 @@
+import { useDialogFocus } from '../hooks/useDialogFocus';
 import React from 'react';
 import type { ReviewerOut } from '../api/types';
 import { getReviewers, submitRevision } from '../api/client';
@@ -22,6 +23,7 @@ export function SubmitReviewModal({
   onSuccess,
   onClose,
 }: SubmitReviewModalProps) {
+  const dialogRef = useDialogFocus();
   const [reviewers, setReviewers] = React.useState<ReviewerOut[]>([]);
   const [selectedReviewer, setSelectedReviewer] = React.useState<string>(currentReviewerId || '');
   const [loadingReviewers, setLoadingReviewers] = React.useState(true);
@@ -40,16 +42,12 @@ export function SubmitReviewModal({
     getReviewers()
       .then(list => {
         setReviewers(list);
-        if (!selectedReviewer && list.length > 0) {
-          setSelectedReviewer(list[0].id);
-        }
+        setSelectedReviewer(current => current || list[0]?.id || '');
       })
       .catch(() => {
-        // Fallback default reviewer
-        setReviewers([
-          { id: 'rev-default', user_id: 'u-reviewer', email: 'reviewer@lumadesk.test' }
-        ]);
-        setSelectedReviewer('rev-default');
+        setReviewers([]);
+        setSelectedReviewer('');
+        setError('Authorized reviewers could not be loaded. Close and retry.');
       })
       .finally(() => setLoadingReviewers(false));
   }, []);
@@ -78,7 +76,7 @@ export function SubmitReviewModal({
   };
 
   return (
-    <div className="modal-backdrop" onClick={onClose} role="dialog" aria-modal="true" aria-labelledby="submit-modal-title">
+    <div className="modal-backdrop" onClick={onClose} ref={dialogRef} tabIndex={-1} role="dialog" aria-modal="true" aria-labelledby="submit-modal-title">
       <div className="modal-content" style={{ maxWidth: '520px', width: '90%' }} onClick={e => e.stopPropagation()}>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 'var(--space-4)' }}>
           <h2 id="submit-modal-title" style={{ margin: 0, fontSize: '1.25rem' }}>

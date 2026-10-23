@@ -1,5 +1,7 @@
 # Implemented features and remaining work
 
+> Integration update: use [INTEGRATION_REPORT.md](INTEGRATION_REPORT.md) for current verification. The table below records the earlier S6 baseline; later frontend and infrastructure completion claims require the integration qualifications.
+
 S6 inventory at `b5999b2`, 23 October 2026. “Implemented” below identifies code and component evidence. Final release-register cases remain open until the release build is independently verified.
 
 | Requirement | Current implementation and evidence | Remaining work / owner |

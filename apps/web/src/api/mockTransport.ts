@@ -7,6 +7,7 @@
  *  - Stateful for the duration of the browser tab session
  */
 
+import type { MeResponse } from './types';
 import {
   FIXTURE_BRAND,
   FIXTURE_LOGIN_CREATOR,
@@ -145,7 +146,7 @@ export const mockTransport = async (
     return jsonResponse(200, meMap[mockSession.email] ?? {
       user_id: 'mock-user',
       org_id: mockBrand.id,
-      role: mockSession.role as any,
+      role: mockSession.role as MeResponse['role'],
     });
   }
 

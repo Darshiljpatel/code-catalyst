@@ -1,3 +1,4 @@
+import { useDialogFocus } from '../hooks/useDialogFocus';
 import React from 'react';
 import { createAmbiguityReport } from '../api/client';
 import { Alert } from './Primitives';
@@ -19,6 +20,7 @@ export function AmbiguityReportModal({
   onSuccess,
   onClose,
 }: AmbiguityReportModalProps) {
+  const dialogRef = useDialogFocus();
   const [rationale, setRationale] = React.useState('');
   const [submitting, setSubmitting] = React.useState(false);
   const [error, setError] = React.useState<string | null>(null);
@@ -54,7 +56,7 @@ export function AmbiguityReportModal({
   };
 
   return (
-    <div className="modal-backdrop" onClick={onClose} role="dialog" aria-modal="true" aria-labelledby="ambiguity-modal-title">
+    <div className="modal-backdrop" onClick={onClose} ref={dialogRef} tabIndex={-1} role="dialog" aria-modal="true" aria-labelledby="ambiguity-modal-title">
       <div className="modal-content" style={{ maxWidth: '520px', width: '90%' }} onClick={e => e.stopPropagation()}>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 'var(--space-4)' }}>
           <h2 id="ambiguity-modal-title" style={{ margin: 0, fontSize: '1.25rem' }}>

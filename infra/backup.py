@@ -1,7 +1,6 @@
 """Database and private storage snapshot backup utility for BrandGuard.
 
-Fulfills Case T18 (snapshot export with SHA-256 verification) and Case T21
-(backup expiry metadata and tombstone tracking).
+Creates database snapshots. Recovery and deletion-ledger checks must be tested separately.
 """
 import argparse
 import base64
@@ -49,6 +48,8 @@ def create_backup(
     Returns:
         The snapshot dictionary including SHA-256 checksum and metadata.
     """
+    if not 1 <= expiry_days <= 7:
+        raise ValueError("Retention must be between one and seven days")
     now = datetime.now(timezone.utc)
     expiry = now + timedelta(days=expiry_days)
 
@@ -67,7 +68,7 @@ def create_backup(
                     "content_base64": base64.b64encode(raw).decode("ascii"),
                 })
             else:
-                logger.warning(f"File {f} not found or not a regular file; skipping.")
+                raise ValueError("A requested backup file is missing or not regular")
 
     payload = {
         "version": "1.0",
@@ -93,7 +94,9 @@ def create_backup(
 
     out = Path(output_path)
     out.parent.mkdir(parents=True, exist_ok=True)
-    out.write_text(json.dumps(snapshot, indent=2), encoding="utf-8")
+    import os
+    with os.fdopen(os.open(out, os.O_WRONLY | os.O_CREAT | os.O_EXCL, 0o600), "w", encoding="utf-8") as stream:
+        json.dump(snapshot, stream, indent=2)
 
     logger.info(
         f"Backup successfully written to {out} (SHA-256: {payload_checksum[:16]}..., "
@@ -105,48 +108,29 @@ def create_backup(
 
 def dump_database_records(db_url: str) -> Dict[str, List[Dict[str, Any]]]:
     """Connects to live PostgreSQL/SQLAlchemy and exports real table records as serializable dicts."""
-    from sqlalchemy import create_engine, text
+    from sqlalchemy import create_engine, MetaData, select
     engine = create_engine(db_url)
-    tables_to_dump = [
-        "organisations",
-        "users",
-        "memberships",
-        "brands",
-        "source_versions",
-        "content_items",
-        "content_revisions",
-        "review_runs",
-        "run_sources",
-        "jobs",
-        "audit_events",
-        "processing_policies",
-        "findings",
-        "comments",
-        "resolutions",
-        "decisions",
-        "manual_checks",
-    ]
-    records: Dict[str, List[Dict[str, Any]]] = {}
-    with engine.connect() as conn:
-        for tbl in tables_to_dump:
-            try:
-                res = conn.execute(text(f"SELECT * FROM {tbl}"))
-                rows = []
-                for row in res.mappings():
-                    row_dict = {}
-                    for k, v in row.items():
-                        if isinstance(v, datetime):
-                            row_dict[k] = v.isoformat()
-                        elif isinstance(v, (bytes, bytearray)):
-                            row_dict[k] = base64.b64encode(v).decode("ascii")
-                        else:
-                            row_dict[k] = v
-                    rows.append(row_dict)
-                records[tbl] = rows
-            except Exception as e:
-                logger.debug(f"Table {tbl} not queried: {e}")
-    engine.dispose()
-    return records
+    records = {}
+    try:
+        # All tables are read in one consistent PostgreSQL snapshot. Sessions are
+        # deliberately excluded: recovery requires everyone to sign in again.
+        with engine.connect() as conn:
+            if engine.dialect.name == "postgresql":
+                conn = conn.execution_options(isolation_level="REPEATABLE READ")
+            with conn.begin():
+                metadata = MetaData()
+                metadata.reflect(bind=conn)
+                for table in metadata.sorted_tables:
+                    if table.name in {"alembic_version", "sessions", "login_attempts"}:
+                        continue
+                    rows = []
+                    for row in conn.execute(select(table)).mappings():
+                        rows.append({k: v.isoformat() if isinstance(v, datetime) else v
+                                     for k, v in row.items()})
+                    records[table.name] = rows
+        return records
+    finally:
+        engine.dispose()
 
 
 def extract_tombstones(db_records: Dict[str, List[Dict[str, Any]]]) -> List[Dict[str, Any]]:
@@ -205,52 +189,12 @@ def main():
     )
     args = parser.parse_args()
 
-    db_records = None
-    tombstones = None
-
-    if args.db_url:
-        try:
-            logger.info(f"Connecting to live database to export tables...")
-            db_records = dump_database_records(args.db_url)
-            tombstones = extract_tombstones(db_records)
-            total_rows = sum(len(v) for v in db_records.values())
-            logger.info(f"Successfully dumped {total_rows} rows across {len(db_records)} tables.")
-        except Exception as e:
-            logger.warning(f"Could not connect to live database ({e}); using fixture baseline.")
-            db_records = None
-
-    # Fallback to verified baseline data when running standalone/offline
+    if not args.db_url:
+        parser.error("DATABASE_URL or --db-url is required; no fixture fallback is used")
+    db_records = dump_database_records(args.db_url)
     if not db_records:
-        db_records = {
-            "brands": [
-                {"id": "b-1", "name": "LumaDesk", "status": "active"},
-                {"id": "b-2", "name": "ApexCloud", "status": "active"},
-            ],
-            "campaigns": [
-                {
-                    "id": "c-101",
-                    "brand_id": "b-1",
-                    "title": "Spring Ergonomics 2026",
-                    "status": "approved",
-                    "created_at": datetime.now(timezone.utc).isoformat(),
-                }
-            ],
-            "sources": [
-                {
-                    "id": "s-1",
-                    "brand_id": "b-1",
-                    "claim_policy": "Promotional claims require customer benchmarks.",
-                    "trial_duration_days": 14,
-                }
-            ],
-        }
-        tombstones = [
-            {
-                "target_id": "c-deleted-99",
-                "deleted_at": datetime.now(timezone.utc).isoformat(),
-                "reason": "user_retention_purge",
-            }
-        ]
+        raise SystemExit("No application tables found; backup aborted")
+    tombstones = extract_tombstones(db_records)
 
     create_backup(
         output_path=args.output,

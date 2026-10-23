@@ -42,7 +42,7 @@ export function NewReviewPage() {
         setReviewers(availableReviewers);
         setBrands(bList);
         setPolicy(p);
-        const preselected = (location.state as any)?.brandId;
+        const preselected = (location.state as { brandId?: string } | null)?.brandId;
         if (preselected && bList.some(b => b.id === preselected)) {
           setBrandId(preselected);
         } else if (bList.length > 0) {

@@ -40,6 +40,8 @@ export interface LoginResponse {
 // Me GET /api/v1/me
 // ---------------------------------------------------------------------------
 export interface MeResponse {
+  membership_id?: string;
+  csrf_token?: string;
   user_id: string;
   org_id: string;
   role: 'creator' | 'manager' | 'reviewer' | 'admin';
@@ -258,7 +260,7 @@ export interface FindingOut {
   revision_id: string;
   run_id: string;
   category: string;
-  severity: string;
+  severity: FindingSeverity;
   evidence_status: string;
   origin: string;
   source_version_id: string;
@@ -378,8 +380,8 @@ export type Decision = DecisionOut;
 export interface ManualCheckInput {
   rationale: string;
   expected_item_version: number;
-  category: RuleCategory | string;
-  outcome: 'passed' | 'failed' | 'complete' | 'not_applicable';
+  category: RuleCategory;
+  outcome: 'complete' | 'not_applicable';
   source_version_ids?: string[];
 }
 
@@ -425,7 +427,7 @@ export interface ReviewRecordOut {
   run_id: string;
   workflow_version: number;
   stale: boolean;
-  evidence: Record<string, unknown>;
+  evidence: { effective_checks: CheckOut[]; [key: string]: unknown };
   decisions: DecisionOut[];
 }
 

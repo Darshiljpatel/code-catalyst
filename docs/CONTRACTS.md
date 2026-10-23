@@ -67,3 +67,12 @@ Initial limits: 10 MB upload, 20 PDF pages, 20 megapixels, 100,000 canonical cha
 Default processing is local. The planned hosted semantic candidates and fallback policy are defined in [MODEL_PLAN.md](MODEL_PLAN.md); an unconfigured model leaves semantic checks unavailable. External requests require enabled provider policy AND creator-visible disclosure before analysis; log provider, model, prompt revision and the approved boundary. Uploaded content cannot instruct the model to fetch URLs, change access or publish. No such tools are provided. Never log raw documents, cookies or keys.
 
 Demo retention: 24 hours, synthetic data only, scheduled purge with a verified completion record. A deletion job removes original bytes, extracted text, analysis/cache/retrieval data; retain only documented minimal non-content audit metadata. Backups must have an explicit expiry and restored deletions must be re-applied. Confidential pilots remain gated on verified provider policies, encryption and deletion behaviour.
+
+## Session recovery integration note
+
+`GET /me` now also returns `membership_id` for workflow ownership checks and
+`csrf_token` for restoring the in-memory mutation token after reload. The token
+is derived from the high-entropy HTTP-only session secret, stored hashed, and
+never accepted without the session and matching Origin. Repeated tabs receive
+the same token; it is not persisted in localStorage. Existing sessions migrate
+to the derived token on their next authenticated `/me` request.

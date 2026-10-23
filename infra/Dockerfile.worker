@@ -1,17 +1,12 @@
-FROM python:3.13-slim
-
+FROM python:3.14-slim
 WORKDIR /app
-
-RUN apt-get update && apt-get install -y --no-install-recommends \
-    gcc libpq-dev \
-    && rm -rf /var/lib/apt/lists/*
-
-COPY pyproject.toml .
+ENV PYTHONPATH=/app/apps/api:/app/packages:/app PYTHONUNBUFFERED=1 PYTHONDONTWRITEBYTECODE=1
+COPY apps/api/requirements.lock /app/requirements.lock
+RUN pip install --no-cache-dir -r requirements.lock
 COPY packages/ ./packages/
 COPY apps/worker/ ./apps/worker/
 COPY apps/api/ ./apps/api/
-
-RUN pip install --no-cache-dir -e .
-RUN pip install --no-cache-dir psycopg[binary] sqlalchemy pydantic python-dotenv
-
-CMD ["python", "-m", "apps.worker.runner"]
+COPY contracts/ ./contracts/
+RUN useradd --create-home app
+USER app
+CMD ["python", "-m", "apps.worker", "--interval", "1"]

@@ -1,3 +1,4 @@
+import { useDialogFocus } from '../hooks/useDialogFocus';
 import React from 'react';
 import type { InsightsOut } from '../api/types';
 import { getBrandInsights } from '../api/client';
@@ -10,6 +11,7 @@ interface BrandInsightsModalProps {
 }
 
 export function BrandInsightsModal({ brandId, brandName, onClose }: BrandInsightsModalProps) {
+  const dialogRef = useDialogFocus();
   const [insights, setInsights] = React.useState<InsightsOut | null>(null);
   const [loading, setLoading] = React.useState(true);
   const [error, setError] = React.useState<string | null>(null);
@@ -31,7 +33,7 @@ export function BrandInsightsModal({ brandId, brandName, onClose }: BrandInsight
   }, [brandId]);
 
   return (
-    <div className="modal-backdrop" onClick={onClose} role="dialog" aria-modal="true" aria-labelledby="insights-modal-title">
+    <div className="modal-backdrop" onClick={onClose} ref={dialogRef} tabIndex={-1} role="dialog" aria-modal="true" aria-labelledby="insights-modal-title">
       <div className="modal-content" style={{ maxWidth: '800px', width: '92%' }} onClick={e => e.stopPropagation()}>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 'var(--space-4)' }}>
           <div>

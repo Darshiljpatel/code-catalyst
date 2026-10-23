@@ -28,3 +28,47 @@ jobs:
       - run: alembic -c apps/api/alembic.ini upgrade head
       - run: alembic -c apps/api/alembic.ini check
       - run: pytest apps/api/tests tests -q
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+      - run: npm --prefix apps/web ci
+      - run: npm --prefix apps/web run build
+      - run: npm --prefix apps/web run lint
+      - name: Install browser
+        working-directory: apps/web
+        run: npx playwright install --with-deps chromium
+      - name: Provision isolated browser database
+        run: |
+          python - <<'PY'
+          import os
+          from sqlalchemy import create_engine
+          engine = create_engine(os.environ['DATABASE_URL'], isolation_level='AUTOCOMMIT')
+          with engine.connect() as conn:
+              conn.exec_driver_sql("CREATE DATABASE brandguard_browser_test TEMPLATE template0 ENCODING 'UTF8'")
+          engine.dispose()
+          PY
+      - name: Run actual browser workflow
+        env:
+          DATABASE_URL: postgresql+psycopg://brandguard:ci-only-password@localhost:5432/brandguard_browser_test
+          PUBLIC_ORIGIN: http://localhost:5178
+          APP_ENV: development
+          PYTHONPATH: apps/api:packages:.
+        run: |
+          alembic -c apps/api/alembic.ini upgrade head
+          python scripts/seed_browser_check.py
+          uvicorn brandguard.main:create_app --factory --port 8000 > "$RUNNER_TEMP/api.log" 2>&1 &
+          python -m apps.worker > "$RUNNER_TEMP/worker.log" 2>&1 &
+          npm --prefix apps/web run preview -- --port 5178 > "$RUNNER_TEMP/web.log" 2>&1 &
+          python - <<'PY'
+          import time, urllib.request
+          for endpoint in ('http://localhost:8000/api/v1/health/ready', 'http://localhost:5178'):
+              for attempt in range(30):
+                  try:
+                      urllib.request.urlopen(endpoint, timeout=2)
+                      break
+                  except OSError:
+                      if attempt == 29: raise
+                      time.sleep(1)
+          PY
+          cd apps/web
+          npx playwright test

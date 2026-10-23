@@ -39,7 +39,7 @@ def check_database(db_url: str) -> bool:
         engine.dispose()
         return True
     except Exception as e:
-        logger.warning(f"Database readiness probe failed: {e}")
+        logger.warning("Database readiness probe failed: %s", type(e).__name__)
         return False
 
 
@@ -62,8 +62,8 @@ def main():
     args = parser.parse_args()
 
     engine_ok = check_engine()
-    api_ok = check_api(args.api_url) if args.api_url else True
-    db_ok = check_database(args.db_url) if args.db_url else True
+    api_ok = check_api(args.api_url) if args.api_url else False
+    db_ok = check_database(args.db_url) if args.db_url else False
 
     logger.info(f"Health Status: Engine={engine_ok}, API={api_ok}, DB={db_ok}")
 

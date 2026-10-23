@@ -62,3 +62,32 @@ At 25 October 07:00 IST, each member explains their part and a failure scenario 
 - [W3C: text contrast minimum](https://www.w3.org/WAI/WCAG22/Understanding/contrast-minimum.html) — ordinary and qualifying large-text thresholds with exceptions; not full accessibility certification.
 
 These sources support technical choices; they do not verify this project's future deployment or quality.
+
+## Integration deployment corrections (23 October)
+
+The canonical local command is `docker compose --env-file .env -f infra/compose.yaml up --build -d`.
+Set `POSTGRES_PASSWORD`, `APP_ENV=development`, and `PUBLIC_ORIGIN=http://localhost:3000`.
+The stack runs migrations before services, installs the API dependency lock,
+passes model settings to workers, and exposes only the localhost web port.
+`infra/docker-compose.yml` is a compatibility copy; keep it equal to `compose.yaml`.
+
+For a real host, set `APP_ENV=production`, `PUBLIC_ORIGIN=https://your.domain`,
+`SITE_ADDRESS=your.domain`, point DNS to the host, and use both Compose files:
+
+```sh
+docker compose --env-file .env -f infra/compose.yaml -f infra/compose.production.yaml up --build -d
+```
+
+The production overlay needs [Compose 2.24.4 or newer](https://docs.docker.com/reference/compose-file/merge/).
+Caddy uses the hostname for [automatic HTTPS](https://caddyserver.com/docs/caddyfile/concepts/)
+and persists certificates. This configuration is not evidence of a successful
+public deployment. Production provisioning must use non-demo identities;
+`brandguard.seed` intentionally rejects production mode.
+
+Backups now query the live database in a consistent snapshot and fail on errors.
+They exclude sessions and login throttling records. Restore requires an empty,
+migrated target database and fails on missing tables or insertion errors.
+Use a new private destination path for every backup. A real PostgreSQL recovery
+and approved API export round trip is covered by `test_recovery.py`.
+Seven-day expiry rejection exists; scheduled expiry deletion and an authoritative
+post-snapshot deletion ledger with derivative deletion remain release blockers.

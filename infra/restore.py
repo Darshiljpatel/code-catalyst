@@ -1,7 +1,7 @@
 """Snapshot restoration and validation utility for BrandGuard.
 
-Fulfills Case T18 (verifies SHA-256 integrity, validates file hashes, generates working export)
-and Case T21 (verifies backup expiry and reapplies deletion tombstones).
+Restores complete snapshots into an empty migrated database; fails on any error.
+An approved export must subsequently be exercised through the application API.
 """
 import argparse
 import base64
@@ -59,9 +59,9 @@ def verify_snapshot_integrity(snapshot_path: Path | str) -> Tuple[bool, str, Dic
             expires_at = datetime.fromisoformat(expires_at_str)
             now = datetime.now(timezone.utc)
             if now > expires_at:
-                logger.warning(f"Snapshot expired on {expires_at.isoformat()} (retention policy expired)")
-        except Exception:
-            pass
+                return False, "Snapshot has expired", data
+        except (ValueError, TypeError):
+            return False, "Invalid snapshot expiry", data
 
     return True, "Snapshot verified with matching SHA-256 checksum", data
 
@@ -73,33 +73,36 @@ def restore_database_records(
     reapply_tombstones: bool = True,
 ) -> Dict[str, int]:
     """Inserts restored rows into live PostgreSQL database, suppressing tombstoned IDs."""
-    from sqlalchemy import create_engine, text
+    from sqlalchemy import create_engine, MetaData, select, func, DateTime
     engine = create_engine(target_db_url)
-    tombstone_ids = {str(t["target_id"]) for t in (tombstones or []) if "target_id" in t}
     inserted_counts = {}
-
-    with engine.begin() as conn:
-        for tbl_name, rows in tables.items():
-            inserted = 0
-            for row in rows:
-                row_id = str(row.get("id")) if row.get("id") is not None else None
-                if reapply_tombstones and row_id in tombstone_ids:
-                    logger.info(f"Skipping tombstoned record {row_id} in {tbl_name}")
+    try:
+        with engine.begin() as conn:
+            metadata = MetaData()
+            metadata.reflect(bind=conn)
+            unknown = set(tables) - set(metadata.tables)
+            if unknown:
+                raise ValueError("Snapshot contains tables absent from the target schema")
+            # Never merge a backup into existing data or silently skip conflicts.
+            for name in tables:
+                if conn.scalar(select(func.count()).select_from(metadata.tables[name])):
+                    raise ValueError("Restore requires empty application tables")
+            for table in metadata.sorted_tables:
+                if table.name not in tables:
                     continue
-                cols = list(row.keys())
-                if not cols:
-                    continue
-                col_names = ", ".join(cols)
-                param_names = ", ".join(f":{c}" for c in cols)
-                stmt = text(f"INSERT INTO {tbl_name} ({col_names}) VALUES ({param_names}) ON CONFLICT DO NOTHING")
-                try:
-                    conn.execute(stmt, row)
-                    inserted += 1
-                except Exception as e:
-                    logger.debug(f"Insert error into {tbl_name}: {e}")
-            inserted_counts[tbl_name] = inserted
-    engine.dispose()
-    return inserted_counts
+                rows = []
+                for original in tables[table.name]:
+                    row = dict(original)
+                    for column in table.columns:
+                        if isinstance(column.type, DateTime) and isinstance(row.get(column.name), str):
+                            row[column.name] = datetime.fromisoformat(row[column.name])
+                    rows.append(row)
+                if rows:
+                    conn.execute(table.insert(), rows)
+                inserted_counts[table.name] = len(rows)
+        return inserted_counts
+    finally:
+        engine.dispose()
 
 
 def restore_snapshot(
@@ -160,7 +163,12 @@ def restore_snapshot(
                     "status": "failed",
                     "error": f"File hash mismatch for {f['filename']}: expected {f['sha256']}, got {file_hash}",
                 }
-            target_file = dest_dir / f["filename"]
+            filename = f["filename"]
+            if not filename or Path(filename).name != filename or filename in {".", ".."}:
+                return {"status": "failed", "error": "Unsafe backup filename"}
+            target_file = dest_dir / filename
+            if target_file.is_symlink() or target_file.exists():
+                return {"status": "failed", "error": "Restore file already exists"}
             target_file.write_bytes(content)
             restored_files_count += 1
 
@@ -177,46 +185,15 @@ def restore_snapshot(
             )
             logger.info(f"Database restoration complete: {db_insert_summary}")
         except Exception as e:
-            logger.warning(f"Could not restore into target DB ({e}); table data verified in-memory.")
+            return {"status": "failed", "error": f"Database restore failed: {type(e).__name__}"}
 
-    # Verify that one restored export works (Case T18 requirement)
-    approved_revision = None
-    for rev in restored_tables.get("content_revisions", []):
-        if rev.get("text"):
-            approved_revision = rev
-            break
-
-    if approved_revision:
-        rev_text = approved_revision.get("text", "")
-        text_hash = compute_sha256(rev_text.encode("utf-8"))
-        sample_export = {
-            "export_format": "brandguard_export_v1",
-            "content_id": approved_revision.get("item_id"),
-            "revision_number": approved_revision.get("number", 1),
-            "text": rev_text,
-            "text_hash": text_hash,
-            "canonical_sha256": approved_revision.get("text_hash", text_hash),
-            "verified_at": datetime.now(timezone.utc).isoformat(),
-            "status": "approved",
-            "source_snapshot": str(snapshot_path),
-            "hashes_survived": (text_hash == approved_revision.get("text_hash", text_hash)),
-        }
-    else:
-        sample_export = {
-            "export_format": "brandguard_summary_v1",
-            "generated_at": datetime.now(timezone.utc).isoformat(),
-            "source_snapshot": str(snapshot_path),
-            "brands_count": len(restored_tables.get("brands", [])),
-            "campaigns_count": len(restored_tables.get("campaigns", []) or restored_tables.get("content_items", [])),
-            "restored_tables_summary": {k: len(v) for k, v in restored_tables.items()},
-        }
-
-    logger.info(
-        f"Restoration successful. Tables: {list(restored_tables.keys())}, "
-        f"Files restored: {restored_files_count}, "
-        f"Tombstones reapplied: {purged_records_count}, "
-        f"Verified export generated: {sample_export['export_format']}"
-    )
+    # A recovery summary is not an approval decision or export certificate.
+    sample_export = {
+        "export_format": "brandguard_summary_v1",
+        "brands_count": len(restored_tables.get("brands", [])),
+        "campaigns_count": len(restored_tables.get("campaigns", []) or restored_tables.get("content_items", [])),
+        "approved_export_verified": False,
+    }
 
     return {
         "status": "success",

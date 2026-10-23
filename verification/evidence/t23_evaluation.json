@@ -1,23 +1,37 @@
 {
   "dataset": "dev_cases.json",
+  "dataset_sha256": "689d8d94549daeb80a49a9882592dfebb1d257c1e36579c2503b3dee79e2a2e3",
+  "scope": "Deterministic engine synthetic fixture regression, finding-level metrics; not independent held-out or semantic-model evaluation",
+  "metric_unit": "finding",
   "total_cases": 20,
   "splits": [
     "dev",
     "test"
   ],
   "metrics": {
-    "precision": 1.0,
-    "recall": 1.0,
-    "f1": 1.0,
-    "citation_resolution_rate": 1.0,
-    "true_positives": 11,
-    "false_positives": 0,
-    "false_negatives": 0,
-    "true_negatives": 9,
-    "total_evaluations": 20
+    "precision": 0.9231,
+    "recall": 0.9231,
+    "f1": 0.9231,
+    "citation_resolution_rate": 0.9231,
+    "true_positives": 12,
+    "false_positives": 1,
+    "false_negatives": 1,
+    "true_negatives": 0,
+    "total_evaluations": 14
   },
   "per_split_metrics": {
     "dev": {
+      "precision": 0.8571,
+      "recall": 0.8571,
+      "f1": 0.8571,
+      "citation_resolution_rate": 0.8571,
+      "true_positives": 6,
+      "false_positives": 1,
+      "false_negatives": 1,
+      "true_negatives": 0,
+      "total_evaluations": 8
+    },
+    "test": {
       "precision": 1.0,
       "recall": 1.0,
       "f1": 1.0,
@@ -25,19 +39,8 @@
       "true_positives": 6,
       "false_positives": 0,
       "false_negatives": 0,
-      "true_negatives": 6,
-      "total_evaluations": 12
-    },
-    "test": {
-      "precision": 1.0,
-      "recall": 1.0,
-      "f1": 1.0,
-      "citation_resolution_rate": 1.0,
-      "true_positives": 5,
-      "false_positives": 0,
-      "false_negatives": 0,
-      "true_negatives": 3,
-      "total_evaluations": 8
+      "true_negatives": 0,
+      "total_evaluations": 6
     }
   },
   "per_category_metrics": {
@@ -64,24 +67,57 @@
       "total_evaluations": 6
     },
     "accessibility": {
-      "precision": 1.0,
-      "recall": 1.0,
-      "f1": 1.0,
-      "citation_resolution_rate": 1.0,
-      "true_positives": 1,
-      "false_positives": 0,
-      "false_negatives": 0,
+      "precision": 0.0,
+      "recall": 0.0,
+      "f1": 0.0,
+      "citation_resolution_rate": 0.0,
+      "true_positives": 0,
+      "false_positives": 1,
+      "false_negatives": 1,
       "true_negatives": 0,
-      "total_evaluations": 1
+      "total_evaluations": 2
     }
   },
   "latency": {
-    "p50_ms": 0.05,
-    "p95_ms": 0.26,
-    "min_ms": 0.02,
-    "max_ms": 1.52,
-    "mean_ms": 0.15
+    "p50_ms": 0.11,
+    "p95_ms": 0.34,
+    "min_ms": 0.04,
+    "max_ms": 1.47,
+    "mean_ms": 0.2
   },
-  "disagreements_count": 0,
-  "disagreements": []
+  "disagreements_count": 1,
+  "disagreements": [
+    {
+      "case_id": "CASE-10",
+      "missed_expected": [
+        {
+          "category": "accessibility",
+          "quote": "Contrast ratio 3.54:1",
+          "rule_id": "R-CONTRAST",
+          "evidence_status": "supported_violation"
+        }
+      ],
+      "unexpected_findings": [
+        {
+          "id": "find-4549c610",
+          "org_id": null,
+          "revision_id": null,
+          "run_id": null,
+          "category": "accessibility",
+          "severity": "warning",
+          "evidence_status": "supported_violation",
+          "origin": "deterministic",
+          "location": {
+            "field": "contrast_ratio"
+          },
+          "rule_id": null,
+          "source_version_id": null,
+          "evidence_quote": "Contrast ratio 3.54:1 (FG: #888888, BG: #FFFFFF)",
+          "rationale": "Contrast ratio 3.54:1 fails WCAG AA standard of 4.5:1 for normal text.",
+          "suggested_edit": "Adjust foreground or background color to achieve at least 4.5:1 contrast.",
+          "resolution": null
+        }
+      ]
+    }
+  ]
 }

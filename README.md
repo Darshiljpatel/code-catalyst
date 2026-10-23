@@ -2,15 +2,21 @@
 
 Pre-publication brand review with source-linked findings and human approval of an exact content revision.
 
-## 🚀 Judge Walkthrough & Quick Start
+## Integration status
 
-- **[Judge Walkthrough & Evaluation Guide](docs/JUDGE_WALKTHROUGH.md)**: 10-minute step-by-step tour covering pre-seeded roles (`manager`, `creator`, `reviewer`), live workflow screens, interactive evidence drawer, diff viewer, review queue, export certificate, and governance insights.
-- **[Updated Project Submission PDF (CODE CATALYST.pdf)](CODE%20CATALYST.pdf)**: Complete 8-page updated project PDF containing architecture, embedded screenshot figures, Round 1 delta matrix, automated verification results, and team contributions.
-- **[Frontend Workstream Progress (Darshil)](docs/DARSHIL_PROGRESS.md)**: Acceptance evidence across tasks D1 through D6.
+See [the integration verification report](docs/INTEGRATION_REPORT.md) for tested
+behavior and release blockers. The team changes through `fd78a19` have been
+integrated locally with fixes for workflow state, manual checks, session reload,
+source evidence, Unicode edits, recovery and deployment configuration.
 
-## Current status
+- [Judge walkthrough and local setup](docs/JUDGE_WALKTHROUGH.md)
+- [Executable browser verification](tests/e2e/README.md)
 
-Sanath phases S1–S5 now provide an integrated backend text-review workflow: real deterministic checks, controlled Nebius review, immutable revisions, human decisions and approved export, plus scoped queues and governance counts. Backend integration tests run against PostgreSQL; see [S2 integration handoff](docs/S2_HANDOFF.md). Full browser workflow verification, document/image API intake, retention/deletion, deployment and user/evaluation evidence remain pending. See [API setup](apps/api/README.md) and [phase progress](docs/SANATH_PROGRESS.md). The three original brief files remain the source of truth.
+The existing project PDF contains pre-integration verification claims and needs
+revision before submission. Earlier D5 artifacts were invalidated because their
+runner emitted hardcoded passes. Public deployment, retention/deletion and
+independent evaluation are still outstanding; do not treat phase labels as
+release approval.
 
 - [Implementation plan and balanced assignments](docs/IMPLEMENTATION_PLAN.md)
 - [S6 submission status and bundle commands](docs/SUBMISSION_STATUS.md)

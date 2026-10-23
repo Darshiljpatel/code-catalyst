@@ -1,3 +1,4 @@
+import { useDialogFocus } from '../hooks/useDialogFocus';
 import React from 'react';
 import type { DecisionKind } from '../api/types';
 import { createDecision } from '../api/client';
@@ -22,6 +23,7 @@ export function DecisionModal({
   onSuccess,
   onClose,
 }: DecisionModalProps) {
+  const dialogRef = useDialogFocus();
   const [rationale, setRationale] = React.useState('');
   const [submitting, setSubmitting] = React.useState(false);
   const [error, setError] = React.useState<string | null>(null);
@@ -61,7 +63,7 @@ export function DecisionModal({
   };
 
   return (
-    <div className="modal-backdrop" onClick={onClose} role="dialog" aria-modal="true" aria-labelledby="decision-modal-title">
+    <div className="modal-backdrop" onClick={onClose} ref={dialogRef} tabIndex={-1} role="dialog" aria-modal="true" aria-labelledby="decision-modal-title">
       <div className="modal-content" style={{ maxWidth: '540px', width: '90%' }} onClick={e => e.stopPropagation()}>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 'var(--space-4)' }}>
           <h2 id="decision-modal-title" style={{ margin: 0, fontSize: '1.25rem', color: isApproval ? 'var(--color-success)' : 'var(--color-warning)' }}>

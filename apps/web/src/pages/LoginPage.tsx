@@ -125,7 +125,7 @@ export function LoginPage() {
         </form>
 
         <p style={{ marginTop: 'var(--space-6)', fontSize: '0.8rem', color: 'var(--text-muted)', textAlign: 'center' }}>
-          <strong>Synthetic demo only.</strong> Data labelled fictional. Processing is local.
+          Review your workspace processing notice before starting an analysis.
         </p>
       </div>
     </main>

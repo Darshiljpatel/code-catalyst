@@ -1,3 +1,4 @@
+import { useDialogFocus } from '../hooks/useDialogFocus';
 import type { RevisionOut } from '../api/types';
 import { DiffViewer } from './DiffViewer';
 
@@ -16,8 +17,9 @@ export function ConflictResolutionModal({
   onDiscard,
   onClose,
 }: ConflictResolutionModalProps) {
+  const dialogRef = useDialogFocus();
   return (
-    <div className="modal-backdrop" role="dialog" aria-modal="true" aria-labelledby="conflict-title">
+    <div className="modal-backdrop" ref={dialogRef} tabIndex={-1} role="dialog" aria-modal="true" aria-labelledby="conflict-title">
       <div className="modal-card modal-card--lg animate-scale-in">
         <div className="modal-header">
           <div>
