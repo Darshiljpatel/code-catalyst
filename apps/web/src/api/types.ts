@@ -376,29 +376,108 @@ export type Decision = DecisionOut;
 export interface ManualCheckInput {
   rationale: string;
   expected_item_version: number;
-  category: RuleCategory;
-  outcome: 'complete' | 'not_applicable';
+  category: RuleCategory | string;
+  outcome: 'passed' | 'failed' | 'complete' | 'not_applicable';
   source_version_ids?: string[];
 }
 
-export interface BrandInsights {
-  brand_id: string;
-  confirmed_total: number;
-  dismissed_total: number;
-  ambiguous_total: number;
-  reviewed_items_denominator: number;
+export interface ManualCheckOut {
+  id: string;
+  run_id: string;
+  reviewer_id: string;
+  category: string;
+  outcome: string;
+  rationale: string;
+  source_version_ids: string[];
+  created_at: string;
 }
 
-export interface ExportRecord {
+export interface ContentSummaryOut {
+  id: string;
+  brand_id: string;
+  title: string;
+  creator_id: string;
+  reviewer_id: string | null;
+  current_revision: number;
+  workflow_version: number;
+  approval_stale: boolean;
+  state: string;
+  created_at: string;
+}
+
+export interface ContentPageOut {
+  items: ContentSummaryOut[];
+  total: number;
+  limit: number;
+  offset: number;
+}
+
+export interface SubmissionInput {
+  expected_item_version: number;
+  expected_run_id: string;
+  expected_source_epoch: number;
+  reviewer_id: string;
+}
+
+export interface ReviewRecordOut {
+  run_id: string;
+  workflow_version: number;
+  stale: boolean;
+  evidence: Record<string, unknown>;
+  decisions: DecisionOut[];
+}
+
+export interface ExportOut {
   revision_id: string;
+  content_id: string;
+  text: string;
+  text_hash: string;
+  channel: string;
+  audience: string;
+  purpose: string;
   decision: DecisionOut;
-  source_epoch: number;
+  evidence_record: Record<string, unknown>;
   exported_at: string;
 }
 
-/** S4 reviewer discovery: scoped membership labels for assignment. */
-export interface ReviewerOut {
-  id: string;
-  user_id: string;
-  email: string;
+export type ExportRecord = ExportOut;
+
+export interface AmbiguityInput {
+  rationale: string;
+  rule_id?: string | null;
+  revision_id?: string | null;
 }
+
+export interface AmbiguityOut {
+  id: string;
+  source_id: string;
+  actor_id: string;
+  rule_id: string | null;
+  revision_id: string | null;
+  rationale: string;
+  created_at: string;
+}
+
+export interface RuleInsightOut {
+  source_key: string;
+  rule_id: string;
+  category: string;
+  confirmed_items: number;
+  dismissed_items: number;
+  exception_items: number;
+  confirmed_per_reviewed_item: number | null;
+}
+
+export interface InsightsOut {
+  brand_id: string;
+  reviewed_items_denominator: number;
+  denominator_definition: string;
+  confirmed_total: number;
+  dismissed_total: number;
+  exception_total: number;
+  ambiguous_total: number;
+  ambiguity_definition: string;
+  rules: RuleInsightOut[];
+}
+
+export type BrandInsights = InsightsOut;

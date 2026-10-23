@@ -16,6 +16,7 @@ import { getBrands } from '../api/client';
 import type { Brand } from '../api/types';
 import { useAuth } from '../context/AuthContext';
 import { Skeleton, EmptyState, Alert, ProcessingMode } from '../components/Primitives';
+import { ReviewQueue } from '../components/ReviewQueue';
 
 export function HomePage() {
   const { user } = useAuth();
@@ -130,6 +131,11 @@ export function HomePage() {
             ))}
           </ul>
         )}
+      </section>
+
+      {/* Review Workflow Queue */}
+      <section aria-labelledby="queue-heading">
+        <ReviewQueue />
       </section>
     </div>
   );

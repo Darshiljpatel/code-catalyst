@@ -33,6 +33,17 @@ import type {
   ResolutionInput,
   ResolutionOut,
   ReviewerOut,
+  ContentPageOut,
+  SubmissionInput,
+  ReviewRecordOut,
+  DecisionInput,
+  DecisionOut,
+  ExportOut,
+  ManualCheckInput,
+  ManualCheckOut,
+  InsightsOut,
+  AmbiguityInput,
+  AmbiguityOut,
   ApiError,
 } from './types';
 
@@ -269,6 +280,59 @@ export async function assignReviewer(
     expected_item_version: expectedItemVersion,
     rationale,
   });
+}
+
+export async function getContentPage(params?: {
+  state?: string;
+  limit?: number;
+  offset?: number;
+}): Promise<ContentPageOut> {
+  const query = new URLSearchParams();
+  if (params?.state) query.set('state', params.state);
+  if (params?.limit !== undefined) query.set('limit', String(params.limit));
+  if (params?.offset !== undefined) query.set('offset', String(params.offset));
+  const qs = query.toString();
+  return request<ContentPageOut>('GET', `/content${qs ? `?${qs}` : ''}`);
+}
+
+export async function submitRevision(
+  revisionId: string,
+  payload: SubmissionInput
+): Promise<ContentOut> {
+  return request<ContentOut>('POST', `/revisions/${revisionId}/submit`, payload);
+}
+
+export async function getReviewRecord(revisionId: string): Promise<ReviewRecordOut> {
+  return request<ReviewRecordOut>('GET', `/revisions/${revisionId}/review`);
+}
+
+export async function createDecision(
+  revisionId: string,
+  payload: DecisionInput
+): Promise<DecisionOut> {
+  return request<DecisionOut>('POST', `/revisions/${revisionId}/decisions`, payload);
+}
+
+export async function exportRevision(revisionId: string): Promise<ExportOut> {
+  return request<ExportOut>('GET', `/revisions/${revisionId}/export`);
+}
+
+export async function createManualCheck(
+  runId: string,
+  payload: ManualCheckInput
+): Promise<ManualCheckOut> {
+  return request<ManualCheckOut>('POST', `/runs/${runId}/manual-checks`, payload);
+}
+
+export async function getBrandInsights(brandId: string): Promise<InsightsOut> {
+  return request<InsightsOut>('GET', `/brands/${brandId}/insights`);
+}
+
+export async function createAmbiguityReport(
+  sourceId: string,
+  payload: AmbiguityInput
+): Promise<AmbiguityOut> {
+  return request<AmbiguityOut>('POST', `/sources/${sourceId}/ambiguity-reports`, payload);
 }
 
 // ---------------------------------------------------------------------------

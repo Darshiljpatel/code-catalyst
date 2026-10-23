@@ -120,3 +120,38 @@ Completed 23 October 2026. All work is in `apps/web/` and documentation only.
 
 D4: Human reviewer decisions, workflow queues, and export artifacts.
 
+---
+
+# Darshilkumar D4 — Review queue, reviewer decisions, export, and governance insights
+
+Completed 23 October 2026. All work is in `apps/web/` and documentation only.
+
+## Task ID: D4
+
+## Acceptance evidence
+
+| Criterion | Evidence |
+|---|---|
+| Contract & schema alignment | `src/api/types.ts` updated with `ContentSummaryOut`, `ContentPageOut`, `SubmissionInput`, `ReviewRecordOut`, `AmbiguityInput`, `AmbiguityOut`, `RuleInsightOut`, `InsightsOut`, `ExportOut`, `ManualCheckOut`. |
+| API client functions | `src/api/client.ts` extended with `getContentPage`, `submitRevision`, `getReviewRecord`, `createDecision`, `exportRevision`, `createManualCheck`, `getBrandInsights`, `createAmbiguityReport`. |
+| Campaign review queue | `src/components/ReviewQueue.tsx` embedded on `HomePage.tsx` — tabbed filtering (`All`, `In Review`, `Changes Requested`, `Approved`, `Drafts`), title/ID search, revision counter, reviewer email, created date, and stale approval badge with direct navigation to campaign workspace. |
+| Creator review submission | `src/components/SubmitReviewModal.tsx` & `ContentDetailPage.tsx` — enables creators to submit revision for review with authorized reviewer assignment, confirming workflow version and source epoch. Transitions item to `in_review`. |
+| Reviewer decisions (Approve / Request Changes) | `src/components/DecisionModal.tsx` & `ContentDetailPage.tsx` — provides distinct "✓ Approve Exact Revision" (success) and "⟲ Request Changes" (warning) buttons requiring minimum 10-char audit rationale, validating run ID, source epoch, and item version. |
+| Finding disposition resolutions | `src/components/ResolutionModal.tsx` & `ContentDetailPage.tsx` — reviewers can record dispositions on any finding: Confirm violation, Dismiss violation, or Grant exception with ticket reference (`POST /findings/:id/resolutions`). |
+| Approved export & cryptographic certificate | `src/components/ExportModal.tsx` & `ContentDetailPage.tsx` — displays approved revision copy with 1-click clipboard copy, SHA-256 cryptographic text hash, approver attribution, source epoch, tamper-proof verification seal, and 1-click JSON certificate download (`GET /revisions/:id/export`). |
+| Brand governance insights & disclosures | `src/components/BrandInsightsModal.tsx` & `BrandDetailPage.tsx` — displays real-data metrics via `GET /brands/:id/insights`: reviewed items denominator, confirmed violations total, dismissed total, exceptions granted, ambiguous guidelines count, and rule breakdown table with violation rate per reviewed item. |
+| Ambiguity reporting dialog | `src/components/AmbiguityReportModal.tsx` & `BrandDetailPage.tsx` — allows reporting ambiguous or conflicting guidelines with 20+ char rationale, rule ID, and revision ID (`POST /sources/:id/ambiguity-reports`). |
+| Mock transport faithful simulation | `src/api/mockTransport.ts` updated with stateful in-memory handlers for all D4 endpoints (`/content`, `/revisions/:id/submit`, `/revisions/:id/decisions`, `/revisions/:id/export`, `/brands/:id/insights`, `/sources/:id/ambiguity-reports`), ensuring full standalone dev and test support. |
+| TypeScript & build | `npm run build` (`tsc -b && vite build`) passes cleanly with 0 errors (68 modules transformed, 1.38s). |
+| Browser verification | Visual verification by browser subagent (`test_d4_screens_1792740388040.webp`) with screenshots: `campaign_review_queue_in_review`, `campaign_compliance_findings`, and `governance_insights_modal`. |
+
+## Schema impact
+
+- Zero changes to backend or `contracts/openapi.json`.
+- All frontend shapes strictly consumed existing OpenAPI v0.5.0 endpoints.
+
+## Next
+
+D5: Browser/accessibility tests, keyboard navigation journeys, error states, and usability observations.
+
+

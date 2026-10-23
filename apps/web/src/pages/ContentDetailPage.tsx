@@ -29,6 +29,11 @@ import { DiffViewer } from '../components/DiffViewer';
 import { ConflictResolutionModal } from '../components/ConflictResolutionModal';
 import { CommentsSection } from '../components/CommentsSection';
 import { EditSuggestionModal } from '../components/EditSuggestionModal';
+import { SubmitReviewModal } from '../components/SubmitReviewModal';
+import { DecisionModal } from '../components/DecisionModal';
+import { ExportModal } from '../components/ExportModal';
+import { ResolutionModal } from '../components/ResolutionModal';
+import { useAuth } from '../context/AuthContext';
 import { FIXTURE_FINDINGS, FIXTURE_REVIEW_RUN, FIXTURE_SOURCES } from '../api/fixtures';
 
 export function ContentDetailPage() {
@@ -67,6 +72,16 @@ export function ContentDetailPage() {
 
   // 409 Conflict state
   const [conflictServerRevision, setConflictServerRevision] = React.useState<RevisionOut | null>(null);
+
+  // Auth context for role-aware workflow actions
+  const { user } = useAuth();
+
+  // D4 Workflow & Decision Modals state
+  const [showSubmitModal, setShowSubmitModal] = React.useState(false);
+  const [showDecisionModal, setShowDecisionModal] = React.useState(false);
+  const [decisionKind, setDecisionKind] = React.useState<'approved' | 'changes_requested'>('approved');
+  const [showExportModal, setShowExportModal] = React.useState(false);
+  const [resolvingFinding, setResolvingFinding] = React.useState<FindingOut | null>(null);
 
   const loadContent = React.useCallback(async () => {
     if (!contentId) return;
@@ -350,12 +365,64 @@ export function ContentDetailPage() {
 
           <button
             id="btn-run-analysis"
-            className="btn btn--primary"
+            className="btn btn--secondary"
             onClick={handleRunAnalysis}
             disabled={analysing || isEditing}
           >
             {analysing ? 'Analysing…' : '✦ Run Compliance Check'}
           </button>
+
+          {/* Workflow Action 1: Creator Submit for Review */}
+          {(content.state === 'draft' || content.state === 'changes_requested') && (
+            <button
+              id="btn-submit-review"
+              className="btn btn--primary"
+              onClick={() => setShowSubmitModal(true)}
+              disabled={analysing || isEditing}
+            >
+              Submit for Review →
+            </button>
+          )}
+
+          {/* Workflow Action 2: Reviewer Decisions */}
+          {(content.state === 'in_review' || user?.role === 'reviewer' || user?.role === 'manager') && content.state !== 'approved' && (
+            <div style={{ display: 'flex', gap: 'var(--space-2)' }}>
+              <button
+                id="btn-request-changes"
+                className="btn btn--secondary"
+                style={{ color: 'var(--color-warning)' }}
+                onClick={() => {
+                  setDecisionKind('changes_requested');
+                  setShowDecisionModal(true);
+                }}
+              >
+                ⟲ Request Changes
+              </button>
+              <button
+                id="btn-approve-revision"
+                className="btn btn--primary"
+                style={{ background: 'var(--color-success)', borderColor: 'var(--color-success)' }}
+                onClick={() => {
+                  setDecisionKind('approved');
+                  setShowDecisionModal(true);
+                }}
+              >
+                ✓ Approve Exact Revision
+              </button>
+            </div>
+          )}
+
+          {/* Workflow Action 3: Export Certificate (Approved Revisions) */}
+          {content.state === 'approved' && (
+            <button
+              id="btn-export-certificate"
+              className="btn btn--primary"
+              style={{ background: 'var(--color-success)', borderColor: 'var(--color-success)' }}
+              onClick={() => setShowExportModal(true)}
+            >
+              ⬇ View Approved Export
+            </button>
+          )}
         </div>
       </div>
 
@@ -575,15 +642,27 @@ export function ContentDetailPage() {
                               [{finding.origin}]
                             </span>
                           </div>
-                          <button
-                            className="btn btn--ghost btn--sm"
-                            onClick={e => {
-                              e.stopPropagation();
-                              setActiveFinding(finding);
-                            }}
-                          >
-                            View Evidence ↗
-                          </button>
+                          <div style={{ display: 'flex', gap: 'var(--space-2)' }}>
+                            <button
+                              className="btn btn--secondary btn--sm"
+                              onClick={e => {
+                                e.stopPropagation();
+                                setResolvingFinding(finding);
+                              }}
+                              title="Record human disposition (confirm, dismiss, exception)"
+                            >
+                              Resolve
+                            </button>
+                            <button
+                              className="btn btn--ghost btn--sm"
+                              onClick={e => {
+                                e.stopPropagation();
+                                setActiveFinding(finding);
+                              }}
+                            >
+                              Evidence ↗
+                            </button>
+                          </div>
                         </div>
 
                         <div style={{ fontSize: '0.875rem', fontWeight: 500, marginBottom: '6px' }}>
@@ -678,6 +757,59 @@ export function ContentDetailPage() {
             setIsEditing(false);
           }}
           onClose={() => setConflictServerRevision(null)}
+        />
+      )}
+
+      {/* D4: Submit for Review Modal */}
+      {showSubmitModal && currentRevision && (
+        <SubmitReviewModal
+          revisionId={currentRevision.id}
+          expectedItemVersion={content.current_revision}
+          expectedRunId={run?.id || 'run-default'}
+          expectedSourceEpoch={run?.source_epoch ?? 0}
+          currentReviewerId={content.reviewer_id}
+          onSuccess={() => {
+            setShowSubmitModal(false);
+            loadContent();
+          }}
+          onClose={() => setShowSubmitModal(false)}
+        />
+      )}
+
+      {/* D4: Reviewer Decision Modal (Approve / Request Changes) */}
+      {showDecisionModal && currentRevision && (
+        <DecisionModal
+          revisionId={currentRevision.id}
+          expectedItemVersion={content.current_revision}
+          expectedRunId={run?.id || 'run-default'}
+          expectedSourceEpoch={run?.source_epoch ?? 0}
+          kind={decisionKind}
+          onSuccess={() => {
+            setShowDecisionModal(false);
+            loadContent();
+          }}
+          onClose={() => setShowDecisionModal(false)}
+        />
+      )}
+
+      {/* D4: Export Certificate Modal */}
+      {showExportModal && currentRevision && (
+        <ExportModal
+          revisionId={currentRevision.id}
+          onClose={() => setShowExportModal(false)}
+        />
+      )}
+
+      {/* D4: Finding Disposition Resolution Modal */}
+      {resolvingFinding && (
+        <ResolutionModal
+          finding={resolvingFinding}
+          expectedItemVersion={content.current_revision}
+          onSuccess={() => {
+            setResolvingFinding(null);
+            loadContent();
+          }}
+          onClose={() => setResolvingFinding(null)}
         />
       )}
     </main>

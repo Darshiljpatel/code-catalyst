@@ -21,6 +21,10 @@ import {
   FIXTURE_CONTENT_ITEM,
   FIXTURE_REVIEW_RUN,
   FIXTURE_POLICY,
+  FIXTURE_CONTENT_PAGE,
+  FIXTURE_INSIGHTS,
+  FIXTURE_EXPORT,
+  FIXTURE_REVIEW_RECORD,
   FIXTURE_ERROR_UNAUTHENTICATED,
   FIXTURE_ERROR_FORBIDDEN,
   FIXTURE_ERROR_RATE_LIMITED,
@@ -36,6 +40,11 @@ import type {
   CommentOut,
   ResolutionOut,
   ReviewerOut,
+  ContentPageOut,
+  DecisionOut,
+  ManualCheckOut,
+  AmbiguityOut,
+  ExportOut,
 } from './types';
 
 // Mutable in-memory state for local testing
@@ -431,6 +440,174 @@ export const mockTransport = async (
     };
     mockResolutions[findingId] = res;
     return jsonResponse(201, res);
+  }
+
+  // GET /api/v1/content (queue listing with filters)
+  if ((url.endsWith('/api/v1/content') || url.includes('/api/v1/content?')) && method === 'GET') {
+    if (!mockSession) return jsonResponse(401, FIXTURE_ERROR_UNAUTHENTICATED);
+    const parsedUrl = new URL(url, 'http://localhost');
+    const stateFilter = parsedUrl.searchParams.get('state');
+
+    // Build summaries from mockContent
+    const summaries = Object.values(mockContent).map(c => ({
+      id: c.id,
+      brand_id: c.brand_id,
+      title: c.title,
+      creator_id: c.creator_id,
+      reviewer_id: c.reviewer_id,
+      current_revision: c.current_revision,
+      workflow_version: 1,
+      approval_stale: false,
+      state: c.state,
+      created_at: c.revisions[0]?.created_at || new Date().toISOString(),
+    }));
+
+    // Merge with fixture page items if not already present
+    for (const item of FIXTURE_CONTENT_PAGE.items) {
+      if (!summaries.some(s => s.id === item.id)) {
+        summaries.push(item);
+      }
+    }
+
+    const filtered = stateFilter ? summaries.filter(s => s.state === stateFilter) : summaries;
+    const page: ContentPageOut = {
+      items: filtered,
+      total: filtered.length,
+      limit: 20,
+      offset: 0,
+    };
+    return jsonResponse(200, page);
+  }
+
+  // POST /api/v1/revisions/:id/submit
+  const submitMatch = url.match(/\/api\/v1\/revisions\/([^/]+)\/submit$/);
+  if (submitMatch && method === 'POST') {
+    if (!mockSession) return jsonResponse(401, FIXTURE_ERROR_UNAUTHENTICATED);
+    const revId = submitMatch[1];
+    const body = JSON.parse((init?.body as string) ?? '{}');
+    const item = Object.values(mockContent).find(c => c.revisions.some(r => r.id === revId));
+    if (!item) return jsonResponse(404, { code: 'not_found', message: 'Revision not found', request_id: 'mock', details: {} });
+
+    item.state = 'in_review';
+    if (body.reviewer_id) item.reviewer_id = body.reviewer_id;
+    return jsonResponse(200, item);
+  }
+
+  // GET /api/v1/revisions/:id/review
+  const reviewMatch = url.match(/\/api\/v1\/revisions\/([^/]+)\/review$/);
+  if (reviewMatch && method === 'GET') {
+    if (!mockSession) return jsonResponse(401, FIXTURE_ERROR_UNAUTHENTICATED);
+    return jsonResponse(200, FIXTURE_REVIEW_RECORD);
+  }
+
+  // POST /api/v1/revisions/:id/decisions
+  const decisionMatch = url.match(/\/api\/v1\/revisions\/([^/]+)\/decisions$/);
+  if (decisionMatch && method === 'POST') {
+    if (!mockSession) return jsonResponse(401, FIXTURE_ERROR_UNAUTHENTICATED);
+    const revId = decisionMatch[1];
+    const body = JSON.parse((init?.body as string) ?? '{}');
+
+    if (!body.rationale || body.rationale.length < 10) {
+      return jsonResponse(422, {
+        code: 'validation_error',
+        message: 'Decision rationale must be at least 10 characters.',
+        request_id: 'mock',
+        details: {},
+      });
+    }
+
+    const item = Object.values(mockContent).find(c => c.revisions.some(r => r.id === revId));
+    if (item) {
+      item.state = body.kind === 'approved' ? 'approved' : 'changes_requested';
+    }
+
+    const decision: DecisionOut = {
+      id: 'dec-' + Math.random().toString(36).substring(2, 9),
+      revision_id: revId,
+      run_id: body.expected_run_id || 'run-mock',
+      reviewer_id: mockSession.email,
+      kind: body.kind,
+      rationale: body.rationale,
+      source_epoch: body.expected_source_epoch ?? 0,
+      text_hash: 'sha256-mock-approved-hash',
+      decided_at: new Date().toISOString(),
+    };
+    return jsonResponse(201, decision);
+  }
+
+  // GET /api/v1/revisions/:id/export
+  const exportMatch = url.match(/\/api\/v1\/revisions\/([^/]+)\/export$/);
+  if (exportMatch && method === 'GET') {
+    if (!mockSession) return jsonResponse(401, FIXTURE_ERROR_UNAUTHENTICATED);
+    const revId = exportMatch[1];
+    const item = Object.values(mockContent).find(c => c.revisions.some(r => r.id === revId));
+    const rev = item?.revisions.find(r => r.id === revId);
+
+    const exportRecord: ExportOut = {
+      ...FIXTURE_EXPORT,
+      revision_id: revId,
+      content_id: item?.id || FIXTURE_EXPORT.content_id,
+      text: rev?.text || FIXTURE_EXPORT.text,
+      channel: rev?.channel || FIXTURE_EXPORT.channel,
+      audience: rev?.audience || FIXTURE_EXPORT.audience,
+      purpose: rev?.purpose || FIXTURE_EXPORT.purpose,
+      exported_at: new Date().toISOString(),
+    };
+    return jsonResponse(200, exportRecord);
+  }
+
+  // POST /api/v1/runs/:id/manual-checks
+  const manualCheckMatch = url.match(/\/api\/v1\/runs\/([^/]+)\/manual-checks$/);
+  if (manualCheckMatch && method === 'POST') {
+    if (!mockSession) return jsonResponse(401, FIXTURE_ERROR_UNAUTHENTICATED);
+    const runId = manualCheckMatch[1];
+    const body = JSON.parse((init?.body as string) ?? '{}');
+    const check: ManualCheckOut = {
+      id: 'mc-' + Math.random().toString(36).substring(2, 9),
+      run_id: runId,
+      reviewer_id: mockSession.email,
+      category: body.category,
+      outcome: body.outcome,
+      rationale: body.rationale,
+      source_version_ids: body.source_version_ids || [],
+      created_at: new Date().toISOString(),
+    };
+    return jsonResponse(201, check);
+  }
+
+  // GET /api/v1/brands/:id/insights
+  const insightsMatch = url.match(/\/api\/v1\/brands\/([^/]+)\/insights$/);
+  if (insightsMatch && method === 'GET') {
+    if (!mockSession) return jsonResponse(401, FIXTURE_ERROR_UNAUTHENTICATED);
+    return jsonResponse(200, {
+      ...FIXTURE_INSIGHTS,
+      brand_id: insightsMatch[1],
+    });
+  }
+
+  // POST /api/v1/sources/:id/ambiguity-reports
+  const ambiguityMatch = url.match(/\/api\/v1\/sources\/([^/]+)\/ambiguity-reports$/);
+  if (ambiguityMatch && method === 'POST') {
+    if (!mockSession) return jsonResponse(401, FIXTURE_ERROR_UNAUTHENTICATED);
+    const body = JSON.parse((init?.body as string) ?? '{}');
+    if (!body.rationale || body.rationale.length < 20) {
+      return jsonResponse(422, {
+        code: 'validation_error',
+        message: 'Ambiguity rationale must be at least 20 characters.',
+        request_id: 'mock',
+        details: {},
+      });
+    }
+    const report: AmbiguityOut = {
+      id: 'amb-' + Math.random().toString(36).substring(2, 9),
+      source_id: ambiguityMatch[1],
+      actor_id: mockSession.email,
+      rule_id: body.rule_id || null,
+      revision_id: body.revision_id || null,
+      rationale: body.rationale,
+      created_at: new Date().toISOString(),
+    };
+    return jsonResponse(201, report);
   }
 
   // GET /api/v1/health/live

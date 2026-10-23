@@ -16,6 +16,8 @@ import type {
 } from '../api/types';
 import { useAuth } from '../context/AuthContext';
 import { Alert, Spinner, EmptyState } from '../components/Primitives';
+import { BrandInsightsModal } from '../components/BrandInsightsModal';
+import { AmbiguityReportModal } from '../components/AmbiguityReportModal';
 
 export function BrandDetailPage() {
   const { brandId } = useParams<{ brandId: string }>();
@@ -31,6 +33,8 @@ export function BrandDetailPage() {
   // Modals
   const [showAddModal, setShowAddModal] = React.useState(false);
   const [activatingSource, setActivatingSource] = React.useState<SourceOut | null>(null);
+  const [showInsightsModal, setShowInsightsModal] = React.useState(false);
+  const [reportingAmbiguity, setReportingAmbiguity] = React.useState<{ sourceId: string; sourceTitle?: string; ruleId?: string } | null>(null);
 
   const isManager = user?.role === 'manager';
 
@@ -90,7 +94,15 @@ export function BrandDetailPage() {
                 </p>
               </div>
 
-              <div style={{ display: 'flex', gap: 'var(--space-3)', alignItems: 'center' }}>
+              <div style={{ display: 'flex', gap: 'var(--space-3)', alignItems: 'center', flexWrap: 'wrap' }}>
+                <button
+                  id="btn-brand-insights"
+                  className="btn btn--secondary"
+                  onClick={() => setShowInsightsModal(true)}
+                  title="View real-data rule violation rates and governance metrics"
+                >
+                  📊 Governance Insights
+                </button>
                 <button
                   className="btn btn--secondary"
                   onClick={() => navigate('/review/new', { state: { brandId: brand.id } })}
@@ -144,6 +156,13 @@ export function BrandDetailPage() {
                     source={source}
                     isManager={isManager}
                     onActivate={() => setActivatingSource(source)}
+                    onReportAmbiguity={(ruleId?: string) =>
+                      setReportingAmbiguity({
+                        sourceId: source.id,
+                        sourceTitle: source.title,
+                        ruleId,
+                      })
+                    }
                   />
                 ))}
               </div>
@@ -177,6 +196,29 @@ export function BrandDetailPage() {
           }}
         />
       )}
+
+      {/* D4: Brand Governance Insights Modal */}
+      {showInsightsModal && brand && (
+        <BrandInsightsModal
+          brandId={brand.id}
+          brandName={brand.name}
+          onClose={() => setShowInsightsModal(false)}
+        />
+      )}
+
+      {/* D4: Ambiguity Report Modal */}
+      {reportingAmbiguity && (
+        <AmbiguityReportModal
+          sourceId={reportingAmbiguity.sourceId}
+          sourceTitle={reportingAmbiguity.sourceTitle}
+          ruleId={reportingAmbiguity.ruleId}
+          onSuccess={() => {
+            setReportingAmbiguity(null);
+            loadData();
+          }}
+          onClose={() => setReportingAmbiguity(null)}
+        />
+      )}
     </main>
   );
 }
@@ -189,10 +231,12 @@ function SourceCard({
   source,
   isManager,
   onActivate,
+  onReportAmbiguity,
 }: {
   source: SourceOut;
   isManager: boolean;
   onActivate: () => void;
+  onReportAmbiguity: (ruleId?: string) => void;
 }) {
   const [expanded, setExpanded] = React.useState(false);
 
@@ -222,6 +266,14 @@ function SourceCard({
         </div>
 
         <div style={{ display: 'flex', gap: 'var(--space-2)' }}>
+          <button
+            type="button"
+            className="btn btn--ghost btn--sm"
+            onClick={() => onReportAmbiguity()}
+            title="Report this source as ambiguous or conflicting"
+          >
+            🚩 Report Ambiguity
+          </button>
           {isManager && source.state === 'draft' && (
             <button className="btn btn--primary btn--sm" onClick={onActivate}>
               Activate Source
@@ -262,6 +314,7 @@ function SourceCard({
                     <th>Key</th>
                     <th>Approved Value</th>
                     <th>Evidence Quote</th>
+                    <th style={{ textAlign: 'right' }}>Action</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -274,6 +327,16 @@ function SourceCard({
                       <td>{rule.value}</td>
                       <td style={{ fontStyle: 'italic', color: 'var(--text-secondary)' }}>
                         "{rule.evidence_quote}"
+                      </td>
+                      <td style={{ textAlign: 'right' }}>
+                        <button
+                          type="button"
+                          className="btn btn--ghost btn--sm"
+                          onClick={() => onReportAmbiguity(rule.id)}
+                          title={`Report rule ${rule.id} as ambiguous or conflicting`}
+                        >
+                          🚩
+                        </button>
                       </td>
                     </tr>
                   ))}

@@ -32,7 +32,11 @@ import type {
   ContentOut,
   Decision,
   Comment,
-  BrandInsights,
+  ContentPageOut,
+  InsightsOut,
+  ExportOut,
+  ReviewRecordOut,
+  AmbiguityOut,
 } from './types';
 
 // ---------------------------------------------------------------------------
@@ -422,13 +426,154 @@ export const FIXTURE_COMMENT: Comment = {
 };
 
 // ---------------------------------------------------------------------------
-// @pending S4 — Insights fixture
+// @pending S4/S5 — D4 Queue and Governance Fixtures
 // ---------------------------------------------------------------------------
 
-export const FIXTURE_INSIGHTS: BrandInsights = {
-  brand_id: FIXTURE_BRAND_ID,
-  confirmed_total: 4,
-  dismissed_total: 0,
-  ambiguous_total: 1,
-  reviewed_items_denominator: 1,
+export const FIXTURE_CONTENT_PAGE: ContentPageOut = {
+  items: [
+    {
+      id: FIXTURE_CONTENT_ID,
+      brand_id: FIXTURE_BRAND_ID,
+      title: 'LumaDesk Q4 Launch Campaign',
+      creator_id: FIXTURE_CREATOR_USER_ID,
+      reviewer_id: FIXTURE_REVIEWER_USER_ID,
+      current_revision: 2,
+      workflow_version: 2,
+      approval_stale: false,
+      state: 'in_review',
+      created_at: '2026-10-23T06:00:00Z',
+    },
+    {
+      id: '00000000-0000-0000-0000-000000000002',
+      brand_id: FIXTURE_BRAND_ID,
+      title: 'Black Friday Social Ads',
+      creator_id: FIXTURE_CREATOR_USER_ID,
+      reviewer_id: FIXTURE_REVIEWER_USER_ID,
+      current_revision: 1,
+      workflow_version: 1,
+      approval_stale: false,
+      state: 'changes_requested',
+      created_at: '2026-10-23T07:15:00Z',
+    },
+    {
+      id: '00000000-0000-0000-0000-000000000003',
+      brand_id: FIXTURE_BRAND_ID,
+      title: 'Product Launch Email Series',
+      creator_id: FIXTURE_CREATOR_USER_ID,
+      reviewer_id: FIXTURE_REVIEWER_USER_ID,
+      current_revision: 3,
+      workflow_version: 3,
+      approval_stale: false,
+      state: 'approved',
+      created_at: '2026-10-22T14:30:00Z',
+    },
+    {
+      id: '00000000-0000-0000-0000-000000000004',
+      brand_id: FIXTURE_BRAND_ID,
+      title: 'Winter Billboard Copy (Draft)',
+      creator_id: FIXTURE_CREATOR_USER_ID,
+      reviewer_id: null,
+      current_revision: 1,
+      workflow_version: 1,
+      approval_stale: false,
+      state: 'draft',
+      created_at: '2026-10-23T09:00:00Z',
+    },
+  ],
+  total: 4,
+  limit: 20,
+  offset: 0,
 };
+
+export const FIXTURE_INSIGHTS: InsightsOut = {
+  brand_id: FIXTURE_BRAND_ID,
+  reviewed_items_denominator: 12,
+  denominator_definition: 'Distinct content items with at least one completed terminal analysis run',
+  confirmed_total: 9,
+  dismissed_total: 2,
+  exception_total: 1,
+  ambiguous_total: 3,
+  ambiguity_definition: 'Reports filed by creators or reviewers flagging unclear or conflicting guidelines',
+  rules: [
+    {
+      source_key: 'lumadesk-identity',
+      rule_id: 'rule-terminology-001',
+      category: 'terminology',
+      confirmed_items: 6,
+      dismissed_items: 0,
+      exception_items: 0,
+      confirmed_per_reviewed_item: 0.5,
+    },
+    {
+      source_key: 'lumadesk-identity',
+      rule_id: 'rule-facts-trial-duration',
+      category: 'facts_claims',
+      confirmed_items: 3,
+      dismissed_items: 1,
+      exception_items: 1,
+      confirmed_per_reviewed_item: 0.25,
+    },
+    {
+      source_key: 'lumadesk-tone',
+      rule_id: 'rule-tone-calm',
+      category: 'tone',
+      confirmed_items: 2,
+      dismissed_items: 1,
+      exception_items: 0,
+      confirmed_per_reviewed_item: 0.17,
+    },
+    {
+      source_key: 'lumadesk-accessibility',
+      rule_id: 'rule-accessibility-alt',
+      category: 'accessibility',
+      confirmed_items: 1,
+      dismissed_items: 0,
+      exception_items: 0,
+      confirmed_per_reviewed_item: 0.08,
+    },
+  ],
+};
+
+export const FIXTURE_EXPORT: ExportOut = {
+  revision_id: FIXTURE_REVISION_ID_2,
+  content_id: FIXTURE_CONTENT_ID,
+  text: 'LumaDesk helps teams focus with evidence-based workspace management. Get your 14-day free trial.',
+  text_hash: 'e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855',
+  channel: 'paid_social',
+  audience: 'b2b_decision_makers',
+  purpose: 'lead_generation',
+  decision: FIXTURE_DECISION,
+  evidence_record: {
+    run_id: FIXTURE_RUN_ID,
+    source_epoch: 0,
+    evaluated_rules: ['rule-terminology-001', 'rule-facts-trial-duration', 'rule-tone-calm'],
+    resolved_findings: 5,
+    exceptions_granted: 0,
+    timestamp: '2026-10-23T08:00:00Z',
+    tamper_proof_checksum: 'BG-SHA256-CERT-8F39A1',
+  },
+  exported_at: '2026-10-23T08:05:00Z',
+};
+
+export const FIXTURE_REVIEW_RECORD: ReviewRecordOut = {
+  run_id: FIXTURE_RUN_ID,
+  workflow_version: 1,
+  stale: false,
+  evidence: {
+    rule_terminology_001: 'passed',
+    rule_facts_trial: 'passed',
+    rule_tone_calm: 'passed',
+  },
+  decisions: [FIXTURE_DECISION],
+};
+
+export const FIXTURE_AMBIGUITY_OUT: AmbiguityOut = {
+  id: 'amb-0001',
+  source_id: 'src-0001',
+  actor_id: FIXTURE_CREATOR_USER_ID,
+  rule_id: 'rule-facts-trial-duration',
+  revision_id: FIXTURE_REVISION_ID_1,
+  rationale: 'Guideline states 14-day free trial, but sales promotion policy allows 30 days for enterprise accounts. Need clarification on B2B tier applicability.',
+  created_at: '2026-10-23T07:30:00Z',
+};
+
