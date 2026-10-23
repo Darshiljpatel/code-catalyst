@@ -99,6 +99,7 @@ class ContentItem(Base):
     reviewer_id: Mapped[str | None] = mapped_column(String(36))
     title: Mapped[str] = mapped_column(String(200))
     current_revision: Mapped[int] = mapped_column(Integer, default=1)
+    workflow_version: Mapped[int] = mapped_column(Integer, default=1, server_default='1')
     state: Mapped[str] = mapped_column(String(30), default='draft')
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True))
 
@@ -221,3 +222,75 @@ class Finding(Base):
     rationale: Mapped[str] = mapped_column(Text)
     suggested_edit: Mapped[str | None] = mapped_column(Text)
     resolution: Mapped[str] = mapped_column(String(30), default='unresolved')
+
+Finding.__table__.append_constraint(UniqueConstraint('org_id','id',name='uq_finding_org_id'))
+Finding.__table__.append_constraint(UniqueConstraint('org_id','id','revision_id',name='uq_finding_revision'))
+
+class Comment(Base):
+    __tablename__ = 'comments'
+    __table_args__ = (
+        ForeignKeyConstraint(['org_id','revision_id'],['content_revisions.org_id','content_revisions.id']),
+        ForeignKeyConstraint(['org_id','author_id'],['memberships.org_id','memberships.id']),
+        ForeignKeyConstraint(['org_id','finding_id','revision_id'],['findings.org_id','findings.id','findings.revision_id']),
+    )
+    id: Mapped[str] = mapped_column(String(36),primary_key=True,default=uid)
+    org_id: Mapped[str] = mapped_column(String(36),index=True)
+    revision_id: Mapped[str] = mapped_column(String(36))
+    author_id: Mapped[str] = mapped_column(String(36))
+    finding_id: Mapped[str | None] = mapped_column(String(36))
+    text: Mapped[str] = mapped_column(Text)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True))
+
+class FindingResolution(Base):
+    __tablename__ = 'finding_resolutions'
+    __table_args__ = (
+        ForeignKeyConstraint(['org_id','actor_id'],['memberships.org_id','memberships.id']),
+        ForeignKeyConstraint(['org_id','finding_id'],['findings.org_id','findings.id']),
+        CheckConstraint("action IN ('request_exception','request_dismissal','confirm','dismiss','grant_exception','reject_exception')"),
+    )
+    id: Mapped[str] = mapped_column(String(36),primary_key=True,default=uid)
+    org_id: Mapped[str] = mapped_column(String(36),index=True)
+    finding_id: Mapped[str] = mapped_column(String(36),index=True)
+    actor_id: Mapped[str] = mapped_column(String(36))
+    action: Mapped[str] = mapped_column(String(30))
+    rationale: Mapped[str] = mapped_column(Text)
+    source_version_ids: Mapped[list] = mapped_column(JSON)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True))
+
+class ManualCheck(Base):
+    __tablename__ = 'manual_checks'
+    __table_args__ = (
+        ForeignKeyConstraint(['org_id','run_id'],['review_runs.org_id','review_runs.id']),
+        ForeignKeyConstraint(['org_id','reviewer_id'],['memberships.org_id','memberships.id']),
+        UniqueConstraint('run_id','category','reviewer_id'),
+        CheckConstraint("outcome IN ('complete','not_applicable')"),
+    )
+    id: Mapped[str] = mapped_column(String(36),primary_key=True,default=uid)
+    org_id: Mapped[str] = mapped_column(String(36),index=True)
+    run_id: Mapped[str] = mapped_column(String(36))
+    reviewer_id: Mapped[str] = mapped_column(String(36))
+    category: Mapped[str] = mapped_column(String(30))
+    outcome: Mapped[str] = mapped_column(String(30))
+    rationale: Mapped[str] = mapped_column(Text)
+    source_version_ids: Mapped[list] = mapped_column(JSON)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True))
+
+class Decision(Base):
+    __tablename__ = 'decisions'
+    __table_args__ = (
+        ForeignKeyConstraint(['org_id','run_id','revision_id'],['review_runs.org_id','review_runs.id','review_runs.revision_id']),
+        ForeignKeyConstraint(['org_id','reviewer_id'],['memberships.org_id','memberships.id']),
+        UniqueConstraint('run_id'),
+        CheckConstraint("kind IN ('approved','changes_requested')"),
+    )
+    id: Mapped[str] = mapped_column(String(36),primary_key=True,default=uid)
+    org_id: Mapped[str] = mapped_column(String(36),index=True)
+    revision_id: Mapped[str] = mapped_column(String(36))
+    run_id: Mapped[str] = mapped_column(String(36))
+    reviewer_id: Mapped[str] = mapped_column(String(36))
+    kind: Mapped[str] = mapped_column(String(30))
+    rationale: Mapped[str] = mapped_column(Text)
+    source_epoch: Mapped[int] = mapped_column(Integer)
+    text_hash: Mapped[str] = mapped_column(String(64))
+    evidence_record: Mapped[dict] = mapped_column(JSON)
+    decided_at: Mapped[datetime] = mapped_column(DateTime(timezone=True))

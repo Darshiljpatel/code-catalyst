@@ -52,8 +52,17 @@ def content_out(session, item):
     revisions = list(session.scalars(select(ContentRevision).where(
         ContentRevision.org_id == item.org_id, ContentRevision.item_id == item.id
     ).order_by(ContentRevision.number)))
+    approval_stale=False
+    if item.state=='approved':
+        current=next((r for r in revisions if r.number==item.current_revision),None)
+        latest=session.scalar(select(ReviewRun).where(ReviewRun.org_id==item.org_id,
+            ReviewRun.revision_id==current.id).order_by(ReviewRun.created_at.desc(),ReviewRun.id.desc()).limit(1)) if current else None
+        brand=session.get(Brand,item.brand_id)
+        active=set(s.id for s in eligible_sources(session,item,item.brand_id,now()))
+        approval_stale=(latest is None or brand.source_epoch!=latest.source_epoch or
+                        active!={s['id'] for s in latest.source_snapshot})
     return ContentOut(id=item.id, brand_id=item.brand_id, title=item.title, creator_id=item.creator_id,
-                      reviewer_id=item.reviewer_id, current_revision=item.current_revision, state=item.state,
+                      reviewer_id=item.reviewer_id, current_revision=item.current_revision, workflow_version=item.workflow_version, approval_stale=approval_stale, state=item.state,
                       revisions=[RevisionOut.model_validate(r) for r in revisions])
 
 def run_out(session, member, run, revision, item):
@@ -155,6 +164,7 @@ def create_revision(item_id: str, body: NewRevisionInput, member=Depends(identit
     if body.parent_revision_id != parent.id:
         raise Problem(409, 'stale_revision', 'Content changed. Reload before saving your revision.')
     item.current_revision += 1
+    item.workflow_version += 1
     item.state = 'draft'
     revision = ContentRevision(org_id=member.org_id, item_id=item.id, number=item.current_revision, author_id=member.id,
         **{k:getattr(body,k) for k in ('text','channel','audience','purpose')}, text_hash=digest(body.text), created_at=now())
@@ -174,6 +184,8 @@ def queue_analysis(revision_id: str, request: Request, idempotency_key: Annotate
         return run_out(session, member, existing, revision, item)
     if item.current_revision != revision.number:
         raise Problem(409, 'stale_revision', 'Analyse the current revision.')
+    if item.state in ('in_review','approved'):
+        raise Problem(409,'workflow_locked','Create a new revision before reanalysing reviewed content.')
     if session.scalar(select(ReviewRun.id).where(ReviewRun.org_id == member.org_id,
         ReviewRun.revision_id == revision_id, ReviewRun.status.in_(('queued','running')))):
         raise Problem(409, 'analysis_pending', 'An analysis of this revision is already pending.')
@@ -206,6 +218,7 @@ def queue_analysis(revision_id: str, request: Request, idempotency_key: Annotate
         session.add(RunSource(org_id=member.org_id, run_id=run.id, source_id=source.id))
     session.add(Job(org_id=member.org_id, run_id=run.id, status='queued', attempts=0, available_at=at, created_at=at))
     item.state = 'analysing'
+    item.workflow_version += 1
     audit(session, member, 'analysis.queued', run.id, revision_id=revision.id, source_epoch=brand.source_epoch)
     session.commit()
     return run_out(session, member, run, revision, item)

@@ -180,6 +180,7 @@ def finish_claim(engine,claim,checks,findings,metadata):
                 **f,location=dict(block_id='text',start=start,end=end,quote=quote),resolution='unresolved'))
         job.status,job.lease_token,job.lease_expires_at='complete',None,None
         if item.current_revision==revision.number:
+            item.workflow_version+=1
             item.state=('needs_changes' if any(f['severity']=='blocker' for f in findings) else 'ready_for_review') if complete else 'incomplete'
         db.add(AuditEvent(org_id=claim.org_id,actor_id=item.creator_id,action='analysis.finished',object_id=run.id,
             details=dict(status=run.status,finding_count=len(findings),executor='worker',stale=stale),created_at=utcnow()))

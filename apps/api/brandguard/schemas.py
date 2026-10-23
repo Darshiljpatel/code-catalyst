@@ -108,6 +108,8 @@ class ContentOut(BaseModel):
     creator_id: str
     reviewer_id: str | None
     current_revision: int
+    workflow_version: int
+    approval_stale: bool = False
     state: str
     revisions: list[RevisionOut]
 
@@ -149,3 +151,115 @@ class FindingOut(BaseModel):
     rationale: str
     suggested_edit: str | None
     resolution: str
+
+class RationaleInput(StrictInput):
+    rationale: str = Field(min_length=20,max_length=4000)
+
+    @field_validator('rationale')
+    @classmethod
+    def meaningful_reason(cls,value):
+        if len(value.strip())<20:
+            raise ValueError('A meaningful rationale is required')
+        return value.strip()
+
+class ReviewGuard(StrictInput):
+    expected_item_version: int = Field(ge=1)
+    expected_run_id: str = Field(min_length=1,max_length=36)
+    expected_source_epoch: int = Field(ge=0)
+
+class SubmissionInput(ReviewGuard):
+    reviewer_id: str = Field(min_length=1,max_length=36)
+
+class AssignmentInput(RationaleInput):
+    expected_item_version: int = Field(ge=1)
+    reviewer_id: str = Field(min_length=1,max_length=36)
+
+class DecisionInput(ReviewGuard,RationaleInput):
+    kind: Literal['approved','changes_requested']
+
+class ResolutionInput(RationaleInput):
+    expected_item_version: int = Field(ge=1)
+    action: Literal['request_exception','request_dismissal','confirm','dismiss','grant_exception','reject_exception']
+    source_version_ids: list[str] = Field(default_factory=list,max_length=100)
+
+class ManualCheckInput(RationaleInput):
+    expected_item_version: int = Field(ge=1)
+    category: Literal['terminology','tone','messaging','facts_claims','visual','accessibility']
+    outcome: Literal['complete','not_applicable']
+    source_version_ids: list[str] = Field(default_factory=list,max_length=100)
+
+class CommentInput(StrictInput):
+    text: str = Field(min_length=1,max_length=4000)
+    finding_id: str | None = Field(default=None,min_length=1,max_length=36)
+
+    @field_validator('text')
+    @classmethod
+    def comment_nonempty(cls,value):
+        if not value.strip():raise ValueError('A comment is required')
+        return value.strip()
+
+class CommentOut(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+    id: str
+    revision_id: str
+    finding_id: str | None
+    author_id: str
+    text: str
+    created_at: datetime
+
+class ResolutionOut(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+    id: str
+    finding_id: str
+    actor_id: str
+    action: str
+    rationale: str
+    source_version_ids: list[str]
+    created_at: datetime
+
+class ManualCheckOut(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+    id: str
+    run_id: str
+    reviewer_id: str
+    category: str
+    outcome: str
+    rationale: str
+    source_version_ids: list[str]
+    created_at: datetime
+
+class DecisionOut(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+    id: str
+    revision_id: str
+    run_id: str
+    reviewer_id: str
+    kind: str
+    rationale: str
+    source_epoch: int
+    text_hash: str
+    decided_at: datetime
+
+class ReviewerOut(BaseModel):
+    id: str
+    user_id: str
+    email: str
+
+class ExportOut(BaseModel):
+    revision_id: str
+    content_id: str
+    text: str
+    text_hash: str
+    channel: str
+    audience: str
+    purpose: str
+    decision: DecisionOut
+    evidence_record: dict
+    exported_at: datetime
+
+class ReviewRecordOut(BaseModel):
+    run_id: str
+    workflow_version: int
+    stale: bool
+    evidence: dict
+    decisions: list[DecisionOut]

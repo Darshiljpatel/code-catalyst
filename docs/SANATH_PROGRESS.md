@@ -28,10 +28,18 @@ Migration `0003_semantic` adds processing policies, findings, immutable processi
 
 Provider smoke: first request rejected invalid model offsets; quote-based location mapping then produced one validated synthetic trial-duration finding in about 3.7 seconds (727 prompt/202 completion tokens). This is a connection check, not measured accuracy. Validation: 63 backend tests passed, including the PostgreSQL orchestration/security cases and OpenAPI drift check; eight existing extraction/scaffolding tests and six planning-verifier tests also passed. Alembic reports no schema drift, and the S3 migration was exercised through downgrade/re-upgrade in the disposable database. The upstream httpx test-client deprecation warning remains. Tests and remaining integration boundaries are detailed in `docs/S3_HANDOFF.md`. Credentials remain outside tracked files. No deployment or complete evaluation is claimed.
 
-## Next — S4
+## S4 — human review and approved export
 
-Implement review assignment, comments, reasoned findings/exception decisions, self-approval denial, atomic exact-revision approval, source freshness guards, export and audit. All approval paths must treat unavailable/failed required checks as incomplete. Coordinate the expanded screens with Darshilkumar and plug in Surya's real checks before declaring a full review complete.
+Implemented 23 October 2026 with Codex assistance. Migration `0004_workflow` adds immutable comments, reasoned finding-resolution records, per-category manual-check attestations and decisions. Content exposes a workflow version and stale-approval indicator. Added reviewer discovery/assignment, creator submission, separate assigned-reviewer decisions and approved JSON export with exact canonical content/hash and frozen evidence. Source epoch and effective-source checks are repeated on approval/export under locks; edits create a fresh draft and do not inherit approval.
+
+Exceptions cannot bypass failed checks and do not establish claim truth. Human-completed checks retain their reviewer/evidence/rationale separately from the original automated statuses and are disclosed in export. Generic finding display state is insufficient to authorise a blocker waiver: the server requires an actual authorised resolution event. Approval, evidence record, workflow state and audit commit together.
+
+Validation: the full 81-test backend regression passed on PostgreSQL 18, followed by a separately added approval/audit rollback test (82 backend cases validated in total). The S4-specific coverage is 19 cases, including competing decisions, stale sources/expiry, source-activation races, wrong roles/tenants, exact-export hashes, manual-vs-automated disclosure and edits after approval. Eighteen existing engine/scaffolding tests and six planning-verifier tests also passed. Alembic reports no schema drift; the S4 migration was exercised through downgrade/re-upgrade in the disposable database. The existing upstream httpx test-client deprecation warning remains. No live inference was needed for this phase. See `docs/S4_HANDOFF.md` for API integration and limits.
+
+## Next — S5
+
+Integrate Surya's actual deterministic checks/extraction through the runner, coordinate browser review screens with Darshilkumar, and run cross-component security/reliability and end-to-end tests. Complete governance insights, retention/deletion and operational gaps within the owning workstreams before calling the product complete. Approval endpoints are implemented, but an automated production-quality review is not claimed while the runner lacks the real deterministic engine.
 
 ## Later
 
-S4: guarded decisions, export and audit. S5: integration/security regression. S6: architecture and submission evidence. Follow the assigned sequence in the implementation plan; estimates are not a record of actual time spent.
+S6: final architecture, actual contribution/disclosure records and submission evidence. Deployment and the complete evaluation remain team deliverables. Follow the assigned sequence in the implementation plan; estimates are not a record of actual time spent.
