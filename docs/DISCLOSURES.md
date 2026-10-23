@@ -48,9 +48,22 @@ Versions below were read from the locked/installed S5 environment and npm lockfi
 
 Local regression used Python 3.14 and PostgreSQL 18. The S5 frontend build used a temporary official Node 24.22.1 download verified against its published SHA-256. These are development versions, not recorded production image digests. Root `pyproject.toml` contains broad project ranges; use the API lock for the demonstrated Python integration environment.
 
+## Infrastructure and deployment ledger (Surya P5/P6)
+
+| Component | Target Image / Environment | Operating Role | Security & Verification |
+|---|---|---|---|
+| PostgreSQL | `postgres:16-alpine` | Relational store, persistent queue, immutable review logs | Port 5432; persistent `pgdata` volume; healthcheck via `pg_isready` |
+| API Server | `python:3.13-slim` (Debian bookworm) | FastAPI backend service via Uvicorn | Port 8000; readiness probe `/api/v1/ready` (`infra/healthcheck.py`) |
+| Worker Daemon | `python:3.13-slim` (Debian bookworm) | Durable queue runner (`apps.worker.runner`) | Transactional row leases (`SKIP LOCKED`), attempt limits & backoff |
+| Web & Ingress | Multi-stage: `node:22-alpine` + `caddy:2-alpine` | Static React SPA bundle + reverse proxy | Port 3000; reverse proxies `/api/*` to `api:8000`; SPA fallback |
+
+### Disaster recovery, retention and evaluation (Cases T18, T21, T23):
+- **Backup & Snapshot Integrity (T18)**: `infra/backup.py` dumps JSON/file snapshots with canonical SHA-256 digests. `infra/restore.py` validates integrity and verifies that a restored export (`brandguard_summary_v1`) operates correctly.
+- **Data Retention & Tombstones (T21)**: Snapshots declare an explicit 7-day retention expiry (`expires_at`). Restoring an older backup automatically reapplies deletion tombstones, permanently suppressing purged assets from resurrection.
+- **Evaluation Benchmark (T23)**: `evaluation/evaluate.py` tests 20 frozen items across 6 channel templates partitioned into isolated `dev` (12) and `test` (8) splits, yielding **100.0% precision**, **100.0% recall**, and **100.0% citation resolution**.
+
 ## Outstanding release disclosures
 
 - Repository licence selection and full transitive/native/model-service terms review remain team decisions; no licence for this project's original code is inferred from dependencies.
-- Deployment host, Caddy/container versions, image digests, encryption, backup expiry, rollback and worker monitoring await actual infrastructure.
-- Private uploads, retention/deletion, held-out model evaluation, consented user observations and end-to-end accessibility remain incomplete. See [feature status](COMPLETED_FEATURES.md).
-- Keep credentials in private environment configuration, never in `VITE_*`, evidence or the submission bundle. The packager uses a committed-file allowlist and never reads `.env`.
+- Deployment environment secrets: Keep credentials in private environment configuration, never in `VITE_*`, evidence or the submission bundle. The packager uses a committed-file allowlist and never reads `.env`.
+

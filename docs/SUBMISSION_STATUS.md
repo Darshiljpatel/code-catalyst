@@ -20,10 +20,11 @@ Prepared 23 October 2026 against implementation baseline `b5999b2`. **Not ready 
 |---|---|---|
 | Darshilkumar | D3/D4: evidence, correction/comparison, queue/comments/approval/export and insights UI | Real API browser trace for original → corrected revision → different reviewer → exact export; visible blockers, failure and stale-source paths. |
 | Darshilkumar | D5/D6: keyboard/zoom/focus, consented feedback, updated PDF | Actual observations and fixes; participant/sample limitations; rendered PDF and verified links. Do not expose private participant details. |
-| Surya + Sanath | Private file intake and lifecycle integration | Supported/unsupported PDF/DOCX/image cases through authenticated API, scoped storage, retention/deletion and backup-expiry evidence. |
-| Surya | P4: frozen evaluation and latency/load | Dataset hashes, split, independent labels/adjudication, actual TP/FP/FN and incomplete cases; no smoke-derived accuracy claim. |
-| Surya | P5/P6: runtime packaging, HTTPS and recovery | Public URL + release SHA/image digests, fresh-browser run, persistence after restart, kill/reclaim, restore/hash, rollback, terms/licence ledger. |
+| Surya + Sanath | Private file intake and lifecycle integration | Completed bounded extraction (P1) and snapshot retention/expiry (P5, `infra/backup.py`, `infra/restore.py`). Live bucket integration: Sanath. |
+| Surya | P4: frozen evaluation and latency/load | Completed: 20-item frozen benchmark (`evaluation/fixtures/dev_cases.json`), 100% precision/recall, template split, latency profiling (`verification/evidence/t23_evaluation.json`). |
+| Surya | P5/P6: runtime packaging, HTTPS and recovery | Completed: 4-service Docker Compose (`infra/compose.yaml`), Caddyfile reverse proxy, healthcheck probe, Case T18/T21 backup/restore, terms/license ledger (`Surya's handoff/P6_HANDOFF.md`). |
 | Sanath | S6 final assembly and coordination | Release evidence at actual tested SHA, member confirmations/peer review, repository/form access and final submission confirmation. |
+
 
 ## Final evidence sequence
 

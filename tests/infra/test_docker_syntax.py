@@ -103,3 +103,32 @@ def test_backup_and_restore_roundtrip(tmp_path):
     assert res["export"]["export_format"] == "brandguard_summary_v1"
     assert res["export"]["campaigns_count"] == 1
 
+
+def test_corrupt_snapshot_rejected(tmp_path):
+    from infra.backup import create_backup
+    from infra.restore import verify_snapshot_integrity, restore_snapshot
+    import json
+
+    backup_file = tmp_path / "corrupt_snapshot.json"
+    create_backup(output_path=backup_file, db_records={"brands": [{"id": "1", "name": "Test"}]})
+
+    # Tamper with payload
+    data = json.loads(backup_file.read_text(encoding="utf-8"))
+    data["payload"]["tables"]["brands"][0]["name"] = "TamperedBrand"
+    backup_file.write_text(json.dumps(data), encoding="utf-8")
+
+    valid, msg, _ = verify_snapshot_integrity(backup_file)
+    assert valid is False
+    assert "checksum mismatch" in msg.lower()
+
+    res = restore_snapshot(backup_file)
+    assert res["status"] == "failed"
+    assert "mismatch" in res["error"].lower()
+
+
+def test_healthcheck_probe_functionality():
+    from infra.healthcheck import check_engine, check_api
+    assert check_engine() is True
+    assert check_api("http://127.0.0.1:59999", timeout=0.1) is False
+
+

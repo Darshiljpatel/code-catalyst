@@ -1,12 +1,12 @@
 {
   "metadata": {
-    "checksum_sha256": "a05074796d1479f22a2d546e8197543646164e053acd6a6d44aedf16400930d0",
+    "checksum_sha256": "3507e88f1f8289bbd2e568ce7c6a9da06ae47f4df9e289b6d5de6cd846bcd464",
     "algorithm": "sha256"
   },
   "payload": {
     "version": "1.0",
-    "created_at": "2026-10-23T07:27:12.448074+00:00",
-    "expires_at": "2026-10-30T07:27:12.448074+00:00",
+    "created_at": "2026-10-23T07:50:21.046282+00:00",
+    "expires_at": "2026-10-30T07:50:21.046282+00:00",
     "retention_policy": "7-day expiry",
     "tables": {
       "brands": [
@@ -27,7 +27,7 @@
           "brand_id": "b-1",
           "title": "Spring Ergonomics 2026",
           "status": "approved",
-          "created_at": "2026-10-23T07:27:12.448047+00:00"
+          "created_at": "2026-10-23T07:50:21.046255+00:00"
         }
       ],
       "sources": [
@@ -43,7 +43,7 @@
     "tombstones": [
       {
         "target_id": "c-deleted-99",
-        "deleted_at": "2026-10-23T07:27:12.448070+00:00",
+        "deleted_at": "2026-10-23T07:50:21.046278+00:00",
         "reason": "user_retention_purge"
       }
     ]

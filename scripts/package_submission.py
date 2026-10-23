@@ -22,7 +22,10 @@ FILES = (
     'docs/VERIFICATION.md', 'docs/SANATH_PROGRESS.md', 'docs/DARSHIL_PROGRESS.md',
     'docs/S2_HANDOFF.md', 'docs/S3_HANDOFF.md', 'docs/S4_HANDOFF.md', 'docs/S5_HANDOFF.md',
     "Surya's handoff/P1_HANDOFF.md", "Surya's handoff/P2_HANDOFF.md",
-    "Surya's handoff/P3_HANDOFF.md", 'docs/MODEL_PLAN.md', 'docs/CONTRACTS.md',
+    "Surya's handoff/P3_HANDOFF.md", "Surya's handoff/P4_HANDOFF.md",
+    "Surya's handoff/P5_HANDOFF.md", "Surya's handoff/P6_HANDOFF.md",
+    'docs/MODEL_PLAN.md', 'docs/CONTRACTS.md',
+
     'contracts/openapi.json', 'apps/api/README.md', 'apps/web/README.md',
     'apps/api/requirements.lock', 'apps/web/package-lock.json', 'pyproject.toml',
     'verification/requirements.json', 'verification/cases.json',

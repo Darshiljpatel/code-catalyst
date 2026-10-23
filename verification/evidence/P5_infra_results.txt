@@ -4,13 +4,15 @@ cachedir: .pytest_cache
 rootdir: D:\KEN\code-catalyst
 configfile: pyproject.toml
 plugins: anyio-4.13.0
-collecting ... collected 6 items
+collecting ... collected 8 items
 
-tests/infra/test_docker_syntax.py::test_compose_file_exists_and_declares_services PASSED [ 16%]
-tests/infra/test_docker_syntax.py::test_dockerfiles_exist_and_specify_valid_targets PASSED [ 33%]
-tests/infra/test_docker_syntax.py::test_caddyfile_reverse_proxy_and_spa PASSED [ 50%]
-tests/infra/test_docker_syntax.py::test_healthcheck_script_loads PASSED  [ 66%]
-tests/infra/test_docker_syntax.py::test_backup_and_restore_scripts PASSED [ 83%]
-tests/infra/test_docker_syntax.py::test_backup_and_restore_roundtrip PASSED [100%]
+tests/infra/test_docker_syntax.py::test_compose_file_exists_and_declares_services PASSED [ 12%]
+tests/infra/test_docker_syntax.py::test_dockerfiles_exist_and_specify_valid_targets PASSED [ 25%]
+tests/infra/test_docker_syntax.py::test_caddyfile_reverse_proxy_and_spa PASSED [ 37%]
+tests/infra/test_docker_syntax.py::test_healthcheck_script_loads PASSED  [ 50%]
+tests/infra/test_docker_syntax.py::test_backup_and_restore_scripts PASSED [ 62%]
+tests/infra/test_docker_syntax.py::test_backup_and_restore_roundtrip PASSED [ 75%]
+tests/infra/test_docker_syntax.py::test_corrupt_snapshot_rejected PASSED [ 87%]
+tests/infra/test_docker_syntax.py::test_healthcheck_probe_functionality PASSED [100%]
 
-============================== 6 passed in 0.06s ==============================
+============================== 8 passed in 0.61s ==============================

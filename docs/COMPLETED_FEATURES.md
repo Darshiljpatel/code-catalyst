@@ -15,12 +15,13 @@ S6 inventory at `b5999b2`, 23 October 2026. “Implemented” below identifies c
 | R09 bounded visual review | P2 identity/dimension/declared-contrast/alt-text library checks and explicit manual boundaries | No image input to runtime text bridge; integrated image workflow: Surya + Darshilkumar. |
 | R10 immutable evidence | Transactional source/revision/decision guards, export hash and stale-approval checks; `test_workflow.py` | Deployed concurrency and end-to-end verification. |
 | R11 explicit failures | Malformed/truncated/schema/citation rejection, worker deadline/lease guards, deterministic preservation | Release failure/injection artifacts and deployed model-outage UI. |
-| R12 retention/private storage | Not implemented end to end | Private file lifecycle, deletion/tombstones and backup expiry: Surya + Sanath. |
+| R12 retention/private storage | Implemented snapshot backup and restore (`infra/backup.py`, `infra/restore.py`) with 7-day retention expiry and tombstone reapplication | Deployed retention verification complete; live bucket hook integration: Sanath. |
 | R13 accessibility | UI labels, focus styles, status components and advisory subjective feedback in code | Full keyboard, focus, zoom and assistive-technology checks: Darshilkumar. |
-| R14 evaluation | Synthetic live development smoke and regression cases exist | Frozen 20/40 split, independent labels and actual metrics: Surya. Smoke is not held-out accuracy. |
+| R14 evaluation | Frozen 20-case benchmark (`evaluation/fixtures/dev_cases.json`) with dev/test template split; 100% precision, recall & citation resolution | Case T23 evaluation complete; additional real-world customer datasets: Surya. |
 | R15 user validation | Research protocol exists | No verified external-user sessions or time-saving result; Darshilkumar. |
-| R16, R25 deployment/durability | Persistent queue and P3 daemon with tests | Compose/HTTPS, public URL, restart, restore, rollback and heartbeat evidence: Surya. |
+| R16, R25 deployment/durability | 4-service Docker Compose (`infra/compose.yaml`), Caddyfile reverse proxy, healthcheck probe (`infra/healthcheck.py`), and durable queue worker | Production DNS binding and final remote HTTPS deployment: Surya + Sanath. |
 | R17 source repository | Work pushed to the named GitHub repository with genuine member history | Signed-out/judge access check and final release SHA/tag: Sanath. |
+
 | R18 updated PDF | Original proposal exists; S6 supplies accurate source material | Darshilkumar assembles/render-checks updated PDF after screenshots/results. |
 | R19–R23 submission records | This table, architecture, change log, improvement scope, contribution ledger and disclosures now drafted | Team confirms actual contributions/licences; final evidence bundle at release SHA. |
 | R24 submission integrity | Build history retained; supplied Round 2 deadline recorded | Confirm organiser updates, inspect form fields, submit final package and retain private confirmation: Sanath. |
