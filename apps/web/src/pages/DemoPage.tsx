@@ -62,17 +62,17 @@ export function DemoPage() {
               Analysis checks
             </h3>
             <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-2)' }}>
-              {Object.entries(FIXTURE_REVIEW_RUN.check_statuses).map(([check, status]) => (
+              {FIXTURE_REVIEW_RUN.checks.map(checkItem => (
                 <div
-                  key={check}
+                  key={checkItem.category}
                   style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: 'var(--space-3) var(--space-4)', background: 'var(--bg-raised)', borderRadius: 'var(--radius-md)' }}
                 >
-                  <span style={{ textTransform: 'capitalize', fontSize: '0.9rem' }}>{check.replace('_', ' ')}</span>
-                  <CheckStatusChip status={status} />
+                  <span style={{ textTransform: 'capitalize', fontSize: '0.9rem' }}>{checkItem.category.replace('_', ' ')}</span>
+                  <CheckStatusChip status={checkItem.status} title={checkItem.reason} />
                 </div>
               ))}
             </div>
-            {FIXTURE_REVIEW_RUN.check_statuses.messaging === 'unavailable' && (
+            {FIXTURE_REVIEW_RUN.checks.some(c => c.category === 'messaging' && c.status === 'unavailable') && (
               <p style={{ fontSize: '0.8125rem', color: 'var(--text-muted)', marginTop: 'var(--space-3)' }}>
                 Semantic messaging checks are unavailable — no external provider is configured.
                 These findings require explicit manual completion by a reviewer.

@@ -24,10 +24,12 @@ import type {
   LiveResponse,
   ReadyResponse,
   ApiError,
-  Finding,
-  ReviewRun,
-  ContentItem,
-  ContentRevision,
+  FindingOut,
+  RunOut,
+  SourceOut,
+  PolicyOut,
+  RevisionOut,
+  ContentOut,
   Decision,
   Comment,
   BrandInsights,
@@ -174,28 +176,104 @@ export const FIXTURE_ERROR_CSRF: ApiError = {
   details: {},
 };
 
-// ---------------------------------------------------------------------------
-// @pending S2 — ContentItem + ContentRevision fixtures
-// ---------------------------------------------------------------------------
-
-export const FIXTURE_CONTENT_ITEM: ContentItem = {
-  id: FIXTURE_CONTENT_ID,
-  org_id: FIXTURE_ORG_ID,
+export const FIXTURE_SOURCE_TRIAL_TERMS: SourceOut = {
+  id: 'source-0001',
   brand_id: FIXTURE_BRAND_ID,
-  state: 'draft',
-  current_revision_id: FIXTURE_REVISION_ID_1,
+  source_key: 'trial_terms',
+  version: 1,
+  owner_id: FIXTURE_MANAGER_USER_ID,
+  title: 'Approved trial terms',
+  text: 'The trial lasts 14 days. No credit card is required.',
+  text_hash: 'sha256-of-trial-terms',
+  rules: [
+    {
+      id: 'F-01',
+      category: 'facts_claims',
+      kind: 'fact',
+      key: 'trial_duration',
+      value: '14 days',
+      evidence_quote: 'The trial lasts 14 days.',
+    },
+  ],
+  valid_from: '2026-10-22T00:00:00Z',
+  valid_until: null,
+  state: 'active',
+  created_at: '2026-10-22T10:00:00Z',
+  activated_by: FIXTURE_MANAGER_USER_ID,
+  activated_at: '2026-10-22T10:05:00Z',
 };
 
-export const FIXTURE_REVISION_1: ContentRevision = {
+export const FIXTURE_SOURCE_BRAND_NAME: SourceOut = {
+  id: 'source-0002',
+  brand_id: FIXTURE_BRAND_ID,
+  source_key: 'brand_identity',
+  version: 1,
+  owner_id: FIXTURE_MANAGER_USER_ID,
+  title: 'Brand name & style guidelines',
+  text: 'The brand name must always be spelled LumaDesk with a capital D. Voice is calm and evidence-based.',
+  text_hash: 'sha256-of-brand-name',
+  rules: [
+    {
+      id: 'T-01',
+      category: 'terminology',
+      kind: 'terminology',
+      key: 'brand_name',
+      value: 'LumaDesk',
+      evidence_quote: 'spelled LumaDesk with a capital D',
+    },
+    {
+      id: 'TN-01',
+      category: 'tone',
+      kind: 'guidance',
+      key: 'voice_calm',
+      value: 'calm and evidence-based',
+      evidence_quote: 'Voice is calm and evidence-based.',
+    },
+  ],
+  valid_from: '2026-10-22T00:00:00Z',
+  valid_until: null,
+  state: 'active',
+  created_at: '2026-10-22T10:10:00Z',
+  activated_by: FIXTURE_MANAGER_USER_ID,
+  activated_at: '2026-10-22T10:15:00Z',
+};
+
+export const FIXTURE_SOURCES: SourceOut[] = [
+  FIXTURE_SOURCE_TRIAL_TERMS,
+  FIXTURE_SOURCE_BRAND_NAME,
+];
+
+export const FIXTURE_POLICY: PolicyOut = {
+  version: 1,
+  enabled: false,
+  provider: 'nebius',
+  model: 'Qwen/Qwen3-235B-A22B-Instruct-2507',
+  boundary: 'external',
+  notice: 'Local deterministic processing only. Semantic checks are unavailable until external provider policy is enabled by an admin.',
+};
+
+export const FIXTURE_REVISION_1: RevisionOut = {
   id: FIXTURE_REVISION_ID_1,
-  content_id: FIXTURE_CONTENT_ID,
-  parent_revision_id: null,
+  item_id: FIXTURE_CONTENT_ID,
+  number: 1,
   author_id: FIXTURE_CREATOR_USER_ID,
   created_at: '2026-10-23T06:00:00Z',
   channel: 'email',
   audience: 'SMB customers',
   purpose: 'acquisition',
+  text: 'Lumadesk guarantees 10x productivity. Get your 30-day free trial. Sign up NOW!!!',
   text_hash: 'sha256-of-lumadesk-draft',
+};
+
+export const FIXTURE_CONTENT_ITEM: ContentOut = {
+  id: FIXTURE_CONTENT_ID,
+  brand_id: FIXTURE_BRAND_ID,
+  title: 'LumaDesk Q4 Launch Email',
+  creator_id: FIXTURE_CREATOR_USER_ID,
+  reviewer_id: FIXTURE_REVIEWER_USER_ID,
+  current_revision: 1,
+  state: 'draft',
+  revisions: [FIXTURE_REVISION_1],
 };
 
 // The initial LumaDesk demo draft (IMPLEMENTATION_PLAN.md §1)
@@ -206,10 +284,9 @@ export const FIXTURE_LUMADESK_DRAFT_TEXT =
 // @pending S3 — Finding fixtures (LumaDesk expected findings)
 // ---------------------------------------------------------------------------
 
-export const FIXTURE_FINDINGS: Finding[] = [
+export const FIXTURE_FINDINGS: FindingOut[] = [
   {
     id: 'find-0001',
-    org_id: FIXTURE_ORG_ID,
     revision_id: FIXTURE_REVISION_ID_1,
     run_id: FIXTURE_RUN_ID,
     category: 'terminology',
@@ -226,7 +303,6 @@ export const FIXTURE_FINDINGS: Finding[] = [
   },
   {
     id: 'find-0002',
-    org_id: FIXTURE_ORG_ID,
     revision_id: FIXTURE_REVISION_ID_1,
     run_id: FIXTURE_RUN_ID,
     category: 'facts_claims',
@@ -243,7 +319,6 @@ export const FIXTURE_FINDINGS: Finding[] = [
   },
   {
     id: 'find-0003',
-    org_id: FIXTURE_ORG_ID,
     revision_id: FIXTURE_REVISION_ID_1,
     run_id: FIXTURE_RUN_ID,
     category: 'facts_claims',
@@ -252,15 +327,14 @@ export const FIXTURE_FINDINGS: Finding[] = [
     origin: 'model',
     location: { block_id: 'b1', start: 9, end: 40 },
     rule_id: 'rule-claims-evidence',
-    source_version_id: null,
-    evidence_quote: null,
+    source_version_id: '',
+    evidence_quote: '',
     rationale: '"guarantees 10x productivity" is an unsupported quantitative claim. No approved source substantiates this figure.',
     suggested_edit: null,
     resolution: 'open',
   },
   {
     id: 'find-0004',
-    org_id: FIXTURE_ORG_ID,
     revision_id: FIXTURE_REVISION_ID_1,
     run_id: FIXTURE_RUN_ID,
     category: 'tone',
@@ -277,7 +351,6 @@ export const FIXTURE_FINDINGS: Finding[] = [
   },
   {
     id: 'find-0005',
-    org_id: FIXTURE_ORG_ID,
     revision_id: FIXTURE_REVISION_ID_1,
     run_id: FIXTURE_RUN_ID,
     category: 'accessibility',
@@ -286,8 +359,8 @@ export const FIXTURE_FINDINGS: Finding[] = [
     origin: 'deterministic',
     location: { block_id: 'img-1', start: 0, end: 0, field_name: 'alt_text' },
     rule_id: 'rule-accessibility-alt',
-    source_version_id: null,
-    evidence_quote: null,
+    source_version_id: '',
+    evidence_quote: '',
     rationale: 'PNG asset has no alt text provided. Screen readers cannot describe this image.',
     suggested_edit: null,
     resolution: 'open',
@@ -295,27 +368,28 @@ export const FIXTURE_FINDINGS: Finding[] = [
 ];
 
 // ---------------------------------------------------------------------------
-// @pending S3 — ReviewRun fixture
+// ReviewRun fixture
 // ---------------------------------------------------------------------------
 
-export const FIXTURE_REVIEW_RUN: ReviewRun = {
+export const FIXTURE_REVIEW_RUN: RunOut = {
   id: FIXTURE_RUN_ID,
   revision_id: FIXTURE_REVISION_ID_1,
-  source_snapshot_epoch: 0,
-  started_at: '2026-10-23T06:01:00Z',
-  completed_at: '2026-10-23T06:01:15Z',
-  check_statuses: {
-    terminology: 'complete',
-    facts_claims: 'complete',
-    tone: 'complete',
-    accessibility: 'complete',
-    visual: 'complete',
-    messaging: 'unavailable', // semantic adapter not yet configured
-  },
-  incomplete_reason: null,
-  model_id: null,
-  prompt_version: null,
-  engine_version: '0.1.0-deterministic',
+  source_epoch: 0,
+  source_snapshot: FIXTURE_SOURCES,
+  checks: [
+    { category: 'terminology', status: 'complete', reason: 'Verified against active brand dictionary' },
+    { category: 'facts_claims', status: 'complete', reason: 'Checked against approved source facts' },
+    { category: 'tone', status: 'complete', reason: 'Verified against tone guidelines' },
+    { category: 'visual', status: 'complete', reason: 'Dimensions and assets validated' },
+    { category: 'accessibility', status: 'complete', reason: 'Alt-text and contrast verified' },
+    { category: 'messaging', status: 'unavailable', reason: 'External semantic processing disabled by policy' },
+  ],
+  status: 'completed',
+  created_at: '2026-10-23T06:01:00Z',
+  stale: false,
+  processing_snapshot: {},
+  engine_metadata: { engine_version: '0.1.0-deterministic' },
+  findings: FIXTURE_FINDINGS,
 };
 
 // ---------------------------------------------------------------------------
