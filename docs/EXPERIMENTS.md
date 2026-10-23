@@ -277,3 +277,26 @@ intake recovery, manual review, conflicts, bounded diff, text import and sources
 Next candidate: finding lists grow unwieldy on drafts with many findings. Add
 explicit category/severity/disposition filtering and useful result counts without
 letting a filtered view conceal the overall approval blockers.
+
+## Overnight iteration 12: finding triage with global blocker visibility
+
+Added category, severity and disposition filters, visible result counts, clear
+filters and a shortcut to all unresolved blockers. Total unresolved blockers
+always describe the whole run, including hidden cards and staged-but-unchecked
+fixes. A no-match state explains that filters are hiding findings. Filter values
+reset when the run changes. The same unresolved-blocker predicate is used by
+submission preflight to avoid contradictory counts.
+
+Batch application now operates on visible findings when filters are active and
+its label makes that scope explicit. Hidden cards cannot be silently edited by
+the visible batch action. Clearing filters does not discard staged changes.
+
+Verification: build and lint passed; two tests passed. Pure checks cover filter
+combinations, pending dispositions, exceptions/dismissals and global blocker
+counting. The browser case checks hidden blockers remain visible in the summary,
+no-match/clear, blocker shortcut, scoped batch edits, reset on a new run, and a
+zero-violation scoped Axe scan in the tested state.
+
+Next investigation: intake permits “Assign later”, but the manager has no UI for
+the existing audited reviewer-assignment endpoint. Add assignment/reassignment
+with actual reviewer identities, rationale and workflow-version conflict recovery.

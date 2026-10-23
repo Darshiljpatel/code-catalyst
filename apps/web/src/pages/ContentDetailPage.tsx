@@ -1,4 +1,6 @@
 import { categoryLabel } from '../components/categoryLabel';
+import { ALL_FINDINGS, filterFindings, type FindingFilters as FilterValues } from '../api/findingFilters';
+import { FindingFilters } from '../components/FindingFilters';
 import { resolutionActions } from '../api/resolutionActions';
 import React from 'react';
 import { workingDraft, changeDraftText, stageDraftEdit, projectDraftRange, undoDraftChange } from '../api/draftEdits';
@@ -58,6 +60,7 @@ export function ContentDetailPage() {
 
   // Active run state
   const [run, setRun] = React.useState<RunOut | null>(null);
+  const [findingFilterState, setFindingFilterState] = React.useState<{ runId: string; values: FilterValues }>({ runId: '', values: ALL_FINDINGS });
   const [analysing, setAnalysing] = React.useState(false);
 
   // Selected finding for evidence drawer / highlighting
@@ -315,9 +318,12 @@ export function ContentDetailPage() {
   const canEditDraft = Boolean(user?.membership_id === content?.creator_id &&
     currentRevision?.number === content?.current_revision && !savingRevision && !analysing && !['queued', 'running'].includes(run?.status || ''));
   const stagedCount = draft.changes.filter(change => change.findingId).length;
-  const availableFixCount = run?.findings.filter(finding => finding.suggested_edit &&
+  const findingFilterValues = findingFilterState.runId === run?.id ? findingFilterState.values : ALL_FINDINGS;
+  const visibleFindings = filterFindings(run?.findings || [], findingFilterValues);
+  const findingFiltersActive = Object.values(findingFilterValues).some(value => value !== 'all');
+  const availableFixCount = visibleFindings.filter(finding => finding.suggested_edit &&
     !draft.changes.some(change => change.findingId === finding.id) &&
-    projectDraftRange(draft, finding.location.start, finding.location.end) !== null).length || 0;
+    projectDraftRange(draft, finding.location.start, finding.location.end) !== null).length;
   const issues = currentRevision ? submissionIssues(run, currentRevision.id) : [];
 
   React.useEffect(() => {
@@ -360,7 +366,7 @@ export function ContentDetailPage() {
   const applyAvailableFixes = () => {
     if (!run || !canEditDraft) return;
     let next = draft, applied = 0, skipped = 0;
-    for (const finding of run.findings) {
+    for (const finding of visibleFindings) {
       if (!finding.suggested_edit || next.changes.some(change => change.findingId === finding.id)) continue;
       try {
         const updated = stageDraftEdit(next, finding.id, finding.location.start, finding.location.end, finding.suggested_edit, finding.location.quote);
@@ -694,7 +700,7 @@ export function ContentDetailPage() {
           {run ? (
             <div>
               {hasDraftChanges && <p className="draft-findings-note">These findings describe the saved revision. Staged fixes are only confirmed after rechecking.</p>}
-              {canEditDraft && run.findings.some(f => f.suggested_edit) && <button className="btn btn--ghost btn--sm batch-apply" disabled={!availableFixCount} onClick={applyAvailableFixes}>Apply available fixes</button>}
+              {canEditDraft && run.findings.some(f => f.suggested_edit) && <button className="btn btn--ghost btn--sm batch-apply" disabled={!availableFixCount} onClick={applyAvailableFixes}>{findingFiltersActive ? 'Apply visible fixes' : 'Apply available fixes'}</button>}
               {/* Check Status Chips */}
               <div className="check-coverage">
                 {run.checks.map(c => (
@@ -717,13 +723,14 @@ export function ContentDetailPage() {
 
               {user?.membership_id === content.reviewer_id && !['approved', 'changes_requested'].includes(content.state) && <ManualChecks run={run} version={content.workflow_version} onSaved={loadContent} />}
               {/* Findings List */}
+              {run.findings.length > 0 && <FindingFilters findings={run.findings} visibleCount={visibleFindings.length} values={findingFilterValues} onChange={values => setFindingFilterState({ runId: run.id, values })} />}
               <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-3)' }}>
                 {run.findings.length === 0 ? (
                   <div style={{ textAlign: 'center', padding: 'var(--space-6)', color: 'var(--text-secondary)' }}>
                     {['queued', 'running'].includes(run.status) ? 'Analysis is pending.' : 'No compliance violations detected. Check category coverage before approval.'}
                   </div>
-                ) : (
-                  run.findings.map(finding => {
+                ) : visibleFindings.length === 0 ? <p className="draft-findings-note">No findings match these filters. Clear finding filters to see the complete review.</p> : (
+                  visibleFindings.map(finding => {
                     const isSelected = activeFinding?.id === finding.id;
                     const isStaged = draft.changes.some(change => change.findingId === finding.id);
                     const hasLocation = typeof finding.location.start === 'number' && typeof finding.location.end === 'number';
