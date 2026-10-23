@@ -656,6 +656,7 @@ export function ContentDetailPage() {
             <CommentsSection
               revisionId={currentRevision.id}
               activeFindingId={activeFinding?.id}
+              findings={run?.revision_id === currentRevision.id ? run.findings : []}
             />
           )}
         </div>

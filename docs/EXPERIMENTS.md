@@ -51,3 +51,25 @@ npm --prefix apps/web exec -- playwright test queue.spec.ts --config apps/web/pl
 This experiment improves campaign discovery and queue reliability. It does not
 establish public deployment, retention compliance or model accuracy; existing
 release blockers remain recorded in the integration report.
+
+## Overnight iteration 2: revision discussion
+
+Implemented a separate finding selector, display filter and explicit attachment
+checkbox. Filtering no longer silently turns a general note into a finding note.
+Discussion state is scoped to its revision; late responses cannot update a
+different revision's notes. Loading failures have retry controls instead of
+misleading empty states, failed posts preserve entered text, posting disables
+the editor to avoid losing concurrent edits, and successful posts announce their
+destination. Notes show a date as well as time, and enforce the API's 4,000
+character limit in the editor.
+
+Verification: production build and lint passed. Three browser regressions passed
+(new discussion case plus both queue tests). The discussion test exercises
+load/retry, independent filter/attachment semantics, posting failure and retry,
+successful status announcements, and revision isolation using intercepted API
+responses. This change does not alter API authorization or comment storage.
+
+Next investigation: disposition actions offered by the UI currently include
+reviewer-only actions for creators. Align available actions with assignment and
+role, and verify the server remains authoritative. Continue on `experiments`.
+The overnight goal remains active; no public deployment or remote push is implied.
