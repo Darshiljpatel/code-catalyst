@@ -10,6 +10,7 @@ interface SubmitReviewModalProps {
   expectedRunId: string;
   expectedSourceEpoch: number;
   currentReviewerId: string | null;
+  blockingReasons: string[];
   onSuccess: () => void;
   onClose: () => void;
 }
@@ -20,6 +21,7 @@ export function SubmitReviewModal({
   expectedRunId,
   expectedSourceEpoch,
   currentReviewerId,
+  blockingReasons,
   onSuccess,
   onClose,
 }: SubmitReviewModalProps) {
@@ -54,6 +56,7 @@ export function SubmitReviewModal({
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (blockingReasons.length) return;
     if (!selectedReviewer) {
       setError('Please select an authorized reviewer');
       return;
@@ -77,7 +80,7 @@ export function SubmitReviewModal({
 
   return (
     <div className="modal-backdrop" onClick={onClose} ref={dialogRef} tabIndex={-1} role="dialog" aria-modal="true" aria-labelledby="submit-modal-title">
-      <div className="modal-content" style={{ maxWidth: '520px', width: '90%' }} onClick={e => e.stopPropagation()}>
+      <div className="modal-card modal-body" style={{ maxWidth: '520px', width: '90%' }} onClick={e => e.stopPropagation()}>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 'var(--space-4)' }}>
           <h2 id="submit-modal-title" style={{ margin: 0, fontSize: '1.25rem' }}>
             Submit Revision for Review
@@ -88,8 +91,10 @@ export function SubmitReviewModal({
         {error && <Alert kind="error">{error}</Alert>}
 
         <p style={{ fontSize: '0.875rem', color: 'var(--text-secondary)', marginBottom: 'var(--space-4)' }}>
-          This will move the campaign to <strong>IN_REVIEW</strong> state and notify the assigned human reviewer.
+          Send this checked revision to the assigned reviewer. All changes are submitted together; approval remains a separate human decision.
         </p>
+
+        {blockingReasons.length > 0 && <div className="submission-blockers"><h3>Not ready to submit yet</h3><ul>{blockingReasons.map(reason => <li key={reason}>{reason}</li>)}</ul><p>Your saved draft is safe. Close this dialog to continue reviewing.</p></div>}
 
         <form onSubmit={handleSubmit}>
           <div className="form-group" style={{ marginBottom: 'var(--space-4)' }}>
@@ -108,18 +113,14 @@ export function SubmitReviewModal({
               >
                 {reviewers.map(r => (
                   <option key={r.id} value={r.id}>
-                    {r.email} ({r.id})
+                    {r.email}
                   </option>
                 ))}
               </select>
             )}
           </div>
 
-          <div style={{ background: 'var(--glass-bg)', padding: 'var(--space-3)', borderRadius: 'var(--radius-sm)', fontSize: '0.75rem', color: 'var(--text-secondary)', marginBottom: 'var(--space-5)' }}>
-            <div>Workflow Version: <strong>#{expectedItemVersion}</strong></div>
-            <div>Source Epoch: <strong>#{expectedSourceEpoch}</strong></div>
-            <div>Target Run: <code>{expectedRunId}</code></div>
-          </div>
+          <p className="form-hint">Submitting the saved revision with its latest source-linked check results.</p>
 
           <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 'var(--space-3)' }}>
             <button type="button" className="btn btn--ghost" onClick={onClose} disabled={submitting}>
@@ -128,7 +129,7 @@ export function SubmitReviewModal({
             <button
               type="submit"
               className="btn btn--primary"
-              disabled={submitting || !selectedReviewer}
+              disabled={submitting || loadingReviewers || !selectedReviewer || blockingReasons.length > 0}
             >
               {submitting ? 'Submitting…' : 'Confirm Submission →'}
             </button>

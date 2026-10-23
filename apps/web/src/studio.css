@@ -232,3 +232,36 @@
   .login-story__intro { margin: 0; }
   .login-panel__footer { margin-top: 32px; }
 }
+
+/* A single working draft collects every fix before one durable revision. */
+.review-workspace--dirty { padding-bottom: 180px; }
+.draft-action-bar { position: fixed; z-index: 101; bottom: 16px; left: max(16px, calc((100vw - 1320px) / 2)); right: max(16px, calc((100vw - 1320px) / 2)); display: flex; align-items: center; justify-content: space-between; gap: 20px; padding: 20px 24px; background: #282e25; border: 1px solid #6b795e; border-radius: 8px; box-shadow: 0 8px 40px #0008; }
+.draft-action-bar strong { font: 500 16px var(--font-display); }
+.draft-action-bar p { font-size: 12px; color: #c8d0bf; margin-top: 4px; }
+.draft-action-bar__buttons { display: flex; flex-wrap: wrap; gap: 8px; flex-shrink: 0; align-items: center; }
+.draft-action-bar__buttons .btn { font-size: 12px; }
+.draft-notice { padding: 14px 0; color: var(--color-success); font-size: 13px; }
+.draft-findings-note { font-size: 12px; line-height: 1.6; color: var(--text-secondary); margin-bottom: 14px; }
+.batch-apply { margin-bottom: 14px; }
+.finding-card--staged { border-color: #6a8555; }
+.staged-fix-label { color: var(--color-success); font: 500 11px var(--font-sans); margin: 0 0 12px; }
+.finding-card--staged .finding-suggestion { opacity: .8; }
+.review-readiness { padding: 22px 24px; margin-top: 24px; border: 1px solid var(--border-default); border-left: 3px solid var(--color-warning); border-radius: 4px; background: var(--bg-surface); }
+.review-readiness h3, .submission-blockers h3 { font-size: 14px; font-weight: 500; }
+.review-readiness ul, .submission-blockers ul { padding-left: 18px; margin-top: 10px; font-size: 12px; line-height: 1.8; color: var(--text-secondary); }
+.submission-blockers { background: var(--color-warning-muted); padding: 16px; margin-bottom: 20px; border-radius: 6px; }
+.submission-blockers p { color: var(--text-secondary); font-size: 12px; margin-top: 12px; }
+@media (max-width: 1000px) {
+  .draft-action-bar { flex-direction: column; align-items: stretch; gap: 12px; padding: 16px; }
+  .draft-action-bar__buttons { justify-content: flex-end; flex-shrink: 1; }
+}
+@media (max-width: 540px) {
+  .review-workspace--dirty { padding-bottom: 250px; }
+  .draft-action-bar { bottom: 8px; left: 8px; right: 8px; }
+  .draft-action-bar__buttons { gap: 6px; }
+  .draft-action-bar__buttons .btn { font-size: 10px; padding: 8px; min-height: 36px; }
+}
+.finding-passage { padding: 10px 12px; border-left: 2px solid var(--border-strong); margin: 0 0 12px; background: var(--bg-base); }
+.finding-passage span { display: block; color: var(--text-muted); font: 9px var(--font-mono); margin-bottom: 4px; text-transform: uppercase; letter-spacing: .05em; }
+.finding-passage q { display: block; font-size: 13px; line-height: 1.5; }
+.document-editor__fields { border: 0; padding: 0; min-width: 0; }

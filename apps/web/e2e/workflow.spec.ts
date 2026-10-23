@@ -35,11 +35,10 @@ test('real creator → worker → manual reviewer → approval → exact export,
   }
   await creator.keyboard.press('Escape');
   await expect(creator.getByRole('dialog')).toHaveCount(0);
-  await creator.getByRole('button', { name: 'Edit Copy / Save Revision' }).click();
+  await creator.getByRole('button', { name: 'Edit draft' }).click();
   const corrected = '✨ LumaDesk offers a 14-day free trial.  ';
-  await creator.locator('form textarea').first().fill(corrected);
-  await creator.getByRole('button', { name: 'Save as Revision #2' }).click();
-  await creator.locator('#btn-run-analysis').click();
+  await creator.getByLabel('Copy Text', { exact: true }).fill(corrected);
+  await creator.getByRole('button', { name: 'Save all & recheck' }).click();
   await expect(creator.getByText('No compliance violations detected', { exact: false })).toBeVisible({ timeout: 25000 });
   await login(reviewer, 'reviewer');
   await reviewer.goto(url);

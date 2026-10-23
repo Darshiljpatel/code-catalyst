@@ -4,12 +4,14 @@ import type { FindingOut } from '../api/types';
 
 interface EditSuggestionModalProps {
   finding: FindingOut;
+  contentQuote: string;
   onApply: (replacementText: string) => void;
   onClose: () => void;
 }
 
 export function EditSuggestionModal({
   finding,
+  contentQuote,
   onApply,
   onClose,
 }: EditSuggestionModalProps) {
@@ -18,10 +20,16 @@ export function EditSuggestionModal({
     finding.suggested_edit || ''
   );
 
+  React.useEffect(() => {
+    const close = (event: KeyboardEvent) => { if (event.key === 'Escape') onClose(); };
+    window.addEventListener('keydown', close);
+    return () => window.removeEventListener('keydown', close);
+  }, [onClose]);
+
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (!editedSuggestion.trim()) return;
-    onApply(editedSuggestion.trim());
+    onApply(editedSuggestion);
   };
 
   return (
@@ -62,7 +70,7 @@ export function EditSuggestionModal({
                   color: 'var(--text-primary)',
                 }}
               >
-                "{finding.evidence_quote || 'Selected text segment'}"
+                "{contentQuote || 'Selected text segment'}"
               </div>
             </div>
 
@@ -93,7 +101,7 @@ export function EditSuggestionModal({
               className="btn btn--primary"
               disabled={!editedSuggestion.trim()}
             >
-              Apply to Editor & Review
+              Add to working draft
             </button>
           </div>
         </form>

@@ -199,3 +199,18 @@ def test_adapter_hardened_invariants():
         assert f["evidence_status"] == "contradicted"
         assert f["rule_id"] == "F-01"
 
+
+
+@pytest.mark.parametrize("name_key", ["brand_name", "product_name"])
+def test_creator_example_crosses_the_real_bridge_and_evidence_validator(name_key):
+    from brandguard.engine_bridge import _check_text
+    from brandguard.orchestration import EngineResult, ReviewInput, checked_engine_result
+    text = 'lumadeks is providing free trial for users for 9000 days , OH MY GOD THIS IS INSANE!!!'
+    source = dict(id='src-creator-test', text='Use LumaDesk. The trial lasts 14 days.', rules=[
+        dict(id='T01', category='terminology', kind='terminology', key=name_key, value='LumaDesk', evidence_quote='Use LumaDesk.'),
+        dict(id='F01', category='facts_claims', kind='fact', key='trial_duration', value='14 days', evidence_quote='The trial lasts 14 days.'),
+    ])
+    result = _check_text(dict(text=text, context={}, sources=[source]))
+    _, findings = checked_engine_result(EngineResult(**result), ReviewInput(text, {}, [source]))
+    assert {finding['content_quote'] for finding in findings} == {'lumadeks', '9000 days'}
+    assert {finding['evidence_quote'] for finding in findings} == {'Use LumaDesk.', 'The trial lasts 14 days.'}

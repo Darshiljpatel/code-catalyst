@@ -7,7 +7,7 @@ from pathlib import Path
 import sys
 
 CATEGORIES = ('terminology', 'facts_claims', 'visual', 'accessibility')
-ENGINE_VERSION = 'review-engine.p2.s5-bridge.v1'
+ENGINE_VERSION = 'review-engine.p2.s5-bridge.v2'
 MAX_PAYLOAD = 2_000_000
 MAX_RESPONSE = 524_288
 

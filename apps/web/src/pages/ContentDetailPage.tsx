@@ -1,6 +1,7 @@
 import { categoryLabel } from '../components/categoryLabel';
 import React from 'react';
-import { replaceLocatedText } from '../api/textEdits';
+import { workingDraft, changeDraftText, stageDraftEdit, projectDraftRange, undoDraftChange } from '../api/draftEdits';
+import { submissionIssues } from '../api/reviewReadiness';
 import { useParams, useNavigate } from 'react-router-dom';
 import {
   getContent,
@@ -67,7 +68,11 @@ export function ContentDetailPage() {
 
   // Edit mode
   const [isEditing, setIsEditing] = React.useState(false);
-  const [draftText, setDraftText] = React.useState('');
+  const [draft, setDraft] = React.useState(() => workingDraft(''));
+  const draftText = draft.text;
+  const resetDraft = React.useCallback((text: string) => setDraft(workingDraft(text)), []);
+  const [draftNotice, setDraftNotice] = React.useState<string | null>(null);
+  const [submitAfterRun, setSubmitAfterRun] = React.useState<string | null>(null);
   const [draftChannel, setDraftChannel] = React.useState('');
   const [draftAudience, setDraftAudience] = React.useState('');
   const [draftPurpose, setDraftPurpose] = React.useState('');
@@ -116,7 +121,7 @@ export function ContentDetailPage() {
         const latestIdx = item.revisions.length - 1;
         setSelectedRevIndex(latestIdx);
         const rev = item.revisions[latestIdx];
-        setDraftText(rev.text);
+        resetDraft(rev.text);
         setDraftChannel(rev.channel);
         setDraftAudience(rev.audience);
         setDraftPurpose(rev.purpose);
@@ -129,7 +134,7 @@ export function ContentDetailPage() {
     } finally {
       setLoading(false);
     }
-  }, [contentId]);
+  }, [contentId, resetDraft]);
 
   React.useEffect(() => {
     loadContent();
@@ -140,22 +145,26 @@ export function ContentDetailPage() {
 
   const cancelEditing = () => {
     if (currentRevision) {
-      setDraftText(currentRevision.text);
+      resetDraft(currentRevision.text);
       setDraftChannel(currentRevision.channel);
       setDraftAudience(currentRevision.audience);
       setDraftPurpose(currentRevision.purpose);
     }
     setIsEditing(false);
+    setDraftNotice(null);
+    setError(null);
   };
 
   // Initialize or update fields when switching revisions
   const handleSelectRevision = (index: number) => {
     if (!content) return;
     setSelectedRevIndex(index);
+    setActiveFinding(null);
+    setDraftNotice(null);
     setRun(null);
     const rev = content.revisions[index];
     if (rev) {
-      setDraftText(rev.text);
+      resetDraft(rev.text);
       setDraftChannel(rev.channel);
       setDraftAudience(rev.audience);
       setDraftPurpose(rev.purpose);
@@ -165,11 +174,18 @@ export function ContentDetailPage() {
     }
   };
 
-  const handleSaveRevision = async (e?: React.FormEvent, customParentId?: string) => {
+  const handleSaveRevision = async (e?: React.FormEvent, customParentId?: string, thenSubmit = false) => {
     if (e) e.preventDefault();
-    if (!content || !currentRevision) return;
+    if (!content || !currentRevision || savingRevision || (!hasDraftChanges && !customParentId)) return;
+    if (![draftText, draftChannel, draftAudience, draftPurpose].every(value => value.trim())) {
+      setError('Add campaign text, channel, audience, and purpose before saving your working draft.');
+      setIsEditing(true);
+      return;
+    }
 
     setSavingRevision(true);
+    setError(null);
+    setDraftNotice(null);
     setConflictServerRevision(null);
 
     const parentId = customParentId || currentRevision.id;
@@ -184,10 +200,24 @@ export function ContentDetailPage() {
       });
       setContent(updated);
       const newLatestIdx = updated.revisions.length - 1;
+      const saved = updated.revisions[newLatestIdx];
       setSelectedRevIndex(newLatestIdx);
+      resetDraft(saved.text);
       setRun(null);
+      setActiveFinding(null);
       setIsEditing(false);
       setConflictServerRevision(null);
+      setDraftNotice(`All changes saved together as revision #${saved.number}. Checking the updated draft…`);
+      try {
+        const nextRun = await startAnalysis(saved.id, {
+          external_processing_consent: Boolean(policy?.enabled && consent),
+          policy_version: policy?.enabled && consent ? policy.version : null,
+        }, 'run-' + crypto.randomUUID());
+        setRun(nextRun);
+        if (thenSubmit) setSubmitAfterRun(nextRun.id);
+      } catch {
+        setError(`Your changes are saved as revision #${saved.number}, but the check could not start. Use Run Compliance Check to retry; you do not need to save again.`);
+      }
     } catch (err) {
       if (err instanceof ApiResponseError && err.status === 409) {
         // Fetch fresh server state to display conflict diff
@@ -207,7 +237,7 @@ export function ContentDetailPage() {
     }
   };
 
-  const handleRunAnalysis = async () => {
+  const handleRunAnalysis = async (thenSubmit = false) => {
     if (!currentRevision) return;
     setAnalysing(true);
     setError(null);
@@ -222,6 +252,7 @@ export function ContentDetailPage() {
         idempotencyKey
       );
       setRun(newRun);
+      if (thenSubmit) setSubmitAfterRun(newRun.id);
     } catch (err) {
       setError(err instanceof ApiResponseError ? err.body.message : 'Analysis request failed. Your draft is saved; retry when the service is available.');
     } finally {
@@ -241,16 +272,23 @@ export function ContentDetailPage() {
       try {
         const updated = await getRun(pollingRunId);
         if (cancelled) return;
-        setRun(updated);
         if (['queued', 'running'].includes(updated.status)) {
+          setRun(updated);
           if (++attempts < 40) timer = setTimeout(poll, 1500);
           else {
             setAnalysing(false);
             setError('Analysis is still pending. The worker may be unavailable; reload to check its status.');
           }
         } else {
+          if (contentId) {
+            const [updatedContent, record] = await Promise.all([getContent(contentId), getReviewRecord(updated.revision_id)]);
+            if (!cancelled) {
+              setContent(updatedContent);
+              setRun({ ...updated, checks: record.evidence.effective_checks });
+              setDraftNotice('Recheck finished. Review the updated findings before submitting.');
+            }
+          }
           setAnalysing(false);
-          if (contentId) { const updatedContent = await getContent(contentId); if (!cancelled) setContent(updatedContent); }
         }
       } catch (err) {
         if (!cancelled) {
@@ -263,31 +301,78 @@ export function ContentDetailPage() {
     return () => { cancelled = true; if (timer) clearTimeout(timer); };
   }, [pollingRunId, pollingRunStatus, contentId]);
 
-  const applySuggestedEdit = (finding: FindingOut) => {
-    if (!finding.suggested_edit || !currentRevision) return;
-    const start = finding.location?.start;
-    const end = finding.location?.end;
-    const points = Array.from(draftText);
-    if (draftText !== currentRevision.text || typeof start !== 'number' || typeof end !== 'number' ||
-        start < 0 || end <= start || end > points.length) {
-      setError('Reload the analysed revision before applying this suggestion. Your edits are preserved.');
-      return;
+  const hasDraftChanges = Boolean(currentRevision && (draftText !== currentRevision.text ||
+    draftChannel !== currentRevision.channel || draftAudience !== currentRevision.audience || draftPurpose !== currentRevision.purpose));
+  const canEditDraft = Boolean(user?.membership_id === content?.creator_id &&
+    currentRevision?.number === content?.current_revision && !savingRevision && !analysing && !['queued', 'running'].includes(run?.status || ''));
+  const stagedCount = draft.changes.filter(change => change.findingId).length;
+  const availableFixCount = run?.findings.filter(finding => finding.suggested_edit &&
+    !draft.changes.some(change => change.findingId === finding.id) &&
+    projectDraftRange(draft, finding.location.start, finding.location.end) !== null).length || 0;
+  const issues = currentRevision ? submissionIssues(run, currentRevision.id) : [];
+
+  React.useEffect(() => {
+    if (submitAfterRun && run?.id === submitAfterRun && !['queued', 'running'].includes(run.status) && !analysing) {
+      setSubmitAfterRun(null);
+      setShowSubmitModal(true);
     }
-    setIsEditing(true);
-    setDraftText(points.slice(0, start).join('') + finding.suggested_edit + points.slice(end).join(''));
+  }, [submitAfterRun, run, analysing]);
+
+  React.useEffect(() => {
+    if (!hasDraftChanges) return;
+    const beforeUnload = (event: BeforeUnloadEvent) => { event.preventDefault(); event.returnValue = ''; };
+    const preserveDraft = (event: MouseEvent) => {
+      const anchor = event.target instanceof Element ? event.target.closest('a[href]') : null;
+      if (anchor instanceof HTMLAnchorElement && anchor.origin === window.location.origin && anchor.pathname !== window.location.pathname) {
+        event.preventDefault();
+        event.stopPropagation();
+        setError('Your working draft has unsaved changes. Save all changes or discard them before leaving this campaign.');
+      }
+    };
+    window.addEventListener('beforeunload', beforeUnload);
+    document.addEventListener('click', preserveDraft, true);
+    return () => {
+      window.removeEventListener('beforeunload', beforeUnload);
+      document.removeEventListener('click', preserveDraft, true);
+    };
+  }, [hasDraftChanges]);
+
+  const applySuggestedEdit = (finding: FindingOut, replacement = finding.suggested_edit) => {
+    if (replacement === null || !currentRevision || !canEditDraft || run?.revision_id !== currentRevision.id) return;
+    try {
+      setDraft(stageDraftEdit(draft, finding.id, finding.location.start, finding.location.end, replacement, finding.location.quote));
+      setDraftNotice('Fix added to your working draft. Keep going, then save all changes together.');
+      setError(null);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Could not add this fix.');
+    }
+  };
+
+  const applyAvailableFixes = () => {
+    if (!run || !canEditDraft) return;
+    let next = draft, applied = 0, skipped = 0;
+    for (const finding of run.findings) {
+      if (!finding.suggested_edit || next.changes.some(change => change.findingId === finding.id)) continue;
+      try {
+        const updated = stageDraftEdit(next, finding.id, finding.location.start, finding.location.end, finding.suggested_edit, finding.location.quote);
+        if (updated !== next) applied++;
+        next = updated;
+      } catch { skipped++; }
+    }
+    setDraft(next);
+    setError(null);
+    setDraftNotice(`${applied} fixes added to your draft.${skipped ? ` ${skipped} overlapping or unavailable suggestions need manual review.` : ''} Nothing is saved until you save all changes.`);
   };
 
   const handleApplySuggestion = (replacementText: string) => {
-    if (!editingSuggestionFinding) return;
-    const finding = editingSuggestionFinding;
-    try {
-      if (!currentRevision) return;
-      setDraftText(replaceLocatedText(draftText, currentRevision.text, finding.location?.start, finding.location?.end, replacementText));
-      setIsEditing(true);
-    } catch (err) {
-      setError(err instanceof Error ? err.message : 'Invalid suggestion location.');
-    }
+    if (editingSuggestionFinding) applySuggestedEdit(editingSuggestionFinding, replacementText);
     setEditingSuggestionFinding(null);
+  };
+
+  const prepareSubmission = () => {
+    if (hasDraftChanges) void handleSaveRevision(undefined, undefined, true);
+    else if (!run) void handleRunAnalysis(true);
+    else setShowSubmitModal(true);
   };
 
   // Document preview rendering with interactive highlight marks
@@ -296,9 +381,11 @@ export function ContentDetailPage() {
     const points = Array.from(draftText);
     const segments: React.ReactNode[] = [];
     let cursor = 0;
-    const located = draftText === currentRevision.text ? [...(run?.findings || [])].sort((a, b) => Number(a.location.start) - Number(b.location.start)) : [];
+    const located = [...(run?.findings || [])].sort((a, b) => Number(a.location.start) - Number(b.location.start));
     for (const finding of located) {
-      const { start, end } = finding.location;
+      const range = projectDraftRange(draft, finding.location.start, finding.location.end);
+      if (!range) continue;
+      const { start, end } = range;
       if (typeof start !== 'number' || typeof end !== 'number' || start < cursor || end <= start || end > points.length) continue;
       segments.push(points.slice(cursor, start).join(''));
       segments.push(<button type="button" key={finding.id} className={`located-finding located-finding--${finding.severity}`} onClick={() => setActiveFinding(finding)} aria-label={`${categoryLabel(finding.category)}: ${points.slice(start, end).join('')}`}>
@@ -330,12 +417,12 @@ export function ContentDetailPage() {
   }
 
   return (
-    <main className="page-container review-workspace" id="main-content">
+    <main className={`page-container review-workspace${hasDraftChanges ? ' review-workspace--dirty' : ''}`} id="main-content">
       {error && <Alert kind="error">{error}</Alert>}
       {/* Top Header */}
       <div className="workspace-header">
         <div>
-          <button className="btn btn--ghost btn--sm" onClick={() => navigate('/')} style={{ marginBottom: 'var(--space-2)' }}>
+          <button className="btn btn--ghost btn--sm" disabled={hasDraftChanges || savingRevision} title={hasDraftChanges ? 'Save or discard your working draft before leaving.' : undefined} onClick={() => navigate('/')} style={{ marginBottom: 'var(--space-2)' }}>
             ← Back to campaigns
           </button>
           <div className="workspace-title">
@@ -360,21 +447,21 @@ export function ContentDetailPage() {
           <button
             id="btn-run-analysis"
             className="btn btn--secondary"
-            onClick={handleRunAnalysis}
-            disabled={analysing || isEditing || user?.membership_id !== content.creator_id || content.state === 'approved'}
+            onClick={() => { void handleRunAnalysis(); }}
+            disabled={analysing || savingRevision || hasDraftChanges || user?.membership_id !== content.creator_id || content.state === 'approved'}
           >
             {analysing ? 'Analysing…' : 'Run Compliance Check'}
           </button>
 
           {/* Workflow Action 1: Creator Submit for Review */}
-          {user?.membership_id === content.creator_id && ['draft', 'changes_requested', 'ready_for_review', 'needs_changes', 'incomplete'].includes(content.state) && (
+          {user?.membership_id === content.creator_id && ['draft', 'changes_requested', 'ready_for_review', 'needs_changes', 'incomplete', 'analysing'].includes(content.state) && (
             <button
               id="btn-submit-review"
               className="btn btn--primary"
-              onClick={() => setShowSubmitModal(true)}
-              disabled={analysing || isEditing || user?.membership_id !== content.creator_id || content.state === 'approved'}
+              onClick={prepareSubmission}
+              disabled={analysing || savingRevision || user?.membership_id !== content.creator_id || currentRevision?.number !== content.current_revision}
             >
-              Submit for Review →
+              {savingRevision ? 'Saving all changes…' : hasDraftChanges ? 'Save all & submit →' : 'Submit for Review →'}
             </button>
           )}
 
@@ -430,6 +517,8 @@ export function ContentDetailPage() {
             key={rev.id}
             className={`filter-btn ${selectedRevIndex === idx ? 'filter-btn--active' : ''}`}
             aria-pressed={selectedRevIndex === idx}
+            disabled={hasDraftChanges || savingRevision || analysing}
+            title={hasDraftChanges ? 'Save or discard the working draft before switching revisions.' : undefined}
             onClick={() => handleSelectRevision(idx)}
           >
             Rev #{rev.number} {idx === content.revisions.length - 1 ? '(Current)' : ''}
@@ -471,22 +560,22 @@ export function ContentDetailPage() {
         <div className="document-panel">
           <div className="panel-heading">
             <h2 style={{ margin: 0, fontSize: '1.125rem' }}>
-              Draft Copy (Rev #{currentRevision?.number})
+              {hasDraftChanges ? 'Working draft' : `Draft Copy (Rev #${currentRevision?.number})`}
             </h2>
             <button
               className="btn btn--ghost btn--sm"
               onClick={() => {
-                if (isEditing) cancelEditing();
-                else setIsEditing(true);
+                setIsEditing(!isEditing);
               }}
-              disabled={user?.membership_id !== content.creator_id}
+              disabled={!canEditDraft}
             >
-              {isEditing ? 'Cancel Edit' : 'Edit Copy / Save Revision'}
+              {isEditing ? 'Close editor' : 'Edit draft'}
             </button>
           </div>
 
           {isEditing ? (
-            <form className="document-editor" onSubmit={e => handleSaveRevision(e)}>
+            <form className="document-editor" onSubmit={e => e.preventDefault()}>
+              <fieldset className="document-editor__fields" disabled={savingRevision || analysing}>
               <div className="form-group" style={{ marginBottom: 'var(--space-4)' }}>
                 <label htmlFor="edit-copy" className="form-label">Copy Text</label>
                 <textarea
@@ -494,7 +583,7 @@ export function ContentDetailPage() {
                   className="input"
                   rows={8}
                   value={draftText}
-                  onChange={e => setDraftText(e.target.value)}
+                  onChange={e => setDraft(current => changeDraftText(current, e.target.value))}
                   required
                 />
               </div>
@@ -539,23 +628,18 @@ export function ContentDetailPage() {
                 <button
                   type="button"
                   className="btn btn--ghost btn--sm"
-                  onClick={cancelEditing}
+                  onClick={() => setIsEditing(false)}
                 >
-                  Cancel
+                  Preview draft
                 </button>
-                <button
-                  type="submit"
-                  className="btn btn--primary btn--sm"
-                  disabled={savingRevision}
-                >
-                  {savingRevision ? 'Saving revision…' : 'Save as Revision #' + (content.revisions.length + 1)}
-                </button>
+
               </div>
+              </fieldset>
             </form>
           ) : (
             <div className="document-canvas">
               <div className="document-canvas__masthead"><span>CAMPAIGN COPY</span><span>NO. {String(currentRevision?.number || 1).padStart(2, '0')}</span></div>
-              <p className="document-canvas__hint">{run?.findings.some(f => typeof f.location.start === 'number' && typeof f.location.end === 'number') ? 'Select an underlined phrase to follow the evidence.' : 'Your words. Ready for a closer look.'}</p>
+              <p className="document-canvas__hint">{hasDraftChanges ? 'Your working draft. Save all changes together when you’re ready.' : run?.findings.some(f => typeof f.location.start === 'number' && typeof f.location.end === 'number') ? 'Select an underlined phrase to follow the evidence.' : 'Your words. Ready for a closer look.'}</p>
               {renderAnnotatedDocument()}
 
               <div style={{ display: 'flex', flexWrap: 'wrap', gap: 'var(--space-4)', fontSize: '0.8125rem', color: 'var(--text-secondary)', marginTop: 'var(--space-4)' }}>
@@ -580,7 +664,7 @@ export function ContentDetailPage() {
         <section className="findings-panel" aria-labelledby="findings-heading">
           <div className="panel-heading">
             <div><p className="eyebrow">A CLOSER LOOK</p><h2 id="findings-heading" style={{ margin: 0, fontSize: '1.125rem' }}>Compliance Findings {run && <span className="finding-count">{run.findings.length}</span>}</h2></div>
-            <ProcessingMode isExternal={Boolean(policy?.enabled && consent)} />
+            <ProcessingMode isExternal={Boolean(run?.processing_snapshot.enabled && run?.processing_snapshot.consent)} />
           </div>
 
           {/* External consent toggle if policy enabled */}
@@ -592,13 +676,15 @@ export function ContentDetailPage() {
                   checked={consent}
                   onChange={e => setConsent(e.target.checked)}
                 />
-                <span>Include external semantic check (Nebius Token Factory)</span>
+                <span>For the next check: include external semantic review (Nebius Token Factory)</span>
               </label>
             </div>
           )}
 
           {run ? (
             <div>
+              {hasDraftChanges && <p className="draft-findings-note">These findings describe the saved revision. Staged fixes are only confirmed after rechecking.</p>}
+              {canEditDraft && run.findings.some(f => f.suggested_edit) && <button className="btn btn--ghost btn--sm batch-apply" disabled={!availableFixCount} onClick={applyAvailableFixes}>Apply available fixes</button>}
               {/* Check Status Chips */}
               <div className="check-coverage">
                 {run.checks.map(c => (
@@ -629,10 +715,14 @@ export function ContentDetailPage() {
                 ) : (
                   run.findings.map(finding => {
                     const isSelected = activeFinding?.id === finding.id;
+                    const isStaged = draft.changes.some(change => change.findingId === finding.id);
+                    const hasLocation = typeof finding.location.start === 'number' && typeof finding.location.end === 'number';
+                    const available = !isStaged && projectDraftRange(draft, finding.location.start, finding.location.end) !== null;
                     return (
                       <div
                         key={finding.id}
-                        className={`card finding-card ${isSelected ? 'finding-card--selected' : ''}`}
+                        className={`card finding-card ${isSelected ? 'finding-card--selected' : ''} ${isStaged ? 'finding-card--staged' : ''}`}
+                        data-finding-category={finding.category}
                         style={{
                           padding: 'var(--space-4)',
                           background: 'var(--glass-bg)',
@@ -655,7 +745,8 @@ export function ContentDetailPage() {
                                 e.stopPropagation();
                                 setResolvingFinding(finding);
                               }}
-                              title="Record human disposition (confirm, dismiss, exception)"
+                              disabled={hasDraftChanges || savingRevision}
+                              title={hasDraftChanges ? 'Save and recheck before recording a disposition.' : 'Record human disposition (confirm, dismiss, exception)'}
                             >
                               Resolve
                             </button>
@@ -671,6 +762,9 @@ export function ContentDetailPage() {
                           </div>
                         </div>
 
+                        {isStaged && <p className="staged-fix-label">✓ Added to draft · pending recheck</p>}
+                        {finding.suggested_edit && !available && !isStaged && <p className="draft-findings-note">{hasLocation ? 'This passage overlaps another edit. Recheck the draft for a fresh suggestion.' : 'This suggestion has no exact text location. Use Edit draft to make the change.'}</p>}
+                        {hasLocation && <div className="finding-passage"><span>In the saved draft</span><q>{finding.location.quote || Array.from(draft.baseText).slice(finding.location.start, finding.location.end).join('')}</q></div>}
                         <div style={{ fontSize: '0.875rem', fontWeight: 500, marginBottom: '6px' }}>
                           {finding.rationale}
                         </div>
@@ -694,19 +788,21 @@ export function ContentDetailPage() {
                                   e.stopPropagation();
                                   applySuggestedEdit(finding);
                                 }}
-                                title="Apply suggestion directly into draft copy"
+                                disabled={!canEditDraft || !available}
+                                title="Add this fix to the working draft without saving a revision"
                               >
-                                Quick Apply
+                                {isStaged ? 'Added to draft' : 'Apply fix'}
                               </button>
                               <button
                                 type="button"
                                 className="btn btn--secondary btn--sm"
+                                disabled={!canEditDraft || !available}
                                 onClick={e => {
                                   e.stopPropagation();
                                   setEditingSuggestionFinding(finding);
                                 }}
                               >
-                                Inspect & Apply
+                                Customize fix
                               </button>
                             </div>
                           </div>
@@ -726,6 +822,20 @@ export function ContentDetailPage() {
         </section>
       </div>
 
+      {draftNotice && <p className="draft-notice" role="status">{draftNotice}</p>}
+      {!hasDraftChanges && run && !analysing && issues.length > 0 && <aside className="review-readiness" aria-label="Before you submit"><h3>Before you submit</h3><ul>{issues.map(issue => <li key={issue}>{issue}</li>)}</ul></aside>}
+      {hasDraftChanges && (
+        <aside className="draft-action-bar" aria-label="Working draft actions">
+          <div><strong>One draft. All your changes.</strong><p>{stagedCount} suggested {stagedCount === 1 ? 'fix' : 'fixes'} staged{draft.changes.some(change => !change.findingId) ? ' · manual edits included' : ''}. Save once when you’re ready.</p></div>
+          <div className="draft-action-bar__buttons">
+            <button className="btn btn--ghost btn--sm" disabled={savingRevision || !draft.changes.length} onClick={() => { setDraft(undoDraftChange(draft)); setDraftNotice('Last text change undone.'); }}>Undo last change</button>
+            <button className="btn btn--ghost btn--sm" disabled={savingRevision} onClick={cancelEditing}>Discard changes</button>
+            <button className="btn btn--ghost" disabled={savingRevision || analysing || !canEditDraft} onClick={() => { void handleSaveRevision(); }}>Save all & recheck</button>
+            <button className="btn btn--primary" disabled={savingRevision || analysing || !canEditDraft} onClick={() => { void handleSaveRevision(undefined, undefined, true); }}>{savingRevision ? 'Saving all changes…' : 'Save all & submit'}</button>
+          </div>
+        </aside>
+      )}
+
       {/* Evidence Drawer */}
       {activeFinding && (
         <EvidenceDrawer
@@ -743,6 +853,7 @@ export function ContentDetailPage() {
       {editingSuggestionFinding && (
         <EditSuggestionModal
           finding={editingSuggestionFinding}
+          contentQuote={Array.from(draft.baseText).slice(editingSuggestionFinding.location.start, editingSuggestionFinding.location.end).join('')}
           onApply={handleApplySuggestion}
           onClose={() => setEditingSuggestionFinding(null)}
         />
@@ -755,7 +866,10 @@ export function ContentDetailPage() {
           localDraftText={draftText}
           onOverwrite={() => handleSaveRevision(undefined, conflictServerRevision.id)}
           onDiscard={() => {
-            setDraftText(conflictServerRevision.text);
+            setSelectedRevIndex(content.revisions.findIndex(revision => revision.id === conflictServerRevision.id));
+            setRun(null);
+            setActiveFinding(null);
+            resetDraft(conflictServerRevision.text);
             setDraftChannel(conflictServerRevision.channel);
             setDraftAudience(conflictServerRevision.audience);
             setDraftPurpose(conflictServerRevision.purpose);
@@ -767,13 +881,14 @@ export function ContentDetailPage() {
       )}
 
       {/* D4: Submit for Review Modal */}
-      {showSubmitModal && currentRevision && (
+      {showSubmitModal && currentRevision && run && (
         <SubmitReviewModal
           revisionId={currentRevision.id}
           expectedItemVersion={content.workflow_version}
-          expectedRunId={run?.id || 'run-default'}
+          expectedRunId={run.id}
           expectedSourceEpoch={run?.source_epoch ?? 0}
           currentReviewerId={content.reviewer_id}
+          blockingReasons={issues}
           onSuccess={() => {
             setShowSubmitModal(false);
             loadContent();
@@ -783,11 +898,11 @@ export function ContentDetailPage() {
       )}
 
       {/* D4: Reviewer Decision Modal (Approve / Request Changes) */}
-      {showDecisionModal && currentRevision && (
+      {showDecisionModal && currentRevision && run && (
         <DecisionModal
           revisionId={currentRevision.id}
           expectedItemVersion={content.workflow_version}
-          expectedRunId={run?.id || 'run-default'}
+          expectedRunId={run.id}
           expectedSourceEpoch={run?.source_epoch ?? 0}
           kind={decisionKind}
           onSuccess={() => {

@@ -342,3 +342,59 @@ def test_equivalent_numeric_trial_duration_is_not_a_contradiction(duration):
     result=check(extraction,{},dict(rules=[dict(id='F01',category='facts_claims',kind='fact',
         key='trial_duration',value='14 days')]))
     assert next(c for c in result if c.category=='facts_claims').findings==[]
+
+
+def _creator_example_rules():
+    return {'rules': [
+        dict(id='T01', category='terminology', kind='terminology', key='brand_name', value='LumaDesk'),
+        dict(id='F01', category='facts_claims', kind='fact', key='trial_duration', value='14 days'),
+    ]}
+
+
+def test_creator_example_reports_probable_spelling_and_trial_contradiction_with_exact_quotes():
+    text = 'lumadeks is providing free trial for users for 9000 days , OH MY GOD THIS IS INSANE!!!'
+    results = check(extract(text.encode(), 'text/plain', {}), {}, _creator_example_rules())
+    term = next(c for c in results if c.category == 'terminology').findings
+    facts = next(c for c in results if c.category == 'facts_claims').findings
+    assert len(term) == len(facts) == 1
+    assert term[0].evidence_quote == 'lumadeks'
+    assert term[0].suggested_edit == 'LumaDesk'
+    assert term[0].severity == 'advisory'
+    assert 'Possible misspelling' in term[0].rationale
+    assert facts[0].evidence_quote == '9000 days'
+    assert facts[0].suggested_edit == '14 days'
+    for finding in [*term, *facts]:
+        assert text[finding.location['start_char']:finding.location['end_char']] == finding.evidence_quote
+
+
+@pytest.mark.parametrize('token', ['lumadeks', 'LumaDeskk', 'LumDesk', 'LumaDask'])
+def test_approved_brand_single_edit_typos(token):
+    results = check(extract(token.encode(), 'text/plain', {}), {}, _creator_example_rules())
+    assert len(next(c for c in results if c.category == 'terminology').findings) == 1
+
+
+@pytest.mark.parametrize('text', [
+    'LumaDesk is a workspace for users.', 'LumadeskApp is unrelated.',
+    'lumadex is a different word.', 'The platform provides a free trial.',
+])
+def test_brand_typo_check_does_not_claim_arbitrary_prose_is_wrong(text):
+    results = check(extract(text.encode(), 'text/plain', {}), {}, _creator_example_rules())
+    assert next(c for c in results if c.category == 'terminology').findings == []
+
+
+@pytest.mark.parametrize('text', [
+    'Free trial for users for 14 days.', 'Free trial for new customers lasts 14 days.',
+    'The trial lasts 14 days. Refunds take 30 days.',
+    'The trial for users includes onboarding for 9000 days.',
+    'Free trial users get a refund after 30 days.',
+])
+def test_trial_subject_binding_preserves_correct_and_unrelated_durations(text):
+    results = check(extract(text.encode(), 'text/plain', {}), {}, _creator_example_rules())
+    assert next(c for c in results if c.category == 'facts_claims').findings == []
+
+
+def test_explicit_variant_and_case_checks_do_not_duplicate_typo_findings():
+    rules = _creator_example_rules()
+    rules['rules'][0]['forbidden_patterns'] = ['lumadesk', 'lumadeks']
+    results = check(extract(b'lumadesk lumadeks', 'text/plain', {}), {}, rules)
+    assert len(next(c for c in results if c.category == 'terminology').findings) == 2
