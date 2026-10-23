@@ -87,6 +87,14 @@ def test_credentials_rate_limit_and_readiness(setup):
         assert c.post('/api/v1/sessions', json=body, headers={'origin':'https://testserver'}).status_code == 401
     assert c.post('/api/v1/sessions', json=body, headers={'origin':'https://testserver'}).status_code == 429
 
+def test_successful_logins_do_not_consume_the_failure_limit(setup):
+    c, _, orgs, _ = setup
+    for _ in range(25):
+        login(c, orgs[0], 'creator')
+    assert c.post('/api/v1/sessions', json=dict(
+        email='missing@test', password='secret', org_id=orgs[0]
+    ), headers={'origin':'https://testserver'}).status_code == 401
+
 def test_wrong_workspace_and_validation_redaction(setup):
     c, _, orgs, _ = setup
     r = c.post('/api/v1/sessions', json=dict(email='manager@example.test', password='correct-password', org_id=orgs[1]), headers={'origin':'https://testserver'})
