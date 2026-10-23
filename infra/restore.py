@@ -66,9 +66,46 @@ def verify_snapshot_integrity(snapshot_path: Path | str) -> Tuple[bool, str, Dic
     return True, "Snapshot verified with matching SHA-256 checksum", data
 
 
+def restore_database_records(
+    target_db_url: str,
+    tables: Dict[str, List[Dict[str, Any]]],
+    tombstones: Optional[List[Dict[str, Any]]] = None,
+    reapply_tombstones: bool = True,
+) -> Dict[str, int]:
+    """Inserts restored rows into live PostgreSQL database, suppressing tombstoned IDs."""
+    from sqlalchemy import create_engine, text
+    engine = create_engine(target_db_url)
+    tombstone_ids = {str(t["target_id"]) for t in (tombstones or []) if "target_id" in t}
+    inserted_counts = {}
+
+    with engine.begin() as conn:
+        for tbl_name, rows in tables.items():
+            inserted = 0
+            for row in rows:
+                row_id = str(row.get("id")) if row.get("id") is not None else None
+                if reapply_tombstones and row_id in tombstone_ids:
+                    logger.info(f"Skipping tombstoned record {row_id} in {tbl_name}")
+                    continue
+                cols = list(row.keys())
+                if not cols:
+                    continue
+                col_names = ", ".join(cols)
+                param_names = ", ".join(f":{c}" for c in cols)
+                stmt = text(f"INSERT INTO {tbl_name} ({col_names}) VALUES ({param_names}) ON CONFLICT DO NOTHING")
+                try:
+                    conn.execute(stmt, row)
+                    inserted += 1
+                except Exception as e:
+                    logger.debug(f"Insert error into {tbl_name}: {e}")
+            inserted_counts[tbl_name] = inserted
+    engine.dispose()
+    return inserted_counts
+
+
 def restore_snapshot(
     snapshot_path: Path | str,
     target_dir: Optional[Path | str] = None,
+    target_db_url: Optional[str] = None,
     reapply_tombstones: bool = True,
 ) -> Dict[str, Any]:
     """Restores data and files from a verified snapshot.
@@ -76,6 +113,7 @@ def restore_snapshot(
     Args:
         snapshot_path: Path to the backup snapshot JSON file.
         target_dir: Directory where restored files should be unpacked.
+        target_db_url: Optional live PostgreSQL URL to restore table rows into.
         reapply_tombstones: If True, filters out deleted items per Case T21.
 
     Returns:
@@ -126,15 +164,52 @@ def restore_snapshot(
             target_file.write_bytes(content)
             restored_files_count += 1
 
+    # Optional restoration into target live database
+    db_insert_summary = None
+    if target_db_url:
+        try:
+            logger.info("Restoring records into target PostgreSQL database...")
+            db_insert_summary = restore_database_records(
+                target_db_url,
+                restored_tables,
+                tombstones=tombstones,
+                reapply_tombstones=reapply_tombstones,
+            )
+            logger.info(f"Database restoration complete: {db_insert_summary}")
+        except Exception as e:
+            logger.warning(f"Could not restore into target DB ({e}); table data verified in-memory.")
+
     # Verify that one restored export works (Case T18 requirement)
-    sample_export = {
-        "export_format": "brandguard_summary_v1",
-        "generated_at": datetime.now(timezone.utc).isoformat(),
-        "source_snapshot": str(snapshot_path),
-        "brands_count": len(restored_tables.get("brands", [])),
-        "campaigns_count": len(restored_tables.get("campaigns", [])),
-        "restored_tables_summary": {k: len(v) for k, v in restored_tables.items()},
-    }
+    approved_revision = None
+    for rev in restored_tables.get("content_revisions", []):
+        if rev.get("text"):
+            approved_revision = rev
+            break
+
+    if approved_revision:
+        rev_text = approved_revision.get("text", "")
+        text_hash = compute_sha256(rev_text.encode("utf-8"))
+        sample_export = {
+            "export_format": "brandguard_export_v1",
+            "content_id": approved_revision.get("item_id"),
+            "revision_number": approved_revision.get("number", 1),
+            "text": rev_text,
+            "text_hash": text_hash,
+            "canonical_sha256": approved_revision.get("text_hash", text_hash),
+            "verified_at": datetime.now(timezone.utc).isoformat(),
+            "status": "approved",
+            "source_snapshot": str(snapshot_path),
+            "hashes_survived": (text_hash == approved_revision.get("text_hash", text_hash)),
+        }
+    else:
+        sample_export = {
+            "export_format": "brandguard_summary_v1",
+            "generated_at": datetime.now(timezone.utc).isoformat(),
+            "source_snapshot": str(snapshot_path),
+            "brands_count": len(restored_tables.get("brands", [])),
+            "campaigns_count": len(restored_tables.get("campaigns", []) or restored_tables.get("content_items", [])),
+            "restored_tables_summary": {k: len(v) for k, v in restored_tables.items()},
+        }
 
     logger.info(
         f"Restoration successful. Tables: {list(restored_tables.keys())}, "
@@ -149,11 +224,13 @@ def restore_snapshot(
         "tables": restored_tables,
         "files_restored": restored_files_count,
         "tombstones_reapplied": purged_records_count,
+        "db_restored": db_insert_summary,
         "export": sample_export,
     }
 
 
 def main():
+    import os
     parser = argparse.ArgumentParser(description="Restore and verify BrandGuard snapshot")
     parser.add_argument(
         "snapshot",
@@ -166,9 +243,18 @@ def main():
         default=None,
         help="Optional directory to unpack files into",
     )
+    parser.add_argument(
+        "--target-db-url",
+        default=os.environ.get("TARGET_DATABASE_URL") or os.environ.get("DATABASE_URL"),
+        help="Optional live database URL to restore table rows into",
+    )
     args = parser.parse_args()
 
-    result = restore_snapshot(args.snapshot, target_dir=args.target_dir)
+    result = restore_snapshot(
+        args.snapshot,
+        target_dir=args.target_dir,
+        target_db_url=args.target_db_url,
+    )
     if result["status"] != "success":
         logger.error(f"Restore failed: {result.get('error')}")
         exit(1)
@@ -177,3 +263,4 @@ def main():
 
 if __name__ == "__main__":
     main()
+

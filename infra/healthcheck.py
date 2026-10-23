@@ -20,12 +20,13 @@ logger = logging.getLogger("brandguard.healthcheck")
 def check_api(url: str, timeout: float = 5.0) -> bool:
     """Checks if the API readiness endpoint returns HTTP 200."""
     try:
-        req = urllib.request.Request(f"{url.rstrip('/')}/api/v1/ready")
+        req = urllib.request.Request(f"{url.rstrip('/')}/api/v1/health/ready")
         with urllib.request.urlopen(req, timeout=timeout) as response:
             return response.status == 200
     except (urllib.error.URLError, TimeoutError, ConnectionRefusedError) as e:
         logger.warning(f"API readiness probe failed: {e}")
         return False
+
 
 
 def check_database(db_url: str) -> bool:

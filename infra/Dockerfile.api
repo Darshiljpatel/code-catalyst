@@ -16,6 +16,7 @@ RUN pip install --no-cache-dir uvicorn fastapi pydantic psycopg[binary] sqlalche
 
 EXPOSE 8000
 
-HEALTHCHECK --interval=5s --timeout=5s --retries=5 CMD curl -f http://localhost:8000/api/v1/ready || exit 1
+HEALTHCHECK --interval=5s --timeout=5s --retries=5 CMD curl -f http://localhost:8000/api/v1/health/ready || exit 1
+
 
 CMD ["uvicorn", "brandguard.main:create_app", "--factory", "--host", "0.0.0.0", "--port", "8000"]

@@ -132,3 +132,80 @@ def test_healthcheck_probe_functionality():
     assert check_api("http://127.0.0.1:59999", timeout=0.1) is False
 
 
+def test_healthcheck_endpoint_is_health_ready():
+    compose_path = Path("infra/compose.yaml")
+    api_df = Path("infra/Dockerfile.api")
+    hc_path = Path("infra/healthcheck.py")
+
+    assert "/api/v1/health/ready" in compose_path.read_text(encoding="utf-8")
+    assert "/api/v1/health/ready" in api_df.read_text(encoding="utf-8")
+    assert "/api/v1/health/ready" in hc_path.read_text(encoding="utf-8")
+
+
+def test_database_dump_and_restore_live(tmp_path):
+    from sqlalchemy import create_engine, text
+    from infra.backup import dump_database_records, extract_tombstones, create_backup
+    from infra.restore import restore_snapshot
+
+    db_path = tmp_path / "test_live.db"
+    db_url = f"sqlite:///{db_path}"
+
+    engine = create_engine(db_url)
+    with engine.begin() as conn:
+        conn.execute(text("CREATE TABLE brands (id TEXT PRIMARY KEY, name TEXT, source_epoch INT)"))
+        conn.execute(text("INSERT INTO brands VALUES ('b-10', 'LumaDesk', 1)"))
+        conn.execute(text("INSERT INTO brands VALUES ('b-deleted', 'ExpiredBrand', 1)"))
+        conn.execute(text("CREATE TABLE content_revisions (id TEXT PRIMARY KEY, item_id TEXT, number INT, text TEXT, text_hash TEXT)"))
+        text_content = "100% verified copy."
+        import hashlib
+        thash = hashlib.sha256(text_content.encode("utf-8")).hexdigest()
+        conn.execute(text(f"INSERT INTO content_revisions VALUES ('r-1', 'item-1', 1, '{text_content}', '{thash}')"))
+        conn.execute(text("CREATE TABLE audit_events (id TEXT PRIMARY KEY, action TEXT, object_id TEXT, created_at TEXT, details TEXT)"))
+        conn.execute(text("INSERT INTO audit_events VALUES ('evt-1', 'retention_purge', 'b-deleted', '2026-10-23T00:00:00Z', '{\"reason\": \"user_data_retention\"}')"))
+    engine.dispose()
+
+    # Dump live database
+    dumped = dump_database_records(db_url)
+    assert len(dumped["brands"]) == 2
+    assert len(dumped["content_revisions"]) == 1
+    assert len(dumped["audit_events"]) == 1
+
+    # Extract deletion tombstones (Case T21)
+    tombstones = extract_tombstones(dumped)
+    assert len(tombstones) == 1
+    assert tombstones[0]["target_id"] == "b-deleted"
+
+    # Snapshot to JSON
+    snapshot_file = tmp_path / "live_snapshot.json"
+    create_backup(output_path=snapshot_file, db_records=dumped, tombstones=tombstones, expiry_days=7)
+
+    # Restore into separate target database
+    target_db_path = tmp_path / "target_live.db"
+    target_db_url = f"sqlite:///{target_db_path}"
+    target_engine = create_engine(target_db_url)
+    with target_engine.begin() as conn:
+        conn.execute(text("CREATE TABLE brands (id TEXT PRIMARY KEY, name TEXT, source_epoch INT)"))
+        conn.execute(text("CREATE TABLE content_revisions (id TEXT PRIMARY KEY, item_id TEXT, number INT, text TEXT, text_hash TEXT)"))
+    target_engine.dispose()
+
+    res = restore_snapshot(snapshot_file, target_db_url=target_db_url, reapply_tombstones=True)
+    assert res["status"] == "success"
+    # b-deleted should be suppressed from live restoration
+    assert res["db_restored"]["brands"] == 1
+    assert res["db_restored"]["content_revisions"] == 1
+
+    # Confirm by querying target live database directly
+    target_verify_engine = create_engine(target_db_url)
+    with target_verify_engine.connect() as conn:
+        brand_ids = [row[0] for row in conn.execute(text("SELECT id FROM brands")).fetchall()]
+        assert "b-10" in brand_ids
+        assert "b-deleted" not in brand_ids
+    target_verify_engine.dispose()
+
+    # Verify that restored approved export works and hashes survived (Case T18)
+    assert res["export"]["export_format"] == "brandguard_export_v1"
+    assert res["export"]["hashes_survived"] is True
+    assert res["export"]["text"] == text_content
+
+
+
