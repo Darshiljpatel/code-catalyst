@@ -22,7 +22,7 @@ S6 inventory at `b5999b2`, 23 October 2026. “Implemented” below identifies c
 | R16, R25 deployment/durability | 4-service Docker Compose (`infra/compose.yaml`), Caddyfile reverse proxy, healthcheck probe (`infra/healthcheck.py`), and durable queue worker | Production DNS binding and final remote HTTPS deployment: Surya + Sanath. |
 | R17 source repository | Work pushed to the named GitHub repository with genuine member history | Signed-out/judge access check and final release SHA/tag: Sanath. |
 
-| R18 updated PDF | Original proposal exists; S6 supplies accurate source material | Darshilkumar assembles/render-checks updated PDF after screenshots/results. |
+| R18 updated PDF | Rendered 8-page updated PDF (`CODE CATALYST.pdf`) with architecture, workflow, embedded screenshots, delta table, verification metrics, and contributions | Completed by Darshilkumar (`scripts/build_submission_pdf.py`); verified and render-checked. |
 | R19–R23 submission records | This table, architecture, change log, improvement scope, contribution ledger and disclosures now drafted | Team confirms actual contributions/licences; final evidence bundle at release SHA. |
 | R24 submission integrity | Build history retained; supplied Round 2 deadline recorded | Confirm organiser updates, inspect form fields, submit final package and retain private confirmation: Sanath. |
 | R26 unaided usability | Working component UI and integrated backend | Fresh-browser independent judge rehearsal and user observations: Darshilkumar + independent teammate. |

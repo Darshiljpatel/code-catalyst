@@ -182,7 +182,30 @@ Completed 23 October 2026. All work is in `tests/e2e/`, `apps/web/`, and `verifi
 
 ## Next
 
-D6: Integrated walkthrough, judge instructions, and submission PDF assembly.
+D6: Integrated walkthrough, judge instructions, and submission PDF assembly (Completed below).
+
+---
+
+# Darshilkumar D6 — Integrated walkthrough, judge instructions & submission PDF assembly
+
+Completed 23 October 2026. All work is in `docs/`, `scripts/`, `docs/screenshots/`, and `CODE CATALYST.pdf`.
+
+## Task ID: D6
+
+## Acceptance evidence
+
+| Criterion | Evidence |
+|---|---|
+| **Comprehensive Judge Walkthrough Guide** | `docs/JUDGE_WALKTHROUGH.md` — complete guide covering quick-start (both Docker Compose and zero-dependency standalone mock mode), seeded role matrix (`manager`, `creator`, `reviewer`), step-by-step 10-minute workflow tour with photographic evidence, keyboard accessibility instructions, and CLI test verification commands. |
+| **High-Resolution Visual Artifacts** | `docs/screenshots/` — 7 high-resolution screenshots capturing live application screens: `01_login_and_auth.png`, `02_brand_sources_and_guidelines.png`, `03_content_intake_and_processing_mode.png`, `04_campaign_workspace_and_findings.png`, `05_human_review_queue.png`, `06_governance_insights_and_audit.png`, `07_lumadesk_guided_demo.png`. |
+| **Automated PDF Generator Script** | `scripts/build_submission_pdf.py` — ReportLab-based compilation script with running headers, footers (`Page X of Y`), clean typography, tables, callouts, and embedded screenshots. |
+| **Updated Round 2 Project PDF** | `CODE CATALYST.pdf` (742 KB, 8 pages) rendered and verified: (1) Executive summary & enterprise problem statement; (2) 4-tier microservice architecture & dual-lock execution model; (3) Working workflow journey with embedded screenshot figures; (4) Feature implementation register & Round 1 deltas (R01–R26); (5) Automated verification results table (133 backend tests, T11, T16, T17, T26, T30, T23 100% precision/recall); (6) Exactly three Round 3 improvements; (7) Contribution ledger & ethical AI disclosures. |
+| **Workstream D Sign-Off** | All 6 workstream D tasks (D1, D2, D3, D4, D5, D6) completed, tested, and verified on `master`. |
+
+## Schema impact
+
+- Zero changes to backend or `contracts/openapi.json`.
+- All documentation and PDF evidence align 100% with committed OpenAPI v0.5.0 contracts.
 
 
 
