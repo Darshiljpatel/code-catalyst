@@ -205,3 +205,25 @@ server revision immutability is covered by existing PostgreSQL workflow tests.
 Next investigation: word-level diff allocates a full quadratic matrix for long
 documents. Bound comparison work while preserving exact before/after text and
 clearly label coarser comparisons for unusually large rewrites.
+
+## Overnight iteration 9: bounded revision comparisons
+
+Word comparison now trims common token prefixes/suffixes before LCS, caps its
+matrix at 250,000 cells, and groups broad rewrites into exact removed/added
+passages when detailed comparison would exceed that budget. A visible notice
+explains passage mode. Both complete versions remain available side by side.
+Backtracking uses append/reverse instead of repeated front insertion, adjacent
+segments are coalesced to reduce DOM nodes, and added/removed word counts are
+calculated from actual text instead of segment count.
+
+Verification: build and lint passed; four focused tests passed (conflict recovery
+plus three comparison cases). Checks reconstruct both exact inputs from diff
+segments across empty strings, Unicode/ZWJ, repeated words, CRLF, tabs, trailing
+spaces and 150 reproducible text combinations. A 10,000-word full rewrite uses
+passage mode; a small end-of-document edit keeps detailed mode. A browser test
+opens a 1,500-word rewrite, checks complete removed/added text, and switches to
+the complete side-by-side versions without losing content.
+
+Next candidate: let creators import a UTF-8 text draft into intake locally, with
+explicit replacement preview and validation, before any network submission.
+Avoid pretending that PDF/image ingestion is implemented by a text importer.
