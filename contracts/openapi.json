@@ -2,7 +2,7 @@
   "openapi": "3.1.0",
   "info": {
     "title": "BrandGuard API",
-    "version": "0.4.0"
+    "version": "0.5.0"
   },
   "paths": {
     "/api/v1/brands": {
@@ -118,6 +118,210 @@
             "content": {
               "application/json": {
                 "schema": {}
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/content": {
+      "get": {
+        "summary": "Content Queue",
+        "operationId": "content_queue_api_v1_content_get",
+        "parameters": [
+          {
+            "name": "limit",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "maximum": 50,
+              "minimum": 1,
+              "default": 20,
+              "title": "Limit"
+            }
+          },
+          {
+            "name": "offset",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "maximum": 10000,
+              "minimum": 0,
+              "default": 0,
+              "title": "Offset"
+            }
+          },
+          {
+            "name": "state",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "enum": [
+                    "draft",
+                    "analysing",
+                    "needs_changes",
+                    "ready_for_review",
+                    "incomplete",
+                    "in_review",
+                    "approved",
+                    "changes_requested"
+                  ],
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "State"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ContentPageOut"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "summary": "Create Content",
+        "operationId": "create_content_api_v1_content_post",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ContentInput"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ContentOut"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/sources/{source_id}/ambiguity-reports": {
+      "post": {
+        "summary": "Report Ambiguity",
+        "operationId": "report_ambiguity_api_v1_sources__source_id__ambiguity_reports_post",
+        "parameters": [
+          {
+            "name": "source_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Source Id"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AmbiguityInput"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AmbiguityOut"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/brands/{brand_id}/insights": {
+      "get": {
+        "summary": "Brand Insights",
+        "operationId": "brand_insights_api_v1_brands__brand_id__insights_get",
+        "parameters": [
+          {
+            "name": "brand_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Brand Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/InsightsOut"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
               }
             }
           }
@@ -815,44 +1019,6 @@
         }
       }
     },
-    "/api/v1/content": {
-      "post": {
-        "summary": "Create Content",
-        "operationId": "create_content_api_v1_content_post",
-        "requestBody": {
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/ContentInput"
-              }
-            }
-          },
-          "required": true
-        },
-        "responses": {
-          "201": {
-            "description": "Successful Response",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ContentOut"
-                }
-              }
-            }
-          },
-          "422": {
-            "description": "Validation Error",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/HTTPValidationError"
-                }
-              }
-            }
-          }
-        }
-      }
-    },
     "/api/v1/content/{item_id}": {
       "get": {
         "summary": "Get Content",
@@ -1080,6 +1246,106 @@
           "rationale"
         ],
         "title": "ActivationInput"
+      },
+      "AmbiguityInput": {
+        "properties": {
+          "rationale": {
+            "type": "string",
+            "maxLength": 4000,
+            "minLength": 20,
+            "title": "Rationale"
+          },
+          "rule_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 100,
+                "minLength": 1
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Rule Id"
+          },
+          "revision_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 36,
+                "minLength": 1
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Revision Id"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "rationale"
+        ],
+        "title": "AmbiguityInput"
+      },
+      "AmbiguityOut": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "title": "Id"
+          },
+          "source_id": {
+            "type": "string",
+            "title": "Source Id"
+          },
+          "actor_id": {
+            "type": "string",
+            "title": "Actor Id"
+          },
+          "rule_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Rule Id"
+          },
+          "revision_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Revision Id"
+          },
+          "rationale": {
+            "type": "string",
+            "title": "Rationale"
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Created At"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "source_id",
+          "actor_id",
+          "rule_id",
+          "revision_id",
+          "rationale",
+          "created_at"
+        ],
+        "title": "AmbiguityOut"
       },
       "AnalysisInput": {
         "properties": {
@@ -1353,6 +1619,17 @@
             "title": "Approval Stale",
             "default": false
           },
+          "latest_run_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Latest Run Id"
+          },
           "state": {
             "type": "string",
             "title": "State"
@@ -1378,6 +1655,103 @@
           "revisions"
         ],
         "title": "ContentOut"
+      },
+      "ContentPageOut": {
+        "properties": {
+          "items": {
+            "items": {
+              "$ref": "#/components/schemas/ContentSummaryOut"
+            },
+            "type": "array",
+            "title": "Items"
+          },
+          "total": {
+            "type": "integer",
+            "title": "Total"
+          },
+          "limit": {
+            "type": "integer",
+            "title": "Limit"
+          },
+          "offset": {
+            "type": "integer",
+            "title": "Offset"
+          }
+        },
+        "type": "object",
+        "required": [
+          "items",
+          "total",
+          "limit",
+          "offset"
+        ],
+        "title": "ContentPageOut"
+      },
+      "ContentSummaryOut": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "title": "Id"
+          },
+          "brand_id": {
+            "type": "string",
+            "title": "Brand Id"
+          },
+          "title": {
+            "type": "string",
+            "title": "Title"
+          },
+          "creator_id": {
+            "type": "string",
+            "title": "Creator Id"
+          },
+          "reviewer_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Reviewer Id"
+          },
+          "current_revision": {
+            "type": "integer",
+            "title": "Current Revision"
+          },
+          "workflow_version": {
+            "type": "integer",
+            "title": "Workflow Version"
+          },
+          "approval_stale": {
+            "type": "boolean",
+            "title": "Approval Stale"
+          },
+          "state": {
+            "type": "string",
+            "title": "State"
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Created At"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "brand_id",
+          "title",
+          "creator_id",
+          "reviewer_id",
+          "current_revision",
+          "workflow_version",
+          "approval_stale",
+          "state",
+          "created_at"
+        ],
+        "title": "ContentSummaryOut"
       },
       "DecisionInput": {
         "properties": {
@@ -1634,6 +2008,62 @@
         },
         "type": "object",
         "title": "HTTPValidationError"
+      },
+      "InsightsOut": {
+        "properties": {
+          "brand_id": {
+            "type": "string",
+            "title": "Brand Id"
+          },
+          "reviewed_items_denominator": {
+            "type": "integer",
+            "title": "Reviewed Items Denominator"
+          },
+          "denominator_definition": {
+            "type": "string",
+            "title": "Denominator Definition"
+          },
+          "confirmed_total": {
+            "type": "integer",
+            "title": "Confirmed Total"
+          },
+          "dismissed_total": {
+            "type": "integer",
+            "title": "Dismissed Total"
+          },
+          "exception_total": {
+            "type": "integer",
+            "title": "Exception Total"
+          },
+          "ambiguous_total": {
+            "type": "integer",
+            "title": "Ambiguous Total"
+          },
+          "ambiguity_definition": {
+            "type": "string",
+            "title": "Ambiguity Definition"
+          },
+          "rules": {
+            "items": {
+              "$ref": "#/components/schemas/RuleInsightOut"
+            },
+            "type": "array",
+            "title": "Rules"
+          }
+        },
+        "type": "object",
+        "required": [
+          "brand_id",
+          "reviewed_items_denominator",
+          "denominator_definition",
+          "confirmed_total",
+          "dismissed_total",
+          "exception_total",
+          "ambiguous_total",
+          "ambiguity_definition",
+          "rules"
+        ],
+        "title": "InsightsOut"
       },
       "Login": {
         "properties": {
@@ -2172,6 +2602,56 @@
           "evidence_quote"
         ],
         "title": "RuleInput"
+      },
+      "RuleInsightOut": {
+        "properties": {
+          "source_key": {
+            "type": "string",
+            "title": "Source Key"
+          },
+          "rule_id": {
+            "type": "string",
+            "title": "Rule Id"
+          },
+          "category": {
+            "type": "string",
+            "title": "Category"
+          },
+          "confirmed_items": {
+            "type": "integer",
+            "title": "Confirmed Items"
+          },
+          "dismissed_items": {
+            "type": "integer",
+            "title": "Dismissed Items"
+          },
+          "exception_items": {
+            "type": "integer",
+            "title": "Exception Items"
+          },
+          "confirmed_per_reviewed_item": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Confirmed Per Reviewed Item"
+          }
+        },
+        "type": "object",
+        "required": [
+          "source_key",
+          "rule_id",
+          "category",
+          "confirmed_items",
+          "dismissed_items",
+          "exception_items",
+          "confirmed_per_reviewed_item"
+        ],
+        "title": "RuleInsightOut"
       },
       "RunOut": {
         "properties": {

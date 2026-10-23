@@ -1,0 +1,143 @@
+"""Translate the real review engine into the backend contract, with bounded execution."""
+import asyncio
+import hashlib
+import json
+import os
+from pathlib import Path
+import sys
+
+CATEGORIES = ('terminology', 'facts_claims', 'visual', 'accessibility')
+ENGINE_VERSION = 'review-engine.p2.s5-bridge.v1'
+MAX_PAYLOAD = 2_000_000
+MAX_RESPONSE = 524_288
+
+
+def failed(code):
+    return dict(checks=[dict(category=c, status='failed', reason=code) for c in CATEGORIES],
+                findings=[], metadata=dict(version=ENGINE_VERSION, error_code=code))
+
+
+def _check_text(payload):
+    from review_engine.extraction import extract
+    from review_engine.deterministic import check
+
+    text, sources = payload['text'], payload['sources']
+    if len(text) > 100_000 or '\r' in text or sum(len(s['rules']) for s in sources) > 1000:
+        return failed('engine_input_limit')
+    # P1 extraction retains LF-normalised text and global Unicode offsets.
+    extraction = extract(text.encode('utf-8'), 'text/plain', {'max_bytes': 400_000})
+    expected_hash = hashlib.sha256(text.encode('utf-8')).hexdigest()
+    if extraction.status != 'complete' or extraction.canonical_sha256 != expected_hash:
+        return failed('canonical_text_mismatch')
+    lookup = {(s['id'], r['id']): (s, r) for s in sources for r in s['rules']}
+    unsupported = set()
+    adapted = []
+    for source in sources:
+        rules = []
+        for rule in source['rules']:
+            if rule['category'] == 'terminology':
+                if rule['kind'] == 'terminology':
+                    rules.append(rule)
+                else:
+                    unsupported.add('terminology')
+            elif rule['category'] == 'facts_claims' and rule['kind'] == 'fact':
+                # P2's implemented structured numeric check is trial duration.
+                # Other structured facts remain visible for human/semantic review.
+                if rule['key'] == 'trial_duration':
+                    rules.append(rule)
+                else:
+                    unsupported.add('facts_claims')
+            elif rule['category']=='facts_claims' and rule['kind']!='claim_policy':
+                unsupported.add('facts_claims')
+        adapted.append(dict(source, rules=rules))
+    results = check(extraction, payload['context'], adapted)
+    checks, findings = [], []
+    for result in results:
+        if result.category not in CATEGORIES:
+            return failed('unexpected_engine_category')
+        status = result.status
+        reason = result.reason or 'Deterministic text rules executed.'
+        if result.category in unsupported:
+            status, reason = 'needs_manual_review', 'Some approved rule kinds are outside the structured checker scope.'
+        if result.category in ('visual', 'accessibility'):
+            status, reason = 'not_applicable', 'Pasted-text revision: no image, font-size or declared colour-pair input. Not an accessibility certification.'
+        checks.append(dict(category=result.category, status=status, reason=reason))
+        for finding in result.findings:
+            entry = lookup.get((finding.source_version_id, finding.rule_id))
+            if entry is None:
+                return failed('engine_invalid_citation')
+            source, rule = entry
+            start, end = finding.location.get('start_char'), finding.location.get('end_char')
+            if type(start) is not int or type(end) is not int or not 0 <= start < end <= len(text):
+                return failed('engine_invalid_location')
+            content_quote = text[start:end]
+            if content_quote != finding.evidence_quote or rule['evidence_quote'] not in source['text']:
+                return failed('engine_invalid_quote')
+            findings.append(dict(category=finding.category, severity=finding.severity,
+                evidence_status=finding.evidence_status, source_version_id=source['id'], rule_id=rule['id'],
+                evidence_quote=rule['evidence_quote'], start=start, end=end, content_quote=content_quote,
+                rationale=finding.rationale, suggested_edit=finding.suggested_edit))
+    if len(findings) > 100:
+        for c in checks:
+            if c['status'] == 'complete':
+                c.update(status='needs_manual_review', reason='Finding display limit reached; inspect remaining content manually.')
+        findings = findings[:100]
+    return dict(checks=checks, findings=findings, metadata=dict(version=ENGINE_VERSION,
+                canonical_sha256=expected_hash, unsupported_categories=sorted(unsupported)))
+
+
+async def check_text(review_input, *, timeout=10):
+    """Async injectable checker. No DB handles or provider secrets enter the child."""
+    from .orchestration import EngineResult
+    payload = json.dumps(dict(text=review_input.text, context=review_input.context,
+                              sources=review_input.sources), ensure_ascii=False).encode('utf-8')
+    if len(payload) > MAX_PAYLOAD:
+        result = failed('engine_input_limit')
+        return EngineResult(**result)
+    root = Path(__file__).resolve().parents[3]
+    env = dict(PATH=os.defpath, PYTHONPATH=os.pathsep.join((str(root/'apps/api'), str(root/'packages'))),
+               PYTHONIOENCODING='utf-8', PYTHONHASHSEED='0')
+    process = None
+    try:
+        async with asyncio.timeout(timeout):
+            process = await asyncio.create_subprocess_exec(sys.executable, '-m', 'brandguard.engine_bridge',
+                '--child', stdin=asyncio.subprocess.PIPE, stdout=asyncio.subprocess.PIPE,
+                stderr=asyncio.subprocess.DEVNULL, env=env)
+            process.stdin.write(payload)
+            await process.stdin.drain()
+            process.stdin.close()
+            body = bytearray()
+            while chunk := await process.stdout.read(8192):
+                body.extend(chunk)
+                if len(body) > MAX_RESPONSE:
+                    raise ValueError('engine_output_limit')
+            if await process.wait() != 0:
+                raise ValueError('engine_process_failed')
+        result = json.loads(body)
+        return EngineResult(**result)
+    except TimeoutError:
+        return EngineResult(**failed('engine_timeout'))
+    except (OSError, ValueError, TypeError, KeyError):
+        return EngineResult(**failed('engine_process_failed'))
+    finally:
+        if process is not None and process.returncode is None:
+            process.kill()
+            await process.wait()
+
+
+def child_main():
+    import resource
+    # Bounds are independent of the parent process; untrusted parser failures cannot hang it.
+    resource.setrlimit(resource.RLIMIT_AS, (384 * 1024 * 1024, 384 * 1024 * 1024))
+    resource.setrlimit(resource.RLIMIT_CPU, (5, 5))
+    resource.setrlimit(resource.RLIMIT_CORE, (0, 0))
+    try:
+        raw = sys.stdin.buffer.read(MAX_PAYLOAD + 1)
+        result = failed('engine_input_limit') if len(raw) > MAX_PAYLOAD else _check_text(json.loads(raw))
+    except Exception:
+        result = failed('engine_process_failed')
+    sys.stdout.write(json.dumps(result, ensure_ascii=False))
+
+
+if __name__ == '__main__':
+    child_main()

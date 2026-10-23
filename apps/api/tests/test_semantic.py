@@ -10,7 +10,7 @@ TEXT='😀 Sign up NOW!!!'
 SOURCES=[dict(id='11111111-1111-1111-1111-111111111111',text='Use calm language.',
     valid_from='2026-01-01T00:00:00+00:00',valid_until=None,
     rules=[dict(id='TONE1',category='tone',kind='guidance',key='calm',value='Use calm language.',evidence_quote='Use calm language.')])]
-FINDING=dict(category='tone',severity='advisory',evidence_status='supported_violation',
+FINDING=dict(
     source_version_id=SOURCES[0]['id'],rule_id='TONE1',evidence_quote='Use calm language.',
     content_quote=TEXT[2:],rationale='The all-caps urgent call conflicts with calm language.',suggested_edit='Start your trial.')
 
@@ -49,8 +49,8 @@ def test_validated_unicode_location_and_minimal_request():
     ({'evidence_quote':'not a quote'},'invalid_quote'),
     ({'content_quote':'does not exist'},'invalid_location'),
     ({'start':9999},'invalid_model_response'),
-    ({'severity':'blocker'},'subjective_blocker'),
-    ({'evidence_status':'contradicted'},'invalid_evidence_status'),
+    ({'severity':'blocker'},'invalid_model_response'),
+    ({'evidence_status':'contradicted'},'invalid_model_response'),
     ({'suggested_edit':'Guarantees 900% growth.'},'unsupported_edit_number'),
 ])
 def test_t08_rejects_untrusted_findings(change,code):
@@ -126,3 +126,21 @@ def test_no_fallback_or_key_redirect():
 def test_repeated_quote_is_rejected_without_guessing():
     result,_=review(text=TEXT+' '+TEXT)
     assert result.metadata['error_code']=='invalid_location' and not result.findings
+
+
+@pytest.mark.parametrize('kind,expected_status', [('fact','contradicted'),('claim_policy','unsupported')])
+def test_policy_classification_is_assigned_by_server(kind,expected_status):
+    quote='The trial lasts 14 days.' if kind=='fact' else 'Performance claims require approved evidence.'
+    text='A 30-day trial.' if kind=='fact' else '10x faster.'
+    sources=copy.deepcopy(SOURCES)
+    sources[0]['text']=quote
+    sources[0]['rules']=[dict(id='F01',category='facts_claims',kind=kind,key='claim',value='14 days',evidence_quote=quote)]
+    f=dict(source_version_id=sources[0]['id'],rule_id='F01',evidence_quote=quote,
+        content_quote=text,rationale='Synthetic rule-classification fixture.',suggested_edit=None)
+    data=response(f)
+    data['choices'][0]['message']['content']=json.dumps(dict(evaluated_categories=['facts_claims'],findings=[f]))
+    result,_=review(data,sources=sources,text=text)
+    assert result.metadata['error_code'] is None
+    assert result.findings[0]['severity']=='blocker'
+    assert result.findings[0]['evidence_status']==expected_status
+    assert result.metadata['classification_policy']=='source_rule.v1'

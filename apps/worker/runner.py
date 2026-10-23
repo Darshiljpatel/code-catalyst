@@ -27,7 +27,7 @@ def get_reviewer():
         config = ProviderConfig.from_env()
         return NebiusReviewer(config)
     except Exception as e:
-        logger.warning(f"Semantic reviewer not configured ({e}). Running deterministic-only mode.")
+        logger.warning("Semantic reviewer configuration invalid (%s). Running deterministic-only mode.", type(e).__name__)
         class DisabledReviewer:
             class Config:
                 model = "disabled"

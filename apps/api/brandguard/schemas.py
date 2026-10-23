@@ -110,6 +110,7 @@ class ContentOut(BaseModel):
     current_revision: int
     workflow_version: int
     approval_stale: bool = False
+    latest_run_id: str | None = None
     state: str
     revisions: list[RevisionOut]
 
@@ -263,3 +264,54 @@ class ReviewRecordOut(BaseModel):
     stale: bool
     evidence: dict
     decisions: list[DecisionOut]
+
+class ContentSummaryOut(BaseModel):
+    id: str
+    brand_id: str
+    title: str
+    creator_id: str
+    reviewer_id: str | None
+    current_revision: int
+    workflow_version: int
+    approval_stale: bool
+    state: str
+    created_at: datetime
+
+class ContentPageOut(BaseModel):
+    items: list[ContentSummaryOut]
+    total: int
+    limit: int
+    offset: int
+
+class AmbiguityInput(RationaleInput):
+    rule_id: str | None = Field(default=None,min_length=1,max_length=100)
+    revision_id: str | None = Field(default=None,min_length=1,max_length=36)
+
+class AmbiguityOut(BaseModel):
+    id: str
+    source_id: str
+    actor_id: str
+    rule_id: str | None
+    revision_id: str | None
+    rationale: str
+    created_at: datetime
+
+class RuleInsightOut(BaseModel):
+    source_key: str
+    rule_id: str
+    category: str
+    confirmed_items: int
+    dismissed_items: int
+    exception_items: int
+    confirmed_per_reviewed_item: float | None
+
+class InsightsOut(BaseModel):
+    brand_id: str
+    reviewed_items_denominator: int
+    denominator_definition: str
+    confirmed_total: int
+    dismissed_total: int
+    exception_total: int
+    ambiguous_total: int
+    ambiguity_definition: str
+    rules: list[RuleInsightOut]

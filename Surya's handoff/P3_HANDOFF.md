@@ -93,3 +93,7 @@ python scripts/verify_plan.py
 # PASS: 26 requirements mapped to 30 cases.
 ```
 
+
+## S5 integration update
+
+The P3 adapter import path now delegates to the shared bounded engine bridge (`brandguard.engine_bridge`), preserving the daemon while consolidating source/quote/location/scope validation. Install `apps/api/requirements.lock` before running the worker; the child uses the repository `packages/review_engine` layout. Unsupported/invalid coverage is explicit, and no invalid finding is silently dropped into a clean result. See `docs/S5_HANDOFF.md` for the current contract, live smoke evidence and remaining release gates.

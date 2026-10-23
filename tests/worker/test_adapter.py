@@ -21,7 +21,7 @@ def test_adapter_all_deterministic_categories_present():
     # Text-only draft should have visual check marked as not_applicable
     visual_check = next(c for c in result.checks if c["category"] == "visual")
     assert visual_check["status"] == "not_applicable"
-    assert "No visual" in visual_check["reason"]
+    assert "no image" in visual_check["reason"]
 
 
 def test_adapter_lumadesk_findings_formatting():
@@ -32,7 +32,7 @@ def test_adapter_lumadesk_findings_formatting():
             "id": "src-uuid-1",
             "source_key": "trial_terms",
             "title": "Approved trial terms",
-            "text": "The trial lasts 14 days. No credit card is required.",
+            "text": "LumaDesk. The trial lasts 14 days. No credit card is required.",
             "rules": [
                 {
                     "id": "F-01",
@@ -89,7 +89,7 @@ def test_adapter_clean_draft_returns_zero_findings():
             "id": "src-uuid-1",
             "source_key": "trial_terms",
             "title": "Approved trial terms",
-            "text": "The trial lasts 14 days. No credit card is required.",
+            "text": "LumaDesk. The trial lasts 14 days. No credit card is required.",
             "rules": [
                 {
                     "id": "F-01",
@@ -117,7 +117,7 @@ def test_adapter_clean_draft_returns_zero_findings():
 
     assert len(result.findings) == 0
     for chk in result.checks:
-        if chk["category"] == "visual":
+        if chk["category"] in ("visual","accessibility"):
             assert chk["status"] == "not_applicable"
         else:
             assert chk["status"] == "complete"
@@ -133,7 +133,7 @@ def test_adapter_passes_orchestration_checked_engine_result():
             "id": "src-uuid-1",
             "source_key": "trial_terms",
             "title": "Approved trial terms",
-            "text": "The trial lasts 14 days. No credit card is required.",
+            "text": "LumaDesk. The trial lasts 14 days. No credit card is required.",
             "rules": [
                 {
                     "id": "F-01",
@@ -193,7 +193,7 @@ def test_adapter_hardened_invariants():
 
     # All findings must resolve cleanly through orchestration's strict validator
     checks, findings = checked_engine_result(result, review_input)
-    assert all(c["status"] == "complete" for c in checks if c["category"] != "visual")
+    assert all(c["status"] == "complete" for c in checks if c["category"] not in ("visual","accessibility"))
     # Finding must have fact evidence_status = "contradicted"
     for f in findings:
         assert f["evidence_status"] == "contradicted"

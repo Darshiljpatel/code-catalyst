@@ -1,0 +1,56 @@
+{
+  "fictional": true,
+  "source": {
+    "source_key": "brand_guide",
+    "title": "LumaDesk synthetic brand rules",
+    "text": "Write LumaDesk. The free trial lasts 14 days. Performance claims require approved evidence. Use calm language.",
+    "valid_from": "2026-10-22T00:00:00Z",
+    "rules": [
+      {
+        "id": "T01",
+        "category": "terminology",
+        "kind": "terminology",
+        "key": "product_name",
+        "value": "LumaDesk",
+        "evidence_quote": "Write LumaDesk."
+      },
+      {
+        "id": "F01",
+        "category": "facts_claims",
+        "kind": "fact",
+        "key": "trial_duration",
+        "value": "14 days",
+        "evidence_quote": "The free trial lasts 14 days."
+      },
+      {
+        "id": "C01",
+        "category": "facts_claims",
+        "kind": "claim_policy",
+        "key": "promotions",
+        "value": "Substantiate performance claims.",
+        "evidence_quote": "Performance claims require approved evidence."
+      },
+      {
+        "id": "G01",
+        "category": "tone",
+        "kind": "guidance",
+        "key": "tone",
+        "value": "Use calm language.",
+        "evidence_quote": "Use calm language."
+      }
+    ]
+  },
+  "draft": "Lumadesk guarantees 10x productivity. Get your 30-day free trial. Sign up NOW!!!",
+  "corrected": "Try LumaDesk free for 14 days. Start your trial.",
+  "context": {
+    "channel": "email",
+    "audience": "Prospective customers",
+    "purpose": "Promote a trial"
+  },
+  "expected": {
+    "terminology": "Lumadesk",
+    "contradiction": "30-day",
+    "unsupported_claim": "10x productivity",
+    "tone": "advisory"
+  }
+}

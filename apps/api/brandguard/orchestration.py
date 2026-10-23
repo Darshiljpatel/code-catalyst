@@ -1,7 +1,7 @@
 """Durable runner boundary for Surya's engine. All completion writes are lease-guarded."""
 import asyncio
 import secrets
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from datetime import datetime, timedelta, timezone
 from typing import Literal
 
@@ -32,6 +32,7 @@ class EngineResult:
     """Injected deterministic engine contract; input/output have no database handles."""
     checks: list[dict]
     findings: list[dict]
+    metadata: dict = field(default_factory=dict)
 
 @dataclass(frozen=True)
 class ClaimedRun:
@@ -51,13 +52,15 @@ def utcnow():
     return datetime.now(timezone.utc)
 
 
-def claim_one(engine):
+def claim_one(engine, *, run_id=None):
     with Session(engine) as db:
         at=utcnow()
-        job=db.scalar(select(Job).where(or_(
+        query=select(Job).where(or_(
             and_(Job.status=='queued',Job.available_at<=at),
             and_(Job.status=='running',Job.lease_expires_at<=at)
-        )).order_by(Job.available_at,Job.id).with_for_update(skip_locked=True).limit(1))
+        ))
+        if run_id is not None:query=query.where(Job.run_id==run_id)
+        job=db.scalar(query.order_by(Job.available_at,Job.id).with_for_update(skip_locked=True).limit(1))
         if job is None:
             return None
         run=db.get(ReviewRun,job.run_id)
@@ -102,7 +105,7 @@ def checked_engine_result(result, review_input):
         raise ModelFailure('duplicate_engine_check')
     if any(c['category'] not in DETERMINISTIC for c in checks):
         raise ModelFailure('unexpected_engine_category')
-    categories=[c['category'] for c in checks if c['status']=='complete']
+    categories=[c['category'] for c in checks if c['status'] in ('complete','needs_manual_review')]
     findings=[EngineFinding.model_validate(f) for f in result.findings]
     if any(f.category not in categories for f in findings):
         raise ModelFailure('engine_finding_without_completed_check')
@@ -131,6 +134,7 @@ async def analyse_claim(engine, claim, reviewer, checker=None):
                 result=await checker(claim.review_input)
                 engine_checks,engine_findings=checked_engine_result(result,claim.review_input)
                 checks.update({c['category']:c for c in engine_checks})
+                metadata['deterministic']=result.metadata
                 findings.extend([dict(f,origin='deterministic') for f in engine_findings])
             except (ValidationError, ModelFailure, ValueError, TypeError, AttributeError):
                 checks={c:dict(category=c,status='failed',reason='invalid_engine_result') for c in DETERMINISTIC}
@@ -147,7 +151,12 @@ async def analyse_claim(engine, claim, reviewer, checker=None):
                 checks[check['category']]=previous
             else:
                 checks[check['category']]=check
-        findings.extend([dict(f,origin='model') for f in semantic.findings])
+        for finding in semantic.findings:
+            duplicate=any(f['category']==finding['category'] and f['rule_id']==finding['rule_id'] and
+                f['source_version_id']==finding['source_version_id'] and
+                f['start']<finding['end'] and finding['start']<f['end'] for f in findings)
+            if not duplicate:
+                findings.append(dict(finding,origin='model'))
         metadata['semantic']=semantic.metadata
     return [checks[c] for c in CATEGORIES],findings,metadata
 
@@ -188,8 +197,8 @@ def finish_claim(engine,claim,checks,findings,metadata):
         return True
 
 
-def process_one(engine,reviewer,checker=None):
-    claim=claim_one(engine)
+def process_one(engine,reviewer,checker=None,*,run_id=None):
+    claim=claim_one(engine,run_id=run_id)
     if claim is None:
         return False
     try:

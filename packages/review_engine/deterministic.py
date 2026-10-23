@@ -1,4 +1,5 @@
 import math
+from decimal import Decimal
 import re
 import uuid
 from typing import Dict, Any, List, Optional, Tuple, Union
@@ -87,7 +88,7 @@ def _check_terminology(extraction: ExtractionResult, rules: List[Dict[str, Any]]
 
             # If forbidden patterns not explicitly listed, check case-insensitive match differing from canonical
             if not forbidden and canonical:
-                regex = re.compile(rf"\b{re.escape(canonical)}\b", re.IGNORECASE)
+                regex = re.compile(rf"(?<!\w){re.escape(canonical)}(?!\w)", re.IGNORECASE)
                 for match in regex.finditer(block.text):
                     if match.group(0) != canonical:
                         start = block.start_char + match.start()
@@ -112,7 +113,7 @@ def _check_terminology(extraction: ExtractionResult, rules: List[Dict[str, Any]]
 
             # Check explicit forbidden patterns with word boundaries
             for pattern in forbidden:
-                regex = re.compile(rf"\b{re.escape(pattern)}\b")
+                regex = re.compile(rf"(?<!\w){re.escape(pattern)}(?!\w)")
                 for match in regex.finditer(block.text):
                     start = block.start_char + match.start()
                     end = block.start_char + match.end()
@@ -182,14 +183,21 @@ def _check_facts(extraction: ExtractionResult, rules: List[Dict[str, Any]]) -> C
             # Specialized check for trial durations if not already caught
             if rule.get("key") == "trial_duration" or "day" in approved_val.lower():
                 # Extract number from approved value e.g. "14" from "14 days" or "14-day"
-                approved_num_match = re.search(r"\b(\d+)\b", approved_val)
+                approved_num_match = re.search(r"\b(\d+(?:\.\d+)?)\b", approved_val)
                 if approved_num_match:
                     approved_num = approved_num_match.group(1)
                     # Find any pattern like "30-day" or "30 days" or "60 day"
-                    duration_regex = re.compile(r"\b(\d+)[-\s]?(?:day|days)\b", re.IGNORECASE)
+                    duration_regex = re.compile(r"(?<![\w.])(\d+(?:\.\d+)?)[-\s]?(?:day|days)\b", re.IGNORECASE)
                     for match in duration_regex.finditer(block.text):
+                        # Bind the duration to its subject, including "30-day free trial"
+                        # and "trial lasts 30 days"; a refund/onboarding duration is unrelated.
+                        before, after = block.text[:match.start()], block.text[match.end():]
+                        trial_after = re.match(r'(?:\s+(?:free|paid|product|software|evaluation))*\s+trial\b', after, re.IGNORECASE)
+                        trial_before = re.search(r'\btrial(?:\s+(?:lasts?|for|of|is|a|period))*\s*[:=]?\s*$', before, re.IGNORECASE)
+                        if not (trial_after or trial_before):
+                            continue
                         found_num = match.group(1)
-                        if found_num != approved_num:
+                        if Decimal(found_num) != Decimal(approved_num):
                             # Avoid duplicate finding if already caught by explicit contradicted list
                             start = block.start_char + match.start()
                             end = block.start_char + match.end()
@@ -306,12 +314,12 @@ def calculate_relative_luminance(rgb_hex: str) -> float:
 
 
 def calculate_contrast_ratio(foreground_hex: str, background_hex: str) -> float:
-    """Computes the WCAG contrast ratio (L1 + 0.05) / (L2 + 0.05) rounded to 2 decimal places."""
+    """Computes the WCAG contrast ratio (L1 + 0.05) / (L2 + 0.05) without rounding before threshold comparison."""
     lum1 = calculate_relative_luminance(foreground_hex)
     lum2 = calculate_relative_luminance(background_hex)
     l_max = max(lum1, lum2)
     l_min = min(lum1, lum2)
-    return round((l_max + 0.05) / (l_min + 0.05), 2)
+    return (l_max + 0.05) / (l_min + 0.05)
 
 
 def _check_contrast_and_accessibility(extraction: ExtractionResult, context: Dict[str, Any]) -> CheckResult:

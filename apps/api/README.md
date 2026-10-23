@@ -1,6 +1,6 @@
-# BrandGuard API — Sanath phases S1–S4
+# BrandGuard API — Sanath phases S1–S5
 
-Implemented: identity/tenant schema, versioned migration, Argon2 credentials, eight-hour opaque hashed sessions, origin + CSRF mutation checks, persistent login throttling, manager-only brand creation and tenant-scoped brand reads. Each identity currently has one role per workspace. S2 adds versioned sources, verified activation, immutable revisions and atomic review-run/job enqueue. See [S2 handoff](../../docs/S2_HANDOFF.md) for the API sequence and worker boundary. S3 adds workspace policy, creator consent, a Nebius adapter and durable runner. See [S3 handoff](../../docs/S3_HANDOFF.md). S4 adds comments, exceptions, explicit manual checks, guarded approval and approved export; see [S4 handoff](../../docs/S4_HANDOFF.md). Real deterministic-engine integration is still pending.
+Implemented: identity/tenant schema, versioned migration, Argon2 credentials, eight-hour opaque hashed sessions, origin + CSRF mutation checks, persistent login throttling, manager-only brand creation and tenant-scoped brand reads. Each identity currently has one role per workspace. S2 adds versioned sources, verified activation, immutable revisions and atomic review-run/job enqueue. See [S2 handoff](../../docs/S2_HANDOFF.md) for the API sequence and worker boundary. S3 adds workspace policy, creator consent, a Nebius adapter and durable runner. See [S3 handoff](../../docs/S3_HANDOFF.md). S4 adds comments, exceptions, explicit manual checks, guarded approval and approved export; see [S4 handoff](../../docs/S4_HANDOFF.md). S5 connects the real text engine and adds scoped queues/insights; see [integration status](../../docs/S5_HANDOFF.md). Full browser/deployment and file-intake work remain pending.
 
 ## Local setup (from repository root)
 
@@ -22,7 +22,7 @@ export PYTHONPATH=apps/api
 
 Seed creates four synthetic identities (`creator`, `manager`, `reviewer`, `admin` at `lumadesk.test`) and prints the workspace ID. It refuses to overwrite existing identities. Supply email, password and that `org_id` to `POST /api/v1/sessions`; browser requests must carry the exact `Origin`. Store returned `csrf_token` in memory and send `X-CSRF-Token` on mutations. Session cookies are HTTP-only, same-site strict and secure outside development. No bearer token or frontend-selected role is accepted. Production requires HTTPS. Keep API and web same-origin behind the future proxy.
 
-Frontend contract: `contracts/openapi.json`. Published endpoints cover sessions, `/me`, brands, source curation, content revisions, review runs/findings, processing policy, comments/resolutions, human checks, submission, decisions, export and health. Health readiness validates the S4 migration and explicitly excludes a worker. No migrations run implicitly at server startup.
+Frontend contract: `contracts/openapi.json`. Published endpoints cover sessions, `/me`, brands, source curation, content revisions, review runs/findings, processing policy, comments/resolutions, human checks, submission, decisions, export, queues, insights and health. Health readiness validates the S4 migration and explicitly excludes a worker. No migrations run implicitly at server startup.
 
 ```bash
 # Create a separate UTF-8 database named brandguard_s1_test and migrate it first.

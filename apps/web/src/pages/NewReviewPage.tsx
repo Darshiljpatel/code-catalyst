@@ -2,12 +2,13 @@ import React from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import {
   getBrands,
+  getReviewers,
   getProcessingPolicy,
   createContent,
   startAnalysis,
   ApiResponseError,
 } from '../api/client';
-import type { Brand, PolicyOut } from '../api/types';
+import type { Brand, PolicyOut, ReviewerOut } from '../api/types';
 import { FIXTURE_LUMADESK_DRAFT_TEXT } from '../api/fixtures';
 import { Alert, Spinner, ProcessingMode } from '../components/Primitives';
 
@@ -28,6 +29,7 @@ export function NewReviewPage() {
   const [audience, setAudience] = React.useState('SMB prospective customers');
   const [purpose, setPurpose] = React.useState('Acquisition and free trial signup');
   const [reviewerId, setReviewerId] = React.useState('');
+  const [reviewers, setReviewers] = React.useState<ReviewerOut[]>([]);
   const [text, setText] = React.useState(FIXTURE_LUMADESK_DRAFT_TEXT);
 
   // Consent
@@ -35,8 +37,9 @@ export function NewReviewPage() {
 
   React.useEffect(() => {
     setLoading(true);
-    Promise.all([getBrands(), getProcessingPolicy().catch(() => null)])
-      .then(([bList, p]) => {
+    Promise.all([getBrands(), getProcessingPolicy().catch(() => null), getReviewers()])
+      .then(([bList, p, availableReviewers]) => {
+        setReviewers(availableReviewers);
         setBrands(bList);
         setPolicy(p);
         const preselected = (location.state as any)?.brandId;
@@ -76,7 +79,7 @@ export function NewReviewPage() {
       const content = await createContent({
         brand_id: brandId,
         title: title.trim(),
-        text: text.trim(),
+        text,
         channel: channel.trim(),
         audience: audience.trim(),
         purpose: purpose.trim(),
@@ -165,7 +168,7 @@ export function NewReviewPage() {
             </div>
           ) : (
             <p style={{ fontSize: '0.8125rem', color: 'var(--text-muted)', margin: 0 }}>
-              Local deterministic checking only. Terminology, structured facts, visual, and accessibility rules are verified against active guidelines. Semantic processing is currently disabled by administrator policy.
+              Local checks run for supported content and rules. Semantic checks remain unavailable until external processing is enabled and consented to. Review results show the coverage of each check.
             </p>
           )}
         </div>
@@ -258,16 +261,18 @@ export function NewReviewPage() {
 
           <div className="form-group" style={{ marginBottom: 'var(--space-5)' }}>
             <label htmlFor="txt-reviewer" className="form-label">
-              Assigned Reviewer Membership ID <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>(Optional)</span>
+              Assigned reviewer <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>(Optional)</span>
             </label>
-            <input
+            <select
               id="txt-reviewer"
-              type="text"
               className="input"
               value={reviewerId}
               onChange={e => setReviewerId(e.target.value)}
-              placeholder="UUID or membership identifier of a separate reviewer"
-            />
+            >
+              <option value="">Assign later</option>
+              {reviewers.map(reviewer => <option key={reviewer.id} value={reviewer.id}>{reviewer.email}</option>)}
+            </select>
+            {reviewers.length === 0 && <p className="form-hint">A workspace administrator must add a separate reviewer before approval.</p>}
           </div>
 
           <div className="form-group" style={{ marginBottom: 'var(--space-6)' }}>

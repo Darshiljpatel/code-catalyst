@@ -11,7 +11,7 @@ from typing import Literal
 import httpx
 from pydantic import BaseModel, ConfigDict, Field, ValidationError
 
-PROMPT_VERSION = 'brandguard.semantic.v2'
+PROMPT_VERSION = 'brandguard.semantic.v4'
 SEMANTIC_CATEGORIES = ('tone', 'messaging', 'facts_claims')
 NEBIUS_BASE_URL = 'https://api.tokenfactory.nebius.com/v1/'
 PRIMARY_MODEL = 'Qwen/Qwen3-235B-A22B-Instruct-2507'
@@ -25,6 +25,17 @@ enough surrounding context to make it unique. Do not output offsets: the server 
 rule evidence_quote. A missing supporting fact is not proof a claim is false. Under a
 claim_policy rule mark an unsubstantiated promotional claim unsupported. A fact rule may
 support contradicted only if it actually contradicts the draft. Tone/messaging are advisory.
+CRITICAL: findings contains ONLY actual violations, NOT one assessment for every rule.
+If content satisfies a rule, omit it from findings. If a rule does not apply, omit it.
+A source-backed correct fact is NEVER a finding. No performance claim means no finding
+under a performance-claim policy. Neutral calls to action are not pressure by themselves.
+For a clean draft the exact form is {"evaluated_categories": [the requested categories], "findings": []}.
+Never return a finding whose rationale says "matches", "does not apply", "no violation"
+or "no substantiation required". A clean draft should produce findings: [].
+For fact rules, report only an actual contradiction. For claim-policy rules, report only
+an actual promotional claim lacking evidence. The SERVER assigns category, severity and
+evidence status from the cited approved rule. DO NOT output those classification fields.
+Before returning each finding, verify its rationale demonstrates a breach; otherwise omit it.
 Preserve purpose, never introduce factual claims; suggested_edit may be null. Suggestions
 are for human review. If unsure whether a rule applies, do not invent a violation.'''
 
@@ -77,10 +88,21 @@ class LocatedFinding(ModelFinding):
     end: int = Field(gt=0)
 
 
+class ProposedFinding(BaseModel):
+    """The model proposes evidence; policy classification stays server-owned."""
+    model_config = ConfigDict(extra='forbid', strict=True)
+    source_version_id: str = Field(min_length=1,max_length=36)
+    rule_id: str = Field(min_length=1,max_length=100)
+    evidence_quote: str = Field(min_length=1,max_length=4000)
+    content_quote: str = Field(min_length=1,max_length=4000)
+    rationale: str = Field(min_length=1,max_length=2000)
+    suggested_edit: str | None = Field(max_length=4000)
+
+
 class ModelOutput(BaseModel):
     model_config = ConfigDict(extra='forbid', strict=True)
     evaluated_categories: list[Literal['tone', 'messaging', 'facts_claims']] = Field(max_length=3)
-    findings: list[ModelFinding] = Field(max_length=30)
+    findings: list[ProposedFinding] = Field(max_length=30, description='Actual violations only. Return [] for compliant copy. Never include passing or not-applicable rule assessments.')
 
 
 @dataclass
@@ -120,7 +142,18 @@ def validate_findings(output, text, rules, categories):
     located = []
     for finding in output.findings:
         rule = lookup.get((finding.source_version_id, finding.rule_id))
-        if rule is None or rule['category'] != finding.category:
+        if rule is None:
+            raise ModelFailure('invalid_citation')
+        if isinstance(finding,ProposedFinding):
+            category=rule['category']
+            if category in ('tone','messaging') and rule['kind']=='guidance':
+                severity,evidence='advisory','supported_violation'
+            elif category=='facts_claims' and rule['kind'] in ('fact','claim_policy'):
+                severity,evidence='blocker','contradicted' if rule['kind']=='fact' else 'unsupported'
+            else:
+                raise ModelFailure('invalid_rule_configuration')
+            finding=ModelFinding(**finding.model_dump(),category=category,severity=severity,evidence_status=evidence)
+        if rule['category']!=finding.category:
             raise ModelFailure('invalid_citation')
         if finding.evidence_quote != rule['evidence_quote']:
             raise ModelFailure('invalid_quote')
@@ -135,6 +168,8 @@ def validate_findings(output, text, rules, categories):
             raise ModelFailure('invalid_location')
         if finding.category in ('tone', 'messaging') and finding.severity != 'advisory':
             raise ModelFailure('subjective_blocker')
+        if rule['kind']=='fact' and finding.evidence_status!='contradicted':
+            raise ModelFailure('invalid_evidence_status')
         if finding.evidence_status == 'unsupported' and rule['kind'] != 'claim_policy':
             raise ModelFailure('invalid_evidence_status')
         if finding.evidence_status == 'contradicted' and rule['kind'] != 'fact':
@@ -159,7 +194,7 @@ class NebiusReviewer:
     async def review(self, text, context, sources, *, consent, remaining_seconds=60):
         started = time.monotonic()
         metadata = dict(provider='nebius', requested_model=self.config.model, returned_model=None,
-                        prompt_version=PROMPT_VERSION, location_method='exact_unique_quote', output_limit=self.config.max_output_tokens,
+                        prompt_version=PROMPT_VERSION, location_method='exact_unique_quote', classification_policy='source_rule.v1', output_limit=self.config.max_output_tokens,
                         usage=None, error_code=None)
         categories = []
         try:

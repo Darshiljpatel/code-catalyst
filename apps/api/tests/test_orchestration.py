@@ -6,7 +6,7 @@ import pytest
 from sqlalchemy import select, update, func
 from sqlalchemy.orm import Session
 from test_identity import setup,login
-from test_review import brand,source,activate,content,count
+from test_review import brand,source,source_body,activate,content,count
 from brandguard.models import Finding,Job,ReviewRun,ContentItem,AuditEvent
 from brandguard.orchestration import (process_one,claim_one,analyse_claim,finish_claim,
                                       EngineResult,utcnow,DETERMINISTIC)
@@ -21,7 +21,10 @@ def policy(c,orgs,enabled=True,version=0):
 
 def prepared(setup,enable=True,consent=True):
     c,engine,orgs,_=setup
-    bid,mh=brand(c,orgs);s=source(c,bid,mh);activate(c,s['id'],mh)
+    bid,mh=brand(c,orgs)
+    body=source_body();body['text']+=' Use calm language.'
+    body['rules'].append(dict(id='G01',category='tone',kind='guidance',key='tone',value='Use calm language.',evidence_quote='Use calm language.'))
+    s=c.post(f'/api/v1/brands/{bid}/sources',json=body,headers=mh).json();activate(c,s['id'],mh)
     if enable:assert policy(c,orgs).status_code==200
     item,ch=content(c,orgs,bid)
     r=c.post(f"/api/v1/revisions/{item['revisions'][0]['id']}/analysis",
@@ -34,13 +37,15 @@ def reviewer(calls=None,malformed=False):
     async def handle(request):
         if calls is not None:calls.append(request)
         payload=json.loads(json.loads(request.content)['messages'][1]['content'])
-        f=dict(category='facts_claims',severity='warning',evidence_status='contradicted',
-            source_version_id=payload['rules'][0]['source_version_id'],rule_id='F01',
-            evidence_quote='The trial lasts 14 days.',
-            content_quote=payload['text'],rationale='Synthetic adapter integration fixture.',suggested_edit=None)
+        guidance=next((r for r in payload['rules'] if r['kind']=='guidance'),None)
+        findings=[]
+        if guidance:
+            findings.append(dict(source_version_id=guidance['source_version_id'],rule_id=guidance['id'],
+                evidence_quote=guidance['evidence_quote'],content_quote=payload['text'],
+                rationale='Synthetic adapter integration fixture, not a quality assessment.',suggested_edit=None))
         return httpx.Response(200,json=dict(model=PRIMARY_MODEL,usage=dict(total_tokens=100),
             choices=[dict(finish_reason='stop',message=dict(role='assistant',content='{' if malformed else
-                json.dumps(dict(evaluated_categories=payload['categories'],findings=[f]))))]))
+                json.dumps(dict(evaluated_categories=payload['categories'],findings=findings))))]))
     return NebiusReviewer(ProviderConfig(api_key='synthetic-key'),httpx.MockTransport(handle))
 
 async def checker(review_input):

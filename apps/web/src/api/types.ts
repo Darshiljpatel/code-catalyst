@@ -176,6 +176,7 @@ export interface RevisionOut {
 }
 
 export interface ContentOut {
+  latest_run_id?: string | null;
   id: string;
   brand_id: string;
   title: string;
@@ -335,4 +336,11 @@ export interface ExportRecord {
   decision: Decision;
   source_epoch: number;
   exported_at: string;
+}
+
+/** S4 reviewer discovery: scoped membership labels for assignment. */
+export interface ReviewerOut {
+  id: string;
+  user_id: string;
+  email: string;
 }

@@ -16,8 +16,10 @@ def now():
     return datetime.now(timezone.utc)
 
 def audit(session, member, action, object_id, **details):
-    session.add(AuditEvent(org_id=member.org_id, actor_id=member.id, action=action,
-                          object_id=object_id, details=details, created_at=now()))
+    event=AuditEvent(org_id=member.org_id, actor_id=member.id, action=action,
+                     object_id=object_id, details=details, created_at=now())
+    session.add(event)
+    return event
 
 def brand_for(session, member, brand_id, lock=False):
     query = select(Brand).where(Brand.org_id == member.org_id, Brand.id == brand_id)
@@ -48,21 +50,29 @@ def eligible_sources(session, member, brand_id, at):
         or_(SourceVersion.valid_until.is_(None), SourceVersion.valid_until > at),
     ).order_by(SourceVersion.id)))
 
+def approval_is_stale(session,item):
+    if item.state!='approved':return False
+    revision_id=session.scalar(select(ContentRevision.id).where(ContentRevision.org_id==item.org_id,
+        ContentRevision.item_id==item.id,ContentRevision.number==item.current_revision))
+    latest=session.scalar(select(ReviewRun).where(ReviewRun.org_id==item.org_id,
+        ReviewRun.revision_id==revision_id).order_by(ReviewRun.created_at.desc(),ReviewRun.id.desc()).limit(1))
+    brand=session.get(Brand,item.brand_id)
+    at=now()
+    active=set(session.scalars(select(SourceVersion.id).where(SourceVersion.org_id==item.org_id,
+        SourceVersion.brand_id==item.brand_id,SourceVersion.state=='active',SourceVersion.valid_from<=at,
+        or_(SourceVersion.valid_until.is_(None),SourceVersion.valid_until>at))))
+    return latest is None or brand.source_epoch!=latest.source_epoch or active!={s['id'] for s in latest.source_snapshot}
+
+
 def content_out(session, item):
     revisions = list(session.scalars(select(ContentRevision).where(
         ContentRevision.org_id == item.org_id, ContentRevision.item_id == item.id
     ).order_by(ContentRevision.number)))
-    approval_stale=False
-    if item.state=='approved':
-        current=next((r for r in revisions if r.number==item.current_revision),None)
-        latest=session.scalar(select(ReviewRun).where(ReviewRun.org_id==item.org_id,
-            ReviewRun.revision_id==current.id).order_by(ReviewRun.created_at.desc(),ReviewRun.id.desc()).limit(1)) if current else None
-        brand=session.get(Brand,item.brand_id)
-        active=set(s.id for s in eligible_sources(session,item,item.brand_id,now()))
-        approval_stale=(latest is None or brand.source_epoch!=latest.source_epoch or
-                        active!={s['id'] for s in latest.source_snapshot})
+    current=next((r for r in revisions if r.number==item.current_revision),None)
+    latest_run_id=session.scalar(select(ReviewRun.id).where(ReviewRun.org_id==item.org_id,
+        ReviewRun.revision_id==current.id).order_by(ReviewRun.created_at.desc(),ReviewRun.id.desc()).limit(1)) if current else None
     return ContentOut(id=item.id, brand_id=item.brand_id, title=item.title, creator_id=item.creator_id,
-                      reviewer_id=item.reviewer_id, current_revision=item.current_revision, workflow_version=item.workflow_version, approval_stale=approval_stale, state=item.state,
+                      reviewer_id=item.reviewer_id, current_revision=item.current_revision, workflow_version=item.workflow_version, latest_run_id=latest_run_id, approval_stale=approval_is_stale(session,item), state=item.state,
                       revisions=[RevisionOut.model_validate(r) for r in revisions])
 
 def run_out(session, member, run, revision, item):

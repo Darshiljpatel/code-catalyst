@@ -28,6 +28,7 @@ import type {
   RunOut,
   PolicyOut,
   PolicyInput,
+  ReviewerOut,
   ApiError,
 } from './types';
 
@@ -233,4 +234,8 @@ export async function getLive(): Promise<LiveResponse> {
 
 export async function getReady(): Promise<ReadyResponse> {
   return request<ReadyResponse>('GET', '/health/ready');
+}
+
+export async function getReviewers(): Promise<ReviewerOut[]> {
+  return request<ReviewerOut[]>('GET', '/reviewers');
 }

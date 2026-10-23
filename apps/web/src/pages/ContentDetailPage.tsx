@@ -2,6 +2,7 @@ import React from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import {
   getContent,
+  getRun,
   createRevision,
   startAnalysis,
   getProcessingPolicy,
@@ -21,7 +22,6 @@ import {
   CheckStatusChip,
   ProcessingMode,
 } from '../components/Primitives';
-import { FIXTURE_FINDINGS, FIXTURE_REVIEW_RUN } from '../api/fixtures';
 
 export function ContentDetailPage() {
   const { contentId } = useParams<{ contentId: string }>();
@@ -60,6 +60,7 @@ export function ContentDetailPage() {
       ]);
       setContent(item);
       setPolicy(pol);
+      setRun(item.latest_run_id ? await getRun(item.latest_run_id) : null);
       if (item.revisions && item.revisions.length > 0) {
         const latestIdx = item.revisions.length - 1;
         setSelectedRevIndex(latestIdx);
@@ -87,6 +88,7 @@ export function ContentDetailPage() {
   const handleSelectRevision = (index: number) => {
     if (!content) return;
     setSelectedRevIndex(index);
+    setRun(null);
     const rev = content.revisions[index];
     if (rev) {
       setDraftText(rev.text);
@@ -108,7 +110,7 @@ export function ContentDetailPage() {
     try {
       const updated = await createRevision(content.id, {
         parent_revision_id: currentRevision.id,
-        text: draftText.trim(),
+        text: draftText,
         channel: draftChannel.trim(),
         audience: draftAudience.trim(),
         purpose: draftPurpose.trim(),
@@ -116,6 +118,7 @@ export function ContentDetailPage() {
       setContent(updated);
       const newLatestIdx = updated.revisions.length - 1;
       setSelectedRevIndex(newLatestIdx);
+      setRun(null);
       setIsEditing(false);
     } catch (err) {
       if (err instanceof ApiResponseError && err.status === 409) {
@@ -146,30 +149,56 @@ export function ContentDetailPage() {
       );
       setRun(newRun);
     } catch (err) {
-      // In dev mock fallback if backend not running
-      setRun({
-        ...FIXTURE_REVIEW_RUN,
-        revision_id: currentRevision.id,
-        findings: FIXTURE_FINDINGS,
-      });
+      setError(err instanceof ApiResponseError ? err.body.message : 'Analysis request failed. Your draft is saved; retry when the service is available.');
     } finally {
       setAnalysing(false);
     }
   };
 
+  React.useEffect(() => {
+    if (!run || !['queued', 'running'].includes(run.status)) return;
+    let cancelled = false;
+    let timer: ReturnType<typeof setTimeout> | undefined;
+    let attempts = 0;
+    setAnalysing(true);
+    const poll = async () => {
+      try {
+        const updated = await getRun(run.id);
+        if (cancelled) return;
+        setRun(updated);
+        if (['queued', 'running'].includes(updated.status)) {
+          if (++attempts < 40) timer = setTimeout(poll, 1500);
+          else {
+            setAnalysing(false);
+            setError('Analysis is still pending. The worker may be unavailable; reload to check its status.');
+          }
+        } else {
+          setAnalysing(false);
+          if (contentId) { const updatedContent = await getContent(contentId); if (!cancelled) setContent(updatedContent); }
+        }
+      } catch (err) {
+        if (!cancelled) {
+          setAnalysing(false);
+          setError(err instanceof ApiResponseError ? err.body.message : 'Could not retrieve analysis results. No successful review is assumed.');
+        }
+      }
+    };
+    timer = setTimeout(poll, 500);
+    return () => { cancelled = true; if (timer) clearTimeout(timer); };
+  }, [run?.id, run?.status, contentId]);
+
   const applySuggestedEdit = (finding: FindingOut) => {
-    if (!finding.suggested_edit) return;
-    setIsEditing(true);
-    // If quote is known, replace first occurrence
-    if (finding.evidence_quote && draftText.includes(finding.evidence_quote)) {
-      setDraftText(draftText.replace(finding.evidence_quote, finding.suggested_edit));
-    } else if (finding.location?.start !== undefined && finding.location?.end !== undefined) {
-      const before = draftText.slice(0, finding.location.start);
-      const after = draftText.slice(finding.location.end);
-      setDraftText(before + finding.suggested_edit + after);
-    } else {
-      setDraftText(prev => prev + '\n' + finding.suggested_edit);
+    if (!finding.suggested_edit || !currentRevision) return;
+    const start = finding.location?.start;
+    const end = finding.location?.end;
+    const points = Array.from(draftText);
+    if (draftText !== currentRevision.text || typeof start !== 'number' || typeof end !== 'number' ||
+        start < 0 || end <= start || end > points.length) {
+      setConflictError('Reload the analysed revision before applying this suggestion. Your edits are preserved.');
+      return;
     }
+    setIsEditing(true);
+    setDraftText(points.slice(0, start).join('') + finding.suggested_edit + points.slice(end).join(''));
   };
 
   if (loading) {

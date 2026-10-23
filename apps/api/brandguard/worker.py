@@ -7,6 +7,7 @@ from dotenv import load_dotenv
 from sqlalchemy import create_engine
 from .semantic import NebiusReviewer, ProviderConfig
 from .orchestration import process_one
+from .engine_bridge import check_text
 
 
 def main():
@@ -18,7 +19,7 @@ def main():
     reviewer=NebiusReviewer(ProviderConfig.from_env())
     try:
         while True:
-            processed=process_one(engine,reviewer)
+            processed=process_one(engine,reviewer,check_text)
             if args.once:
                 break
             if not processed:

@@ -326,3 +326,19 @@ def test_clean_draft_produces_zero_findings_with_complete_status():
     for r in results:
         assert r.status in ("complete", "not_applicable")
         assert len(r.findings) == 0
+
+
+def test_contrast_is_not_rounded_up_before_threshold_comparison(monkeypatch):
+    import review_engine.deterministic as engine
+    # An exact ratio of 4.499 must fail 4.5, even though a UI rounds it to 4.50.
+    monkeypatch.setattr(engine,'calculate_relative_luminance',lambda color:0.17495 if color=='foreground' else 0.0)
+    assert engine.calculate_contrast_ratio('foreground','background')==pytest.approx(4.499)
+    assert engine.calculate_contrast_ratio('foreground','background')<4.5
+
+
+@pytest.mark.parametrize('duration',['014','14.0'])
+def test_equivalent_numeric_trial_duration_is_not_a_contradiction(duration):
+    extraction=extract(f'LumaDesk offers a {duration}-day trial.'.encode(),'text/plain',{})
+    result=check(extraction,{},dict(rules=[dict(id='F01',category='facts_claims',kind='fact',
+        key='trial_duration',value='14 days')]))
+    assert next(c for c in result if c.category=='facts_claims').findings==[]

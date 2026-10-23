@@ -23,7 +23,7 @@ def create_app(settings=None, provider_config=None):
     async def lifespan(app):
         yield
         engine.dispose()
-    app = FastAPI(title='BrandGuard API', version='0.4.0', lifespan=lifespan)
+    app = FastAPI(title='BrandGuard API', version='0.5.0', lifespan=lifespan)
     app.state.engine = engine
     app.state.settings = settings
     app.state.provider_config = provider_config or ProviderConfig()
@@ -67,7 +67,7 @@ def create_app(settings=None, provider_config=None):
 
     @app.get('/api/v1/health/live')
     def live():
-        return {'status': 'live', 'phase': 'S4'}
+        return {'status': 'live', 'phase': 'S5'}
 
     @app.get('/api/v1/health/ready')
     def ready(session: Session = Depends(db)):
@@ -77,11 +77,13 @@ def create_app(settings=None, provider_config=None):
                 raise ValueError('Unexpected schema')
         except Exception:
             raise Problem(503, 'not_ready', 'Database schema is not ready.')
-        return {'status': 'ready', 'scope': 'S4 API/schema only; check worker process separately'}
+        return {'status': 'ready', 'scope': 'S5 API/schema only; check worker process separately'}
 
     from .review import router as review_router
     from .policy import router as policy_router
     from .workflow import router as workflow_router
+    from .governance import router as governance_router
+    app.include_router(governance_router)
     app.include_router(workflow_router)
     app.include_router(policy_router)
     app.include_router(auth_router)
