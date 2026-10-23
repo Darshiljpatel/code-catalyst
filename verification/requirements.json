@@ -1,0 +1,294 @@
+[
+  {
+    "id": "R01",
+    "source": "PS",
+    "requirement": "Approved guidelines, facts and assets",
+    "owner": "Sanath",
+    "tests": [
+      "T28",
+      "T05"
+    ],
+    "evidence": "Source lifecycle demonstration"
+  },
+  {
+    "id": "R02",
+    "source": "PS",
+    "requirement": "Review multiple content formats",
+    "owner": "Surya",
+    "tests": [
+      "T09",
+      "T10",
+      "T30"
+    ],
+    "evidence": "Supported-format table and fixture results"
+  },
+  {
+    "id": "R03",
+    "source": "PS",
+    "requirement": "Tone, terminology, messaging, claims, visual and accessibility findings",
+    "owner": "Surya",
+    "tests": [
+      "T05",
+      "T06",
+      "T07",
+      "T10"
+    ],
+    "evidence": "Category-specific results and limitations"
+  },
+  {
+    "id": "R04",
+    "source": "PS",
+    "requirement": "Explain issues and link approved sources",
+    "owner": "Sanath",
+    "tests": [
+      "T06",
+      "T08",
+      "T11"
+    ],
+    "evidence": "Evidence drawer and validated citations"
+  },
+  {
+    "id": "R05",
+    "source": "PS",
+    "requirement": "Suggestions preserve purpose and human control",
+    "owner": "Darshilkumar",
+    "tests": [
+      "T07",
+      "T12"
+    ],
+    "evidence": "Editable correction walkthrough"
+  },
+  {
+    "id": "R06",
+    "source": "PS",
+    "requirement": "Comments, approval, revisions and roles",
+    "owner": "Sanath",
+    "tests": [
+      "T02",
+      "T03",
+      "T12",
+      "T13"
+    ],
+    "evidence": "Decision and revision records"
+  },
+  {
+    "id": "R07",
+    "source": "PS",
+    "requirement": "Repeated mistakes and unclear guidelines",
+    "owner": "Darshilkumar",
+    "tests": [
+      "T17"
+    ],
+    "evidence": "Real-data insight counts"
+  },
+  {
+    "id": "R08",
+    "source": "PS",
+    "requirement": "Confidentiality and external AI disclosure",
+    "owner": "Sanath",
+    "tests": [
+      "T01",
+      "T20",
+      "T21",
+      "T22",
+      "T29"
+    ],
+    "evidence": "Processing/privacy/security statement"
+  },
+  {
+    "id": "R09",
+    "source": "PDF-p3",
+    "requirement": "Bounded visual checks and honest uncertainty",
+    "owner": "Surya",
+    "tests": [
+      "T10"
+    ],
+    "evidence": "Asset/contrast checks with manual boundaries"
+  },
+  {
+    "id": "R10",
+    "source": "PDF-p5",
+    "requirement": "Source snapshot and exact revision approval",
+    "owner": "Sanath",
+    "tests": [
+      "T03",
+      "T04"
+    ],
+    "evidence": "Concurrent approval/source-change tests"
+  },
+  {
+    "id": "R11",
+    "source": "PDF-p6",
+    "requirement": "Incomplete failures and prompt injection handling",
+    "owner": "Sanath",
+    "tests": [
+      "T08",
+      "T15",
+      "T22"
+    ],
+    "evidence": "Fault-injection report"
+  },
+  {
+    "id": "R12",
+    "source": "PDF-p6",
+    "requirement": "Retention, deletion and private storage",
+    "owner": "Surya",
+    "tests": [
+      "T19",
+      "T21",
+      "T29"
+    ],
+    "evidence": "Deletion and storage evidence"
+  },
+  {
+    "id": "R13",
+    "source": "PDF-p6",
+    "requirement": "Keyboard accessibility and proportionate feedback",
+    "owner": "Darshilkumar",
+    "tests": [
+      "T07",
+      "T16"
+    ],
+    "evidence": "Accessibility observations and fixes"
+  },
+  {
+    "id": "R14",
+    "source": "PDF-p7",
+    "requirement": "Synthetic evaluation and quality targets",
+    "owner": "Surya",
+    "tests": [
+      "T23",
+      "T25"
+    ],
+    "evidence": "Actual evaluation sample, metrics and deviations"
+  },
+  {
+    "id": "R15",
+    "source": "PDF-p2",
+    "requirement": "Research and user value validation",
+    "owner": "Darshilkumar",
+    "tests": [
+      "T24"
+    ],
+    "evidence": "Honest feedback log; longer study status"
+  },
+  {
+    "id": "R16",
+    "source": "R2",
+    "requirement": "Working project link and functional core journey",
+    "owner": "Surya",
+    "tests": [
+      "T11",
+      "T19"
+    ],
+    "evidence": "Judge URL and fresh-browser result"
+  },
+  {
+    "id": "R17",
+    "source": "R2",
+    "requirement": "Accessible source-code repository",
+    "owner": "Sanath",
+    "tests": [
+      "T27"
+    ],
+    "evidence": "Repository access evidence"
+  },
+  {
+    "id": "R18",
+    "source": "R2",
+    "requirement": "Updated project PDF",
+    "owner": "Darshilkumar",
+    "tests": [
+      "T27"
+    ],
+    "evidence": "Rendered updated PDF"
+  },
+  {
+    "id": "R19",
+    "source": "R2",
+    "requirement": "Completed-feature list",
+    "owner": "Sanath",
+    "tests": [
+      "T27"
+    ],
+    "evidence": "Implemented/partial/deferred feature table"
+  },
+  {
+    "id": "R20",
+    "source": "R2",
+    "requirement": "Technology and implementation details",
+    "owner": "Surya",
+    "tests": [
+      "T26",
+      "T27",
+      "T29"
+    ],
+    "evidence": "Architecture and exact dependency/API/model ledger"
+  },
+  {
+    "id": "R21",
+    "source": "R2",
+    "requirement": "Changes from original plan",
+    "owner": "Sanath",
+    "tests": [
+      "T27"
+    ],
+    "evidence": "Round 1 delta table"
+  },
+  {
+    "id": "R22",
+    "source": "R2",
+    "requirement": "Three major Round 3 improvements",
+    "owner": "Sanath",
+    "tests": [
+      "T27"
+    ],
+    "evidence": "Three scoped additions and acceptance criteria"
+  },
+  {
+    "id": "R23",
+    "source": "PS",
+    "requirement": "Accurate member contributions and submission integrity",
+    "owner": "Sanath",
+    "tests": [
+      "T27",
+      "T29"
+    ],
+    "evidence": "Actual contributions, AI/reuse/licence disclosure"
+  },
+  {
+    "id": "R24",
+    "source": "PS",
+    "requirement": "Permitted build window and timely complete submission",
+    "owner": "Sanath",
+    "tests": [
+      "T27"
+    ],
+    "evidence": "Genuine build-window history and completed pre-submission deadline checklist; retain form confirmation after submission"
+  },
+  {
+    "id": "R25",
+    "source": "PDF-p5",
+    "requirement": "Persistent queue and reproducible deployment",
+    "owner": "Surya",
+    "tests": [
+      "T14",
+      "T18",
+      "T25"
+    ],
+    "evidence": "Worker/restart/recovery report"
+  },
+  {
+    "id": "R26",
+    "source": "R2",
+    "requirement": "Usability without assistance",
+    "owner": "Darshilkumar",
+    "tests": [
+      "T11",
+      "T16",
+      "T19",
+      "T24"
+    ],
+    "evidence": "Judge instructions and observed task completion"
+  }
+]

@@ -1,0 +1,13 @@
+name: Planning coverage
+on: [push, pull_request]
+permissions:
+  contents: read
+jobs:
+  planning:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+      - name: Validate requirement coverage
+        run: python3 scripts/verify_plan.py
+      - name: Exercise evidence gate
+        run: python3 -m unittest discover -s scripts -p 'test_verify_plan.py'

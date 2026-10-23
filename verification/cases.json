@@ -1,0 +1,212 @@
+[
+  {
+    "id": "T01",
+    "owner": "Sanath",
+    "setup": "Two organisations with distinct users and sources",
+    "action": "Read/update/download another tenant object by guessed ID; repeat for findings, assets, comments, exports and insights",
+    "expected": "404 without content leakage; no mutation or new audit data in victim tenant"
+  },
+  {
+    "id": "T02",
+    "owner": "Sanath",
+    "setup": "Creator, manager, admin and separately assigned reviewer",
+    "action": "Attempt approval as each identity, including creator with reviewer role",
+    "expected": "Only assigned non-author reviewer succeeds; server denies all other attempts"
+  },
+  {
+    "id": "T03",
+    "owner": "Sanath",
+    "setup": "Approved revision r1; browser retains old version token",
+    "action": "Create r2 then approve/export r1 as current; race edit against approval",
+    "expected": "409 for stale operations; no approval inherited by r2; transactional outcome is consistent"
+  },
+  {
+    "id": "T04",
+    "owner": "Sanath",
+    "setup": "Approved run with source epoch 1",
+    "action": "Activate changed source concurrently with decision/export; expire a source",
+    "expected": "Fresh export requires current effective source snapshot; historical decision remains visible as stale"
+  },
+  {
+    "id": "T05",
+    "owner": "Surya",
+    "setup": "Terminology and trial facts from two synthetic brands",
+    "action": "Review correct and incorrect spelling, trial durations and word-boundary near matches",
+    "expected": "Only valid violations flagged at exact locations with correct rule/source; no LumaDesk hardcoding"
+  },
+  {
+    "id": "T06",
+    "owner": "Sanath",
+    "setup": "Claim policy plus absent, expired and conflicting evidence",
+    "action": "Review a numeric promotion under each evidence condition",
+    "expected": "Unsupported/unverified/conflicting distinguished from false; conflict routed to source owner"
+  },
+  {
+    "id": "T07",
+    "owner": "Sanath",
+    "setup": "Tone/messaging rules and context; valid model adapter",
+    "action": "Review calm text, pressure language, different audiences and stylistic variants",
+    "expected": "Advisory contextual findings cite real rules; no unsupported replacement facts or dialect-as-error assumption"
+  },
+  {
+    "id": "T08",
+    "owner": "Sanath",
+    "setup": "Adapter stub capable of returning malformed responses",
+    "action": "Return invented source IDs, wrong quotes, out-of-range offsets, bad JSON and extra instructions",
+    "expected": "Reject invalid findings; mark semantic check failed; preserve deterministic findings and block clean status"
+  },
+  {
+    "id": "T09",
+    "owner": "Surya",
+    "setup": "Supported and hostile real document fixtures",
+    "action": "Extract PDF/DOCX including scanned/encrypted PDF, zip bomb, oversized file and empty text",
+    "expected": "Correct canonical locations; unsupported inputs rejected; bounded time/memory; no empty clean review"
+  },
+  {
+    "id": "T10",
+    "owner": "Surya",
+    "setup": "PNG/JPEG plus asset hashes, dimensions and colour-pair metadata",
+    "action": "Check original vs altered asset, missing alt text, 4.49/4.5 and 2.99/3.0 contrast boundaries, unknown font size",
+    "expected": "Exact identity only; no embedded-logo certification; appropriate thresholds; uncertainty/manual review shown"
+  },
+  {
+    "id": "T11",
+    "owner": "Darshilkumar",
+    "setup": "LumaDesk fixture and live services",
+    "action": "Curate, paste draft, analyse, open evidence, edit, reanalyse, submit, review as separate user, export",
+    "expected": "Journey succeeds without mocks; evidence and exported hash match the exact revision and decision"
+  },
+  {
+    "id": "T12",
+    "owner": "Darshilkumar",
+    "setup": "Open finding and submitted revision",
+    "action": "Edit suggestion before applying, comment, compare revisions, request changes then resubmit",
+    "expected": "Original preserved; each saved edit creates revision; comments show actor/time and correct revision"
+  },
+  {
+    "id": "T13",
+    "owner": "Sanath",
+    "setup": "Unresolved claim blocker and failed required check",
+    "action": "Request exception; try creator grant, reviewer grant without reason, then valid authorised grant",
+    "expected": "Only reasoned authorised revision-specific finding exception succeeds; failed check still blocks until rerun/manual completion"
+  },
+  {
+    "id": "T14",
+    "owner": "Surya",
+    "setup": "Queued jobs; worker and database available",
+    "action": "Kill worker after lease; restart; retry same request; deliver late old-run result",
+    "expected": "Lease reclaimed; single authoritative result; old run cannot overwrite new; retry exhaustion visible"
+  },
+  {
+    "id": "T15",
+    "owner": "Surya",
+    "setup": "Model unavailable, extraction timeout and database interruption",
+    "action": "Submit analysis under each fault and recover",
+    "expected": "Explicit incomplete/failed state; no clean/approved result; retriable work safely resumes"
+  },
+  {
+    "id": "T16",
+    "owner": "Darshilkumar",
+    "setup": "Review desk at desktop and narrow viewport",
+    "action": "Keyboard-only journey, drawer focus/escape, error focus, 200% zoom, screen-reader status checks",
+    "expected": "No trapped/lost focus, hidden controls or colour-only status; labels and announcements understandable"
+  },
+  {
+    "id": "T17",
+    "owner": "Darshilkumar",
+    "setup": "Repeated confirmed/dismissed findings and ambiguity reports across revisions",
+    "action": "Open insights; repeat analysis of same content without new confirmation",
+    "expected": "Counts use explicit reviewed-item denominator and dedup policy; dismissals separate; no cross-tenant counts"
+  },
+  {
+    "id": "T18",
+    "owner": "Surya",
+    "setup": "Live release with files and approved content",
+    "action": "Restart stack; restore backup into separate environment; roll back previous compatible image",
+    "expected": "Data/file hashes survive; one restored export works; rollback procedure measured and recorded"
+  },
+  {
+    "id": "T19",
+    "owner": "Surya",
+    "setup": "External browser with no team session",
+    "action": "Open HTTPS demo, inspect readiness/build SHA, perform workflow and request private file directly",
+    "expected": "Valid certificate; demo usable without assistance; deployed SHA matches; unauthenticated private files denied"
+  },
+  {
+    "id": "T20",
+    "owner": "Sanath",
+    "setup": "Local mode and unapproved external provider; outbound request spy",
+    "action": "Analyse content; enable provider only through admin policy then repeat",
+    "expected": "Zero external analysis before opt-in; disclosure precedes processing; model/prompt/provider versions captured"
+  },
+  {
+    "id": "T21",
+    "owner": "Surya",
+    "setup": "Content with original, extraction, cache, findings and backup",
+    "action": "Request deletion; run retention job; restore backup and reapply deletion records",
+    "expected": "All active content derivatives gone; expired links fail; minimal audit retained as documented; backup expiry recorded"
+  },
+  {
+    "id": "T22",
+    "owner": "Sanath",
+    "setup": "Malicious HTML, prompt instructions and cross-site requests",
+    "action": "Render upload/finding/comment; attempt CSRF, session misuse and model tool instructions",
+    "expected": "No script execution, unauthorised mutation, publishing/tool call or cross-tenant source retrieval; secrets absent from logs"
+  },
+  {
+    "id": "T23",
+    "owner": "Surya",
+    "setup": "Frozen labelled evaluation items with template split",
+    "action": "Run evaluation and human citation support review; record disagreements and per-category metrics",
+    "expected": "No split leakage or invented labels; denominators and misses reported; citations resolvable; targets compared honestly"
+  },
+  {
+    "id": "T24",
+    "owner": "Darshilkumar",
+    "setup": "Consenting non-builder testers where available",
+    "action": "Observe unassisted core tasks and record help/errors; revise one observed issue",
+    "expected": "Real anonymised observations, sample and limitations saved; internal sessions labelled if users unavailable"
+  },
+  {
+    "id": "T25",
+    "owner": "Surya",
+    "setup": "Deployed build with documented hardware/provider",
+    "action": "Run 30 supported reviews including five concurrent submissions",
+    "expected": "Record p50/p95, incomplete rate and queue delay; no dropped jobs; timeout terminal by configured limit"
+  },
+  {
+    "id": "T26",
+    "owner": "Darshilkumar",
+    "setup": "Shared OpenAPI and canonical fixtures",
+    "action": "Generate client, compile web, validate API examples and error enums",
+    "expected": "No contract drift; UI handles each status; production has no mock transport"
+  },
+  {
+    "id": "T27",
+    "owner": "Sanath",
+    "setup": "Final submission bundle and repository",
+    "action": "Open links in fresh browser; inspect PDF, feature list, deltas, three improvements, contributions and disclosures",
+    "expected": "All stage items present, accurate, readable and tied to real work; individual required fields completed"
+  },
+  {
+    "id": "T28",
+    "owner": "Sanath",
+    "setup": "Draft extracted guideline with owner and validity dates",
+    "action": "Try activating as creator and activating conflicting facts; manager verifies and resolves conflict",
+    "expected": "Only manager activates verified versions; conflicts explicitly resolved; old versions immutable"
+  },
+  {
+    "id": "T29",
+    "owner": "Surya",
+    "setup": "Release dependency manifests, images and repository",
+    "action": "Run secret/dependency scans and inspect licences, credentials, storage/network settings",
+    "expected": "No committed secrets or unresolved exploitable critical/high issues; disclosure ledger and operational findings recorded"
+  },
+  {
+    "id": "T30",
+    "owner": "Darshilkumar",
+    "setup": "Text with emoji/combining characters plus PDF/DOCX/image content",
+    "action": "Open findings and apply selected edit across formats; test unsupported file UI",
+    "expected": "Locations match canonical code points; document/image context visible; safe editable suggestions; errors preserve draft"
+  }
+]
