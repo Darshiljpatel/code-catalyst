@@ -1,4 +1,5 @@
 import { categoryLabel } from '../components/categoryLabel';
+import { resolutionActions } from '../api/resolutionActions';
 import React from 'react';
 import { workingDraft, changeDraftText, stageDraftEdit, projectDraftRange, undoDraftChange } from '../api/draftEdits';
 import { submissionIssues } from '../api/reviewReadiness';
@@ -746,7 +747,7 @@ export function ContentDetailPage() {
                                 e.stopPropagation();
                                 setResolvingFinding(finding);
                               }}
-                              disabled={hasDraftChanges || savingRevision}
+                              disabled={hasDraftChanges || savingRevision || resolutionActions(user, content, finding, run).length === 0}
                               title={hasDraftChanges ? 'Save and recheck before recording a disposition.' : 'Record human disposition (confirm, dismiss, exception)'}
                             >
                               Resolve
@@ -926,6 +927,7 @@ export function ContentDetailPage() {
       {resolvingFinding && (
         <ResolutionModal
           finding={resolvingFinding}
+          allowedActions={resolutionActions(user, content, resolvingFinding, run)}
           expectedItemVersion={content.workflow_version}
           onSuccess={() => {
             setResolvingFinding(null);

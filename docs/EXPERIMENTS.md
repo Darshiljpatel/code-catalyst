@@ -73,3 +73,27 @@ Next investigation: disposition actions offered by the UI currently include
 reviewer-only actions for creators. Align available actions with assignment and
 role, and verify the server remains authoritative. Continue on `experiments`.
 The overnight goal remains active; no public deployment or remote push is implied.
+
+## Overnight iteration 3: disposition permissions in the UI
+
+Added UI preflight for creator requests versus assigned-reviewer decisions.
+Creators can request an exception or dismissal. Assigned reviewers can confirm,
+dismiss where permitted, grant an exception or reject a request. Unsupported or
+contradicted factual claims cannot be dismissed with the ordinary dismissal
+action. Stale, running, historical and decided reviews expose no available
+disposition actions. Rationale and optional reference lengths now fit the server
+payload limit. The API remains authoritative and continues enforcing its existing
+permission and version checks.
+
+Verification: production build, lint and six focused UI tests passed, including
+creator modal submission and all iteration 2/queue regressions. All 19 PostgreSQL
+workflow tests passed on the isolated experiment database.
+
+The first workflow run shared `brandguard_s1_test` with another live test runner
+and produced fixture foreign-key failures. The rerun uses the separately migrated
+UTF-8 database `brandguard_s1_test_experiments` to avoid concurrent fixture resets.
+Use that database for further overnight PostgreSQL checks.
+
+Next candidate: the export dialog reports clipboard success before the clipboard
+promise resolves. It also lacks a retry path after export retrieval failure.
+Investigate clipboard rejection, retrieval cancellation and download feedback.
