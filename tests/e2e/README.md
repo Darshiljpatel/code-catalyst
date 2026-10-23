@@ -11,7 +11,70 @@ reload, approval and a downloaded export whose SHA-256 and text are asserted.
 It also checks keyboard containment, selected accessibility states and Unicode
 edit boundaries. It never marks the release inventory complete.
 
-## Setup
+## Local testing
+
+## Start the prepared local demo
+
+This is the quickest way to resume the existing fictional browser workspace.
+It uses the local PostgreSQL instance on port `55439`, the private `.env` for
+Nebius only, and the already-provisioned `brandguard_browser_test` database.
+
+Open three terminals at the repository root. In the first, start the API:
+
+```sh
+set -a; source .env; set +a
+DATABASE_URL='postgresql+psycopg://sanath@127.0.0.1:55439/brandguard_browser_test' \
+PUBLIC_ORIGIN='http://localhost:5178' APP_ENV=development \
+PYTHONPATH='apps/api:packages:.' \
+.venv/bin/uvicorn brandguard.main:create_app --factory --host 127.0.0.1 --port 8000
+```
+
+In the second, start the worker. It inherits the private Nebius key from `.env`;
+the browser never receives that key.
+
+```sh
+set -a; source .env; set +a
+DATABASE_URL='postgresql+psycopg://sanath@127.0.0.1:55439/brandguard_browser_test' \
+PYTHONPATH='apps/api:packages:.' \
+.venv/bin/python -m apps.worker
+```
+
+In the third, build and serve the frontend:
+
+```sh
+PATH="$(cat /tmp/brandguard-node-path):$PATH" npm --prefix apps/web run build
+PATH="$(cat /tmp/brandguard-node-path):$PATH" npm --prefix apps/web run preview -- --host 127.0.0.1 --port 5178
+```
+
+Open `http://localhost:5178`. Check readiness with
+`curl http://127.0.0.1:8000/api/v1/health/ready`.
+
+To display the temporary fictional login details without placing them in the
+repository, run:
+
+```sh
+.venv/bin/python - <<'PY'
+import json
+from pathlib import Path
+data = json.loads(Path('/tmp/brandguard-browser-fixture.json').read_text())
+print('Workspace ID:', data['org_id'])
+print('Password:', data['password'])
+for role, email in data['emails'].items():
+    print(f'{role}: {email}')
+PY
+```
+
+If PostgreSQL was stopped, start the prepared local cluster first:
+
+```sh
+/usr/lib/postgresql/18/bin/pg_ctl -D /tmp/brandguard-s1-pg \
+  -o '-p 55439 -h 127.0.0.1 -k /tmp' start
+```
+
+Use `Ctrl+C` in each terminal to stop the API, worker, and frontend. Stopping
+them does not delete the prepared test workspace.
+
+## Create a fresh test workspace
 
 Use separate disposable databases: `brandguard_s1_test` for Python tests and
 `brandguard_browser_test` for the browser server. Never point tests at live data.
