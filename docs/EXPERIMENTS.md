@@ -142,3 +142,25 @@ discussion loading status. No provider calls are involved.
 Next candidate: manual category review currently lets reviewers choose categories
 already completed and gives no category-specific source guidance. Guide reviewers
 through outstanding checks while preserving the server's evidence restrictions.
+
+## Overnight iteration 6: guided manual category review
+
+The reviewer form now lists outstanding categories only and shows the remaining
+count. Applicable source rules can be expanded in place. Completing a category
+requires a selected source relevant to that category when such a rule exists;
+“not applicable” is disabled for categories with applicable approved rules.
+No sources are pre-attested. Switching categories clears rationale and evidence
+selection, and successful completion moves the form to the next outstanding
+category. Fields are disabled while posting, errors preserve the rationale, and
+stale or decided reviews do not show the form. Form state resets for a new run.
+
+Verification: production build and lint passed, the new guided browser journey
+passed, and the existing PostgreSQL manual-evidence workflow test passed in the
+isolated experiment database. A second browser run added an Axe accessibility
+scan of the new form (zero violations in the tested state) and mobile rendering.
+The browser test checks irrelevant versus relevant evidence, rejected save/retry,
+progression, “not applicable” without source references, and final completion.
+
+Next investigation: guideline creation initializes a datetime-local input with
+UTC clock digits. In non-UTC browsers this silently shifts the effective time.
+Use local wall-clock digits and verify submission in multiple time zones.

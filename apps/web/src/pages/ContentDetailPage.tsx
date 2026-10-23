@@ -710,7 +710,7 @@ export function ContentDetailPage() {
                 </div>
               )}
 
-              {user?.membership_id === content.reviewer_id && content.state !== 'approved' && <ManualChecks run={run} version={content.workflow_version} onSaved={loadContent} />}
+              {user?.membership_id === content.reviewer_id && !['approved', 'changes_requested'].includes(content.state) && <ManualChecks run={run} version={content.workflow_version} onSaved={loadContent} />}
               {/* Findings List */}
               <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-3)' }}>
                 {run.findings.length === 0 ? (
