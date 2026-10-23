@@ -300,3 +300,25 @@ zero-violation scoped Axe scan in the tested state.
 Next investigation: intake permits “Assign later”, but the manager has no UI for
 the existing audited reviewer-assignment endpoint. Add assignment/reassignment
 with actual reviewer identities, rationale and workflow-version conflict recovery.
+
+## Overnight iteration 13: manager reviewer assignment
+
+Added assignment/reassignment to the campaign workspace for managers, using the
+existing audited API. The dialog loads actual separate reviewer identities,
+requires a 20-character rationale, prevents unchanged/invalid assignments and
+provides list retry without fictional fallbacks. A 409 blocks stale resubmission
+and offers review reload. Successful assignment refreshes coverage and reports
+the assigned reviewer email. Approved campaigns expose no reassignment control;
+creators do not receive manager-only controls. Server authorization is unchanged.
+
+Verification: build and lint passed. Three focused tests passed (assignment plus
+finding-triage regressions). Assignment tests cover list failure/retry, rationale
+validation, a stale workflow version, reload using the new version, persisted
+assignment and creator-view restrictions. A scoped Axe scan passed. The existing
+PostgreSQL reassignment-authority test also passed on the isolated experiment
+database. The final email success message is checked in a rebuilt browser run.
+
+Next investigation: run the current interface against a separate real API/worker
+stack, avoiding the other active development server and shared fixture databases.
+Refresh outdated end-to-end selectors where necessary and identify integration
+gaps that isolated browser transport tests cannot reveal.

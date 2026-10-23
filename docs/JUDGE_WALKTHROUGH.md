@@ -58,6 +58,10 @@ PDF/image file intake is not provided by this text importer.
 5. In local mode, the assigned reviewer must inspect incomplete categories.
    Record each manual check, its source references and a rationale of at least
    20 characters. Use “not applicable” only where no applicable rule exists.
+   If the campaign was created with **Assign later**, a manager first opens it
+   and uses **Assign reviewer**, selects an authorized reviewer, and records an
+   assignment rationale. Managers can change the reviewer before approval; the
+   new reviewer must record their own manual category checks.
 6. Creator submits the exact revision. The assigned separate reviewer approves
    or requests changes with a rationale. Conflicts require fresh state.
 7. Export the approved revision. The JSON contains the exact text checksum,

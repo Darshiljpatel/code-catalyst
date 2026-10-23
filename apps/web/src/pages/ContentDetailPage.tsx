@@ -1,6 +1,7 @@
 import { categoryLabel } from '../components/categoryLabel';
 import { ALL_FINDINGS, filterFindings, type FindingFilters as FilterValues } from '../api/findingFilters';
 import { FindingFilters } from '../components/FindingFilters';
+import { AssignReviewerModal } from '../components/AssignReviewerModal';
 import { resolutionActions } from '../api/resolutionActions';
 import React from 'react';
 import { workingDraft, changeDraftText, stageDraftEdit, projectDraftRange, undoDraftChange } from '../api/draftEdits';
@@ -96,6 +97,7 @@ export function ContentDetailPage() {
   const [decisionKind, setDecisionKind] = React.useState<'approved' | 'changes_requested'>('approved');
   const [showExportModal, setShowExportModal] = React.useState(false);
   const [resolvingFinding, setResolvingFinding] = React.useState<FindingOut | null>(null);
+  const [showAssignment, setShowAssignment] = React.useState(false);
 
   const loadContent = React.useCallback(async () => {
     if (!contentId) return;
@@ -469,6 +471,7 @@ export function ContentDetailPage() {
           </button>
 
           {/* Workflow Action 1: Creator Submit for Review */}
+          {user?.role === 'manager' && content.state !== 'approved' && <button type="button" className="btn btn--secondary" onClick={() => setShowAssignment(true)}>{content.reviewer_id ? 'Change reviewer' : 'Assign reviewer'}</button>}
           {user?.membership_id === content.creator_id && ['draft', 'changes_requested', 'ready_for_review', 'needs_changes', 'incomplete', 'analysing'].includes(content.state) && (
             <button
               id="btn-submit-review"
@@ -877,6 +880,7 @@ export function ContentDetailPage() {
       )}
 
       {/* Concurrency Conflict Resolution Modal (409) */}
+      {showAssignment && <AssignReviewerModal itemId={content.id} creatorId={content.creator_id} currentReviewerId={content.reviewer_id} version={content.workflow_version} onClose={() => setShowAssignment(false)} onRefresh={() => { setShowAssignment(false); void loadContent(); }} onAssigned={email => { setShowAssignment(false); setDraftNotice(`Reviewer assigned: ${email}. The assignment is recorded in the audit history.`); void loadContent(); }} />}
       {conflictServerRevision && (
         <ConflictResolutionModal
           serverRevision={conflictServerRevision}
