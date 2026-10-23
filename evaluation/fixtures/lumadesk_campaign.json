@@ -1,0 +1,80 @@
+{
+  "brand": "LumaDesk",
+  "draft_text": "Lumadesk guarantees 10x productivity. Get your 30-day free trial. Sign up NOW!!!",
+  "approved_sources": [
+    {
+      "id": "src-luma-01",
+      "source_key": "brand_guide",
+      "title": "LumaDesk Brand & Product Guidelines",
+      "text": "LumaDesk is our canonical brand name. Our standard free trial lasts 14 days with no credit card required. Promotional claims require documented customer benchmarks. Always use calm, professional language.",
+      "rules": [
+        {
+          "id": "rule-term-01",
+          "category": "terminology",
+          "kind": "terminology",
+          "key": "brand_name",
+          "value": "LumaDesk",
+          "canonical_term": "LumaDesk",
+          "forbidden_patterns": ["Lumadesk", "luma desk", "LUMADESK"],
+          "evidence_quote": "LumaDesk is our canonical brand name.",
+          "rationale": "Brand name must always be capitalized as LumaDesk."
+        },
+        {
+          "id": "rule-fact-01",
+          "category": "facts_claims",
+          "kind": "fact",
+          "key": "trial_duration",
+          "value": "14 days",
+          "approved_value": "14 days",
+          "contradicted_values": ["30-day", "30 days", "60-day"],
+          "evidence_quote": "Our standard free trial lasts 14 days with no credit card required.",
+          "rationale": "Trial duration is strictly 14 days."
+        },
+        {
+          "id": "rule-claim-01",
+          "category": "facts_claims",
+          "kind": "claim_policy",
+          "key": "benchmark_claims",
+          "value": "Documented customer benchmarks required",
+          "evidence_quote": "Promotional claims require documented customer benchmarks.",
+          "rationale": "Productivity claims require certified customer benchmarks."
+        },
+        {
+          "id": "rule-tone-01",
+          "category": "tone",
+          "kind": "guidance",
+          "key": "calm_language",
+          "value": "Calm, professional tone",
+          "evidence_quote": "Always use calm, professional language.",
+          "rationale": "Avoid excessive urgency, all-caps yelling, or multiple exclamation marks."
+        }
+      ]
+    }
+  ],
+  "expected_findings": [
+    {
+      "category": "terminology",
+      "quote": "Lumadesk",
+      "rule_id": "rule-term-01",
+      "severity": "blocker"
+    },
+    {
+      "category": "facts_claims",
+      "quote": "30-day",
+      "rule_id": "rule-fact-01",
+      "severity": "blocker"
+    },
+    {
+      "category": "facts_claims",
+      "quote": "guarantees 10x productivity",
+      "rule_id": "rule-claim-01",
+      "severity": "warning"
+    },
+    {
+      "category": "tone",
+      "quote": "Sign up NOW!!!",
+      "rule_id": "rule-tone-01",
+      "severity": "advisory"
+    }
+  ]
+}

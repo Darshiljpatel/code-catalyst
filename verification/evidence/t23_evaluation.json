@@ -1,0 +1,87 @@
+{
+  "dataset": "dev_cases.json",
+  "total_cases": 20,
+  "splits": [
+    "dev",
+    "test"
+  ],
+  "metrics": {
+    "precision": 1.0,
+    "recall": 1.0,
+    "f1": 1.0,
+    "citation_resolution_rate": 1.0,
+    "true_positives": 11,
+    "false_positives": 0,
+    "false_negatives": 0,
+    "true_negatives": 9,
+    "total_evaluations": 20
+  },
+  "per_split_metrics": {
+    "dev": {
+      "precision": 1.0,
+      "recall": 1.0,
+      "f1": 1.0,
+      "citation_resolution_rate": 1.0,
+      "true_positives": 6,
+      "false_positives": 0,
+      "false_negatives": 0,
+      "true_negatives": 6,
+      "total_evaluations": 12
+    },
+    "test": {
+      "precision": 1.0,
+      "recall": 1.0,
+      "f1": 1.0,
+      "citation_resolution_rate": 1.0,
+      "true_positives": 5,
+      "false_positives": 0,
+      "false_negatives": 0,
+      "true_negatives": 3,
+      "total_evaluations": 8
+    }
+  },
+  "per_category_metrics": {
+    "terminology": {
+      "precision": 1.0,
+      "recall": 1.0,
+      "f1": 1.0,
+      "citation_resolution_rate": 1.0,
+      "true_positives": 6,
+      "false_positives": 0,
+      "false_negatives": 0,
+      "true_negatives": 0,
+      "total_evaluations": 6
+    },
+    "facts_claims": {
+      "precision": 1.0,
+      "recall": 1.0,
+      "f1": 1.0,
+      "citation_resolution_rate": 1.0,
+      "true_positives": 6,
+      "false_positives": 0,
+      "false_negatives": 0,
+      "true_negatives": 0,
+      "total_evaluations": 6
+    },
+    "accessibility": {
+      "precision": 1.0,
+      "recall": 1.0,
+      "f1": 1.0,
+      "citation_resolution_rate": 1.0,
+      "true_positives": 1,
+      "false_positives": 0,
+      "false_negatives": 0,
+      "true_negatives": 0,
+      "total_evaluations": 1
+    }
+  },
+  "latency": {
+    "p50_ms": 0.08,
+    "p95_ms": 0.22,
+    "min_ms": 0.03,
+    "max_ms": 1.03,
+    "mean_ms": 0.14
+  },
+  "disagreements_count": 0,
+  "disagreements": []
+}

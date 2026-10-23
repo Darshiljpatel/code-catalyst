@@ -77,6 +77,16 @@ def _normalize_snapshot(source_snapshot: Union[Dict[str, Any], List[Dict[str, An
 # 1. Terminology Engine (T05: Brand-Agnostic, Exact Locations, Word Boundaries)
 # ---------------------------------------------------------------------------
 
+def _make_boundary_regex(pattern: str, ignore_case: bool = False) -> re.Pattern:
+    """Builds regex with smart boundary anchors handling non-word leading/trailing chars."""
+    escaped = re.escape(pattern)
+    prefix = r"(?<!\w)" if re.match(r"^\w", pattern) else r"(?<!\S)"
+    suffix = r"(?!\w)" if re.search(r"\w$", pattern) else r"(?!\S)"
+    flags = re.IGNORECASE if ignore_case else 0
+    return re.compile(f"{prefix}{escaped}{suffix}", flags)
+
+
+
 def _check_terminology(extraction: ExtractionResult, rules: List[Dict[str, Any]]) -> CheckResult:
     findings: List[Finding] = []
     term_rules = [r for r in rules if r.get("category") == "terminology" or r.get("kind") == "terminology"]
@@ -88,7 +98,7 @@ def _check_terminology(extraction: ExtractionResult, rules: List[Dict[str, Any]]
 
             # If forbidden patterns not explicitly listed, check case-insensitive match differing from canonical
             if not forbidden and canonical:
-                regex = re.compile(rf"(?<!\w){re.escape(canonical)}(?!\w)", re.IGNORECASE)
+                regex = _make_boundary_regex(canonical, ignore_case=True)
                 for match in regex.finditer(block.text):
                     if match.group(0) != canonical:
                         start = block.start_char + match.start()
@@ -113,8 +123,9 @@ def _check_terminology(extraction: ExtractionResult, rules: List[Dict[str, Any]]
 
             # Check explicit forbidden patterns with word boundaries
             for pattern in forbidden:
-                regex = re.compile(rf"(?<!\w){re.escape(pattern)}(?!\w)")
+                regex = _make_boundary_regex(pattern)
                 for match in regex.finditer(block.text):
+
                     start = block.start_char + match.start()
                     end = block.start_char + match.end()
                     findings.append(Finding(
@@ -158,7 +169,7 @@ def _check_facts(extraction: ExtractionResult, rules: List[Dict[str, Any]]) -> C
 
             # Check explicit contradicted strings
             for contradicted in contradicted_list:
-                regex = re.compile(rf"\b{re.escape(contradicted)}\b", re.IGNORECASE)
+                regex = _make_boundary_regex(contradicted, ignore_case=True)
                 for match in regex.finditer(block.text):
                     start = block.start_char + match.start()
                     end = block.start_char + match.end()
@@ -345,6 +356,12 @@ def _check_contrast_and_accessibility(extraction: ExtractionResult, context: Dic
 
     # Color contrast pair check (if color metadata or context provides text/background pairs)
     color_pair = context.get("color_pair")
+    if not color_pair and ("foreground_hex" in context or "foreground" in context) and ("background_hex" in context or "background" in context):
+        color_pair = {
+            "foreground": context.get("foreground_hex") or context.get("foreground"),
+            "background": context.get("background_hex") or context.get("background"),
+            "font_size_pt": context.get("font_size_pt", 12)
+        }
     if color_pair:
         fg = color_pair.get("foreground")
         bg = color_pair.get("background")

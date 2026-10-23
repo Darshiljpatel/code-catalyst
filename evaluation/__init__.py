@@ -1,0 +1,1 @@
+"""BrandGuard Quality Evaluation Suite."""
