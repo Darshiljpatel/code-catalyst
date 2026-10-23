@@ -298,29 +298,87 @@ export type FindingOrigin = 'deterministic' | 'model' | 'human' | string;
 export type FindingResolution = 'open' | 'accepted' | 'dismissed' | 'exception' | string;
 
 // ---------------------------------------------------------------------------
-// @pending S4 — Decision, Comment, Insights, Export
+// Human Workflow & Review (S4)
 // ---------------------------------------------------------------------------
 export type DecisionKind = 'approved' | 'changes_requested';
 
-export interface Decision {
-  id: string;
-  revision_id: string;
-  run_id: string;
-  reviewer_id: string;
-  kind: DecisionKind;
-  rationale: string;
-  decided_at: string;
-  source_epoch_at_decision: number;
-  is_stale: boolean;
+export interface CommentInput {
+  text: string;
+  finding_id?: string | null;
 }
 
-export interface Comment {
+export interface CommentOut {
   id: string;
   revision_id: string;
   finding_id: string | null;
   author_id: string;
   text: string;
   created_at: string;
+}
+
+// Compatibility alias
+export type Comment = CommentOut;
+
+export type ResolutionAction =
+  | 'request_exception'
+  | 'request_dismissal'
+  | 'confirm'
+  | 'dismiss'
+  | 'grant_exception'
+  | 'reject_exception';
+
+export interface ResolutionInput {
+  rationale: string;
+  expected_item_version: number;
+  action: ResolutionAction;
+  source_version_ids?: string[];
+}
+
+export interface ResolutionOut {
+  id: string;
+  finding_id: string;
+  actor_id: string;
+  action: string;
+  rationale: string;
+  source_version_ids: string[];
+  created_at: string;
+}
+
+export interface ReviewerOut {
+  id: string;
+  user_id: string;
+  email: string;
+}
+
+export interface DecisionInput {
+  rationale: string;
+  expected_item_version: number;
+  expected_run_id: string;
+  expected_source_epoch: number;
+  kind: DecisionKind;
+}
+
+export interface DecisionOut {
+  id: string;
+  revision_id: string;
+  run_id: string;
+  reviewer_id: string;
+  kind: string;
+  rationale: string;
+  source_epoch: number;
+  text_hash: string;
+  decided_at: string;
+}
+
+// Compatibility alias
+export type Decision = DecisionOut;
+
+export interface ManualCheckInput {
+  rationale: string;
+  expected_item_version: number;
+  category: RuleCategory;
+  outcome: 'complete' | 'not_applicable';
+  source_version_ids?: string[];
 }
 
 export interface BrandInsights {
@@ -333,7 +391,7 @@ export interface BrandInsights {
 
 export interface ExportRecord {
   revision_id: string;
-  decision: Decision;
+  decision: DecisionOut;
   source_epoch: number;
   exported_at: string;
 }

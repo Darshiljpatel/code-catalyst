@@ -33,6 +33,9 @@ import type {
   RunOut,
   PolicyOut,
   Brand,
+  CommentOut,
+  ResolutionOut,
+  ReviewerOut,
 } from './types';
 
 // Mutable in-memory state for local testing
@@ -47,6 +50,20 @@ const mockRuns: Record<string, RunOut> = {
   [FIXTURE_REVIEW_RUN.id]: JSON.parse(JSON.stringify(FIXTURE_REVIEW_RUN)),
 };
 let mockPolicy: PolicyOut = { ...FIXTURE_POLICY };
+const mockComments: CommentOut[] = [
+  {
+    id: 'cmt-1',
+    revision_id: FIXTURE_CONTENT_ITEM.revisions[0]?.id || 'rev-1',
+    finding_id: 'find-0001',
+    author_id: 'creator@lumadesk.test',
+    text: 'Understood, will fix capitalization to LumaDesk in revision 2.',
+    created_at: new Date(Date.now() - 3600000).toISOString(),
+  },
+];
+const mockResolutions: Record<string, ResolutionOut> = {};
+const mockReviewers: ReviewerOut[] = [
+  { id: 'mem-rev-1', user_id: 'user-reviewer', email: 'reviewer@lumadesk.test' },
+];
 
 function jsonResponse(status: number, data: unknown): Response {
   return new Response(JSON.stringify(data), {
@@ -353,6 +370,67 @@ export const mockTransport = async (
     if (!mockSession) return jsonResponse(401, FIXTURE_ERROR_UNAUTHENTICATED);
     if (brandMatch[1] === mockBrand.id) return jsonResponse(200, mockBrand);
     return jsonResponse(404, { code: 'not_found', message: 'Brand not found.', request_id: 'mock', details: {} });
+  }
+
+  // GET /api/v1/reviewers
+  if (url.endsWith('/api/v1/reviewers') && method === 'GET') {
+    if (!mockSession) return jsonResponse(401, FIXTURE_ERROR_UNAUTHENTICATED);
+    return jsonResponse(200, mockReviewers);
+  }
+
+  // PUT /api/v1/content/:id/reviewer
+  const reviewerAssignMatch = url.match(/\/api\/v1\/content\/([^/]+)\/reviewer$/);
+  if (reviewerAssignMatch && method === 'PUT') {
+    if (!mockSession) return jsonResponse(401, FIXTURE_ERROR_UNAUTHENTICATED);
+    const item = mockContent[reviewerAssignMatch[1]];
+    if (!item) return jsonResponse(404, { code: 'not_found', message: 'Content not found', request_id: 'mock', details: {} });
+    const body = JSON.parse((init?.body as string) ?? '{}');
+    item.reviewer_id = body.reviewer_id;
+    return jsonResponse(200, item);
+  }
+
+  // GET /api/v1/revisions/:id/comments
+  const commentsMatch = url.match(/\/api\/v1\/revisions\/([^/]+)\/comments$/);
+  if (commentsMatch && method === 'GET') {
+    if (!mockSession) return jsonResponse(401, FIXTURE_ERROR_UNAUTHENTICATED);
+    const revId = commentsMatch[1];
+    return jsonResponse(200, mockComments.filter(c => c.revision_id === revId));
+  }
+
+  // POST /api/v1/revisions/:id/comments
+  if (commentsMatch && method === 'POST') {
+    if (!mockSession) return jsonResponse(401, FIXTURE_ERROR_UNAUTHENTICATED);
+    const revId = commentsMatch[1];
+    const body = JSON.parse((init?.body as string) ?? '{}');
+    const newComment: CommentOut = {
+      id: 'cmt-' + Math.random().toString(36).substring(2, 9),
+      revision_id: revId,
+      finding_id: body.finding_id || null,
+      author_id: mockSession.email,
+      text: body.text,
+      created_at: new Date().toISOString(),
+    };
+    mockComments.push(newComment);
+    return jsonResponse(201, newComment);
+  }
+
+  // POST /api/v1/findings/:id/resolutions
+  const resolutionMatch = url.match(/\/api\/v1\/findings\/([^/]+)\/resolutions$/);
+  if (resolutionMatch && method === 'POST') {
+    if (!mockSession) return jsonResponse(401, FIXTURE_ERROR_UNAUTHENTICATED);
+    const findingId = resolutionMatch[1];
+    const body = JSON.parse((init?.body as string) ?? '{}');
+    const res: ResolutionOut = {
+      id: 'res-' + Math.random().toString(36).substring(2, 9),
+      finding_id: findingId,
+      actor_id: mockSession.email,
+      action: body.action,
+      rationale: body.rationale,
+      source_version_ids: body.source_version_ids || [],
+      created_at: new Date().toISOString(),
+    };
+    mockResolutions[findingId] = res;
+    return jsonResponse(201, res);
   }
 
   // GET /api/v1/health/live

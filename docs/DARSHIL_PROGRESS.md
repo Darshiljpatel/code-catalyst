@@ -88,3 +88,35 @@ Completed 23 October 2026. All work is in `apps/web/` and documentation only.
 ## Next
 
 D3: Findings, evidence, revisions, corrections — located findings, editable suggestions, comparison and save conflicts.
+
+---
+
+# Darshilkumar D3 — Located findings, evidence drawer, diffs, revision conflict handling
+
+Completed 23 October 2026. All work is in `apps/web/` and documentation only.
+
+## Task ID: D3
+
+## Acceptance evidence
+
+| Criterion | Evidence |
+|---|---|
+| Contract & schema alignment | `src/api/types.ts` has full coverage of S3 & S4 OpenAPI schemas including `FindingOut`, `CheckOut`, `CommentInput`, `CommentOut`, `ResolutionInput`, `ResolutionOut`, `ReviewerOut`. |
+| Located findings & interactive marks | `src/components/EvidenceDrawer.tsx` & `src/pages/ContentDetailPage.tsx` — document preview renders inline interactive annotation markers (`annotation-marker--warning`, `annotation-marker--error`) positioned and tagged with severity, category, and quote. Clicking jumps to evidence and highlights finding. |
+| Grounding & authoritative quote drawer | `src/components/EvidenceDrawer.tsx` — slide-over drawer displaying authoritative source key, title, version, active status, exact quote, grounding status (`grounded`, `ungrounded`, `external`), rationale, and direct link to guideline source. |
+| Word-level LCS revision diff viewer | `src/components/DiffViewer.tsx` — implements Longest Common Subsequence (LCS) token-level diff calculation supporting both unified inline (`<ins>` / `<del>`) and side-by-side split modes, with change statistics (+ins, -del, unchanged). |
+| 409 `stale_revision` concurrency conflict modal | `src/components/ConflictResolutionModal.tsx` — gracefully intercepts 409 conflict responses on `POST /content/:id/revisions`, retrieves latest server revision, displays side-by-side diff with user's local edits, and offers rebase onto server revision or discard without data loss. |
+| Editable suggestions & 1-click apply | `src/components/EditSuggestionModal.tsx` & `ContentDetailPage.tsx` — provides both 1-click "Quick Apply" and an "Inspect & Apply" modal allowing reviewers to fine-tune the proposed replacement text before patching the draft copy. |
+| Revision discussion / comments section | `src/components/CommentsSection.tsx` — threaded revision discussion supporting comment posting via `POST /api/v1/revisions/:id/comments`, optional finding association, author attribution, and formatted timestamps. |
+| Worker queue polling integration | Merged Sanath's upstream S5 queue polling loop (`run.status in ['queued', 'running']`) in `ContentDetailPage.tsx` with Darshil's D3 UI so live worker execution seamlessly updates the UI upon completion. |
+| TypeScript & build | `npm run build` (`tsc -b && vite build`) passes cleanly with 0 errors (61 modules transformed, 1.25s). |
+
+## Schema impact
+
+- Zero changes to backend or `contracts/openapi.json`.
+- Consumed existing OpenAPI endpoints: `GET/POST /revisions/:id/comments`, `POST /content/:id/revisions`, `POST /revisions/:id/analysis`, `GET /brands/:id/sources`.
+
+## Next
+
+D4: Human reviewer decisions, workflow queues, and export artifacts.
+

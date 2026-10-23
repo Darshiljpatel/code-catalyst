@@ -28,6 +28,10 @@ import type {
   RunOut,
   PolicyOut,
   PolicyInput,
+  CommentInput,
+  CommentOut,
+  ResolutionInput,
+  ResolutionOut,
   ReviewerOut,
   ApiError,
 } from './types';
@@ -225,6 +229,49 @@ export async function updateProcessingPolicy(
 }
 
 // ---------------------------------------------------------------------------
+// Human Review & Workflow (S4)
+// ---------------------------------------------------------------------------
+
+export async function getComments(revisionId: string): Promise<CommentOut[]> {
+  return request<CommentOut[]>('GET', `/revisions/${revisionId}/comments`);
+}
+
+export async function postComment(
+  revisionId: string,
+  payload: CommentInput
+): Promise<CommentOut> {
+  return request<CommentOut>('POST', `/revisions/${revisionId}/comments`, payload);
+}
+
+export async function postResolution(
+  findingId: string,
+  payload: ResolutionInput
+): Promise<ResolutionOut> {
+  return request<ResolutionOut>(
+    'POST',
+    `/findings/${findingId}/resolutions`,
+    payload
+  );
+}
+
+export async function getReviewers(): Promise<ReviewerOut[]> {
+  return request<ReviewerOut[]>('GET', '/reviewers');
+}
+
+export async function assignReviewer(
+  itemId: string,
+  reviewerId: string,
+  expectedItemVersion: number,
+  rationale: string
+): Promise<ContentOut> {
+  return request<ContentOut>('PUT', `/content/${itemId}/reviewer`, {
+    reviewer_id: reviewerId,
+    expected_item_version: expectedItemVersion,
+    rationale,
+  });
+}
+
+// ---------------------------------------------------------------------------
 // Health
 // ---------------------------------------------------------------------------
 
@@ -234,8 +281,4 @@ export async function getLive(): Promise<LiveResponse> {
 
 export async function getReady(): Promise<ReadyResponse> {
   return request<ReadyResponse>('GET', '/health/ready');
-}
-
-export async function getReviewers(): Promise<ReviewerOut[]> {
-  return request<ReviewerOut[]>('GET', '/reviewers');
 }

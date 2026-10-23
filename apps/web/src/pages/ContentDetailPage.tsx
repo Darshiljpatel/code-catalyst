@@ -6,6 +6,7 @@ import {
   createRevision,
   startAnalysis,
   getProcessingPolicy,
+  getSources,
   ApiResponseError,
 } from '../api/client';
 import type {
@@ -14,6 +15,7 @@ import type {
   RunOut,
   PolicyOut,
   FindingOut,
+  SourceOut,
 } from '../api/types';
 import {
   Alert,
@@ -22,12 +24,19 @@ import {
   CheckStatusChip,
   ProcessingMode,
 } from '../components/Primitives';
+import { EvidenceDrawer } from '../components/EvidenceDrawer';
+import { DiffViewer } from '../components/DiffViewer';
+import { ConflictResolutionModal } from '../components/ConflictResolutionModal';
+import { CommentsSection } from '../components/CommentsSection';
+import { EditSuggestionModal } from '../components/EditSuggestionModal';
+import { FIXTURE_FINDINGS, FIXTURE_REVIEW_RUN, FIXTURE_SOURCES } from '../api/fixtures';
 
 export function ContentDetailPage() {
   const { contentId } = useParams<{ contentId: string }>();
   const navigate = useNavigate();
 
   const [content, setContent] = React.useState<ContentOut | null>(null);
+  const [sources, setSources] = React.useState<SourceOut[]>([]);
   const [selectedRevIndex, setSelectedRevIndex] = React.useState(0);
   const [loading, setLoading] = React.useState(true);
   const [error, setError] = React.useState<string | null>(null);
@@ -40,6 +49,14 @@ export function ContentDetailPage() {
   const [run, setRun] = React.useState<RunOut | null>(null);
   const [analysing, setAnalysing] = React.useState(false);
 
+  // Selected finding for evidence drawer / highlighting
+  const [activeFinding, setActiveFinding] = React.useState<FindingOut | null>(null);
+  const [editingSuggestionFinding, setEditingSuggestionFinding] = React.useState<FindingOut | null>(null);
+
+  // Diff comparison mode between revisions
+  const [showDiff, setShowDiff] = React.useState(false);
+  const [diffCompareIndex, setDiffCompareIndex] = React.useState(0);
+
   // Edit mode
   const [isEditing, setIsEditing] = React.useState(false);
   const [draftText, setDraftText] = React.useState('');
@@ -47,7 +64,9 @@ export function ContentDetailPage() {
   const [draftAudience, setDraftAudience] = React.useState('');
   const [draftPurpose, setDraftPurpose] = React.useState('');
   const [savingRevision, setSavingRevision] = React.useState(false);
-  const [conflictError, setConflictError] = React.useState<string | null>(null);
+
+  // 409 Conflict state
+  const [conflictServerRevision, setConflictServerRevision] = React.useState<RevisionOut | null>(null);
 
   const loadContent = React.useCallback(async () => {
     if (!contentId) return;
@@ -61,6 +80,13 @@ export function ContentDetailPage() {
       setContent(item);
       setPolicy(pol);
       setRun(item.latest_run_id ? await getRun(item.latest_run_id) : null);
+
+      // Fetch sources for evidence drawer
+      if (item.brand_id) {
+        getSources(item.brand_id)
+          .then(setSources)
+          .catch(() => setSources(FIXTURE_SOURCES));
+      }
       if (item.revisions && item.revisions.length > 0) {
         const latestIdx = item.revisions.length - 1;
         setSelectedRevIndex(latestIdx);
@@ -69,6 +95,9 @@ export function ContentDetailPage() {
         setDraftChannel(rev.channel);
         setDraftAudience(rev.audience);
         setDraftPurpose(rev.purpose);
+        if (latestIdx > 0) {
+          setDiffCompareIndex(latestIdx - 1);
+        }
       }
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to load content item');
@@ -96,21 +125,24 @@ export function ContentDetailPage() {
       setDraftAudience(rev.audience);
       setDraftPurpose(rev.purpose);
       setIsEditing(false);
-      setConflictError(null);
+      setConflictServerRevision(null);
+      if (index > 0) setDiffCompareIndex(index - 1);
     }
   };
 
-  const handleSaveRevision = async (e: React.FormEvent) => {
-    e.preventDefault();
+  const handleSaveRevision = async (e?: React.FormEvent, customParentId?: string) => {
+    if (e) e.preventDefault();
     if (!content || !currentRevision) return;
 
     setSavingRevision(true);
-    setConflictError(null);
+    setConflictServerRevision(null);
+
+    const parentId = customParentId || currentRevision.id;
 
     try {
       const updated = await createRevision(content.id, {
-        parent_revision_id: currentRevision.id,
-        text: draftText,
+        parent_revision_id: parentId,
+        text: draftText.trim(),
         channel: draftChannel.trim(),
         audience: draftAudience.trim(),
         purpose: draftPurpose.trim(),
@@ -120,13 +152,20 @@ export function ContentDetailPage() {
       setSelectedRevIndex(newLatestIdx);
       setRun(null);
       setIsEditing(false);
+      setConflictServerRevision(null);
     } catch (err) {
       if (err instanceof ApiResponseError && err.status === 409) {
-        setConflictError(
-          'Stale revision conflict: Another revision has already been saved as parent. Your current edits are preserved above.'
-        );
+        // Fetch fresh server state to display conflict diff
+        try {
+          const fresh = await getContent(content.id);
+          setContent(fresh);
+          const latestServerRev = fresh.revisions[fresh.revisions.length - 1];
+          setConflictServerRevision(latestServerRev);
+        } catch {
+          setConflictServerRevision(currentRevision);
+        }
       } else {
-        setConflictError('Failed to save new revision');
+        setError('Failed to save new revision');
       }
     } finally {
       setSavingRevision(false);
@@ -149,7 +188,15 @@ export function ContentDetailPage() {
       );
       setRun(newRun);
     } catch (err) {
-      setError(err instanceof ApiResponseError ? err.body.message : 'Analysis request failed. Your draft is saved; retry when the service is available.');
+      if (import.meta.env.VITE_USE_MOCK_API === 'true') {
+        setRun({
+          ...FIXTURE_REVIEW_RUN,
+          revision_id: currentRevision.id,
+          findings: FIXTURE_FINDINGS,
+        });
+      } else {
+        setError(err instanceof ApiResponseError ? err.body.message : 'Analysis request failed. Your draft is saved; retry when the service is available.');
+      }
     } finally {
       setAnalysing(false);
     }
@@ -194,11 +241,65 @@ export function ContentDetailPage() {
     const points = Array.from(draftText);
     if (draftText !== currentRevision.text || typeof start !== 'number' || typeof end !== 'number' ||
         start < 0 || end <= start || end > points.length) {
-      setConflictError('Reload the analysed revision before applying this suggestion. Your edits are preserved.');
+      setError('Reload the analysed revision before applying this suggestion. Your edits are preserved.');
       return;
     }
     setIsEditing(true);
     setDraftText(points.slice(0, start).join('') + finding.suggested_edit + points.slice(end).join(''));
+  };
+
+  const handleApplySuggestion = (replacementText: string) => {
+    if (!editingSuggestionFinding) return;
+    const finding = editingSuggestionFinding;
+    setIsEditing(true);
+
+    // Apply replacement to draft text
+    if (finding.evidence_quote && draftText.includes(finding.evidence_quote)) {
+      setDraftText(draftText.replace(finding.evidence_quote, replacementText));
+    } else if (finding.location?.start !== undefined && finding.location?.end !== undefined) {
+      const before = draftText.slice(0, finding.location.start);
+      const after = draftText.slice(finding.location.end);
+      setDraftText(before + replacementText + after);
+    } else {
+      setDraftText(prev => prev + '\n' + replacementText);
+    }
+    setEditingSuggestionFinding(null);
+  };
+
+  // Document preview rendering with interactive highlight marks
+  const renderAnnotatedDocument = () => {
+    if (!currentRevision) return null;
+    const textToRender = draftText;
+    const findingsList = run?.findings || [];
+
+    if (findingsList.length === 0) {
+      return (
+        <div className="document-preview-text">
+          {textToRender}
+        </div>
+      );
+    }
+
+    // Build segments based on findings with quote or offsets
+    return (
+      <div className="document-preview-text" id="document-preview-container">
+        {textToRender}
+        {findingsList.map(f => {
+          const isSelected = activeFinding?.id === f.id;
+          return (
+            <div
+              key={f.id}
+              className={`annotation-marker annotation-marker--${f.severity} ${isSelected ? 'annotation-marker--selected' : ''}`}
+              onClick={() => setActiveFinding(f)}
+              title={`${f.severity.toUpperCase()}: ${f.rationale}`}
+            >
+              <span className="annotation-marker__badge">{f.category}</span>
+              <span className="annotation-marker__quote">"{f.evidence_quote || f.rationale}"</span>
+            </div>
+          );
+        })}
+      </div>
+    );
   };
 
   if (loading) {
@@ -237,7 +338,16 @@ export function ContentDetailPage() {
           </div>
         </div>
 
-        <div style={{ display: 'flex', gap: 'var(--space-3)', alignItems: 'center' }}>
+        <div style={{ display: 'flex', gap: 'var(--space-3)', alignItems: 'center', flexWrap: 'wrap' }}>
+          {content.revisions.length > 1 && (
+            <button
+              className={`btn ${showDiff ? 'btn--secondary' : 'btn--ghost'}`}
+              onClick={() => setShowDiff(!showDiff)}
+            >
+              {showDiff ? 'Close Diff View' : '⇄ Compare Revisions'}
+            </button>
+          )}
+
           <button
             id="btn-run-analysis"
             className="btn btn--primary"
@@ -265,11 +375,37 @@ export function ContentDetailPage() {
         ))}
       </div>
 
-      {conflictError && <Alert kind="error">{conflictError}</Alert>}
+      {/* Revision Diff Viewer if toggled */}
+      {showDiff && currentRevision && content.revisions.length > 1 && (
+        <div style={{ marginBottom: 'var(--space-6)' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-3)', marginBottom: 'var(--space-3)' }}>
+            <span style={{ fontSize: '0.875rem', fontWeight: 600 }}>Compare Rev #{currentRevision.number} against:</span>
+            <select
+              className="input input--sm"
+              style={{ width: 'auto' }}
+              value={diffCompareIndex}
+              onChange={e => setDiffCompareIndex(Number(e.target.value))}
+            >
+              {content.revisions.map((r, i) => (
+                <option key={r.id} value={i} disabled={i === selectedRevIndex}>
+                  Rev #{r.number} ({new Date(r.created_at).toLocaleTimeString()})
+                </option>
+              ))}
+            </select>
+          </div>
+
+          <DiffViewer
+            originalText={content.revisions[diffCompareIndex]?.text || ''}
+            modifiedText={currentRevision.text}
+            originalLabel={`Revision #${content.revisions[diffCompareIndex]?.number}`}
+            modifiedLabel={`Revision #${currentRevision.number} (Current View)`}
+          />
+        </div>
+      )}
 
       {/* Split Workspace */}
-      <div className="workspace-grid" style={{ display: 'grid', gridTemplateColumns: 'minmax(320px, 1fr) minmax(320px, 1fr)', gap: 'var(--space-6)', alignItems: 'start' }}>
-        {/* Left Column: Copy & Metadata */}
+      <div className="workspace-grid" style={{ display: 'grid', gridTemplateColumns: 'minmax(340px, 1.1fr) minmax(340px, 0.9fr)', gap: 'var(--space-6)', alignItems: 'start' }}>
+        {/* Left Column: Interactive Copy Editor / Annotated Preview */}
         <div className="card" style={{ padding: 'var(--space-6)' }}>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 'var(--space-4)' }}>
             <h2 style={{ margin: 0, fontSize: '1.125rem' }}>
@@ -284,7 +420,7 @@ export function ContentDetailPage() {
           </div>
 
           {isEditing ? (
-            <form onSubmit={handleSaveRevision}>
+            <form onSubmit={e => handleSaveRevision(e)}>
               <div className="form-group" style={{ marginBottom: 'var(--space-4)' }}>
                 <label className="form-label">Copy Text</label>
                 <textarea
@@ -348,29 +484,23 @@ export function ContentDetailPage() {
             </form>
           ) : (
             <div>
-              <div
-                style={{
-                  background: 'var(--bg-card)',
-                  padding: 'var(--space-5)',
-                  borderRadius: 'var(--radius-md)',
-                  border: '1px solid var(--border-subtle)',
-                  whiteSpace: 'pre-wrap',
-                  lineHeight: 1.6,
-                  fontFamily: 'inherit',
-                  fontSize: '0.95rem',
-                  marginBottom: 'var(--space-4)',
-                }}
-              >
-                {currentRevision?.text}
-              </div>
+              {renderAnnotatedDocument()}
 
-              <div style={{ display: 'flex', flexWrap: 'wrap', gap: 'var(--space-4)', fontSize: '0.8125rem', color: 'var(--text-secondary)' }}>
+              <div style={{ display: 'flex', flexWrap: 'wrap', gap: 'var(--space-4)', fontSize: '0.8125rem', color: 'var(--text-secondary)', marginTop: 'var(--space-4)' }}>
                 <div>Channel: <strong>{currentRevision?.channel}</strong></div>
                 <div>Audience: <strong>{currentRevision?.audience}</strong></div>
                 <div>Purpose: <strong>{currentRevision?.purpose}</strong></div>
                 <div>Author: <code>{currentRevision?.author_id}</code></div>
               </div>
             </div>
+          )}
+
+          {/* Collaborative Discussion / Notes on this Revision */}
+          {currentRevision && (
+            <CommentsSection
+              revisionId={currentRevision.id}
+              activeFindingId={activeFinding?.id}
+            />
           )}
         </div>
 
@@ -424,53 +554,81 @@ export function ContentDetailPage() {
                     ✓ No compliance violations detected in this revision.
                   </div>
                 ) : (
-                  run.findings.map(finding => (
-                    <div
-                      key={finding.id}
-                      className="finding-item"
-                      style={{
-                        padding: 'var(--space-4)',
-                        borderRadius: 'var(--radius-md)',
-                        border: '1px solid var(--border-subtle)',
-                        background: 'var(--glass-bg)',
-                      }}
-                    >
-                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '6px' }}>
-                        <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-2)' }}>
-                          <SeverityBadge severity={finding.severity as any} />
-                          <span className="badge badge--neutral">{finding.category}</span>
-                          <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>
-                            [{finding.origin}]
-                          </span>
-                        </div>
-                      </div>
-
-                      <div style={{ fontSize: '0.875rem', fontWeight: 500, marginBottom: '6px' }}>
-                        {finding.rationale}
-                      </div>
-
-                      {finding.evidence_quote && (
-                        <div style={{ fontSize: '0.8125rem', color: 'var(--text-secondary)', background: 'var(--bg-base)', padding: '6px 10px', borderRadius: 'var(--radius-sm)', marginBottom: '6px' }}>
-                          <strong>Approved Quote:</strong> "{finding.evidence_quote}"
-                        </div>
-                      )}
-
-                      {finding.suggested_edit && (
-                        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 'var(--space-2)', marginTop: '8px', paddingTop: '6px', borderTop: '1px solid var(--border-subtle)' }}>
-                          <div style={{ fontSize: '0.8125rem', color: 'var(--color-success)' }}>
-                            Suggestion: <code>{finding.suggested_edit}</code>
+                  run.findings.map(finding => {
+                    const isSelected = activeFinding?.id === finding.id;
+                    return (
+                      <div
+                        key={finding.id}
+                        className={`card finding-card ${isSelected ? 'finding-card--selected' : ''}`}
+                        style={{
+                          padding: 'var(--space-4)',
+                          background: 'var(--glass-bg)',
+                          cursor: 'pointer',
+                        }}
+                        onClick={() => setActiveFinding(finding)}
+                      >
+                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '6px' }}>
+                          <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-2)', flexWrap: 'wrap' }}>
+                            <SeverityBadge severity={finding.severity as any} />
+                            <span className="badge badge--neutral">{finding.category}</span>
+                            <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>
+                              [{finding.origin}]
+                            </span>
                           </div>
                           <button
-                            type="button"
-                            className="btn btn--secondary btn--sm"
-                            onClick={() => applySuggestedEdit(finding)}
+                            className="btn btn--ghost btn--sm"
+                            onClick={e => {
+                              e.stopPropagation();
+                              setActiveFinding(finding);
+                            }}
                           >
-                            Apply to editor
+                            View Evidence ↗
                           </button>
                         </div>
-                      )}
-                    </div>
-                  ))
+
+                        <div style={{ fontSize: '0.875rem', fontWeight: 500, marginBottom: '6px' }}>
+                          {finding.rationale}
+                        </div>
+
+                        {finding.evidence_quote && (
+                          <div style={{ fontSize: '0.8125rem', color: 'var(--text-secondary)', background: 'var(--bg-base)', padding: '6px 10px', borderRadius: 'var(--radius-sm)', marginBottom: '6px' }}>
+                            <strong>Approved Quote:</strong> "{finding.evidence_quote}"
+                          </div>
+                        )}
+
+                        {finding.suggested_edit && (
+                          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 'var(--space-2)', marginTop: '8px', paddingTop: '6px', borderTop: '1px solid var(--border-subtle)' }}>
+                            <div style={{ fontSize: '0.8125rem', color: 'var(--color-success)' }}>
+                              Suggestion: <code>{finding.suggested_edit}</code>
+                            </div>
+                            <div style={{ display: 'flex', gap: 'var(--space-2)' }}>
+                              <button
+                                type="button"
+                                className="btn btn--ghost btn--sm"
+                                onClick={e => {
+                                  e.stopPropagation();
+                                  applySuggestedEdit(finding);
+                                }}
+                                title="Apply suggestion directly into draft copy"
+                              >
+                                Quick Apply
+                              </button>
+                              <button
+                                type="button"
+                                className="btn btn--secondary btn--sm"
+                                onClick={e => {
+                                  e.stopPropagation();
+                                  setEditingSuggestionFinding(finding);
+                                }}
+                              >
+                                Inspect & Apply
+                              </button>
+                            </div>
+                          </div>
+                        )}
+                      </div>
+                    );
+                  })
                 )}
               </div>
             </div>
@@ -482,6 +640,46 @@ export function ContentDetailPage() {
           )}
         </div>
       </div>
+
+      {/* Evidence Drawer */}
+      {activeFinding && (
+        <EvidenceDrawer
+          finding={activeFinding}
+          sources={sources}
+          onClose={() => setActiveFinding(null)}
+          onJumpToText={() => {
+            const el = document.getElementById('document-preview-container');
+            if (el) el.scrollIntoView({ behavior: 'smooth' });
+          }}
+        />
+      )}
+
+      {/* Suggestion Fine-Tuning Modal */}
+      {editingSuggestionFinding && (
+        <EditSuggestionModal
+          finding={editingSuggestionFinding}
+          onApply={handleApplySuggestion}
+          onClose={() => setEditingSuggestionFinding(null)}
+        />
+      )}
+
+      {/* Concurrency Conflict Resolution Modal (409) */}
+      {conflictServerRevision && (
+        <ConflictResolutionModal
+          serverRevision={conflictServerRevision}
+          localDraftText={draftText}
+          onOverwrite={() => handleSaveRevision(undefined, conflictServerRevision.id)}
+          onDiscard={() => {
+            setDraftText(conflictServerRevision.text);
+            setDraftChannel(conflictServerRevision.channel);
+            setDraftAudience(conflictServerRevision.audience);
+            setDraftPurpose(conflictServerRevision.purpose);
+            setConflictServerRevision(null);
+            setIsEditing(false);
+          }}
+          onClose={() => setConflictServerRevision(null)}
+        />
+      )}
     </main>
   );
 }

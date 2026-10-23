@@ -403,9 +403,9 @@ export const FIXTURE_DECISION: Decision = {
   reviewer_id: FIXTURE_REVIEWER_USER_ID,
   kind: 'approved',
   rationale: 'All blockers resolved. Brand compliance confirmed.',
+  source_epoch: 0,
+  text_hash: 'sha256-approved',
   decided_at: '2026-10-23T08:00:00Z',
-  source_epoch_at_decision: 0,
-  is_stale: false,
 };
 
 // ---------------------------------------------------------------------------
