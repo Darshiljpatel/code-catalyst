@@ -276,6 +276,8 @@ export const FIXTURE_CONTENT_ITEM: ContentOut = {
   creator_id: FIXTURE_CREATOR_USER_ID,
   reviewer_id: FIXTURE_REVIEWER_USER_ID,
   current_revision: 1,
+  workflow_version: 1,
+  approval_stale: false,
   state: 'draft',
   revisions: [FIXTURE_REVISION_1],
 };

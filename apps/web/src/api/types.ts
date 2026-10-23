@@ -183,6 +183,8 @@ export interface ContentOut {
   creator_id: string;
   reviewer_id: string | null;
   current_revision: number;
+  workflow_version: number;
+  approval_stale: boolean;
   state: string;
   revisions: RevisionOut[];
 }

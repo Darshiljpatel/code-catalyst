@@ -764,7 +764,7 @@ export function ContentDetailPage() {
       {showSubmitModal && currentRevision && (
         <SubmitReviewModal
           revisionId={currentRevision.id}
-          expectedItemVersion={content.current_revision}
+          expectedItemVersion={content.workflow_version}
           expectedRunId={run?.id || 'run-default'}
           expectedSourceEpoch={run?.source_epoch ?? 0}
           currentReviewerId={content.reviewer_id}
@@ -780,7 +780,7 @@ export function ContentDetailPage() {
       {showDecisionModal && currentRevision && (
         <DecisionModal
           revisionId={currentRevision.id}
-          expectedItemVersion={content.current_revision}
+          expectedItemVersion={content.workflow_version}
           expectedRunId={run?.id || 'run-default'}
           expectedSourceEpoch={run?.source_epoch ?? 0}
           kind={decisionKind}
@@ -804,7 +804,7 @@ export function ContentDetailPage() {
       {resolvingFinding && (
         <ResolutionModal
           finding={resolvingFinding}
-          expectedItemVersion={content.current_revision}
+          expectedItemVersion={content.workflow_version}
           onSuccess={() => {
             setResolvingFinding(null);
             loadContent();

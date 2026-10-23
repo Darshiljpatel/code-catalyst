@@ -231,7 +231,7 @@ export function runT11ReviewJourney(): { passed: boolean; steps: T11StepResult[]
 
   steps.push({
     step: '8. Reviewer Approval Decision',
-    status: decision.kind === 'approved' && decision.rationale.length >= 10 ? 'passed' : 'failed',
+    status: decision.kind === 'approved' && decision.rationale.length >= 20 ? 'passed' : 'failed',
     details: `Recorded decision APPROVED by reviewer ${decision.reviewer_id}. Rationale: "${decision.rationale}"`,
   });
 

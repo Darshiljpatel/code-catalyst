@@ -38,8 +38,8 @@ export function DecisionModal({
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (rationale.trim().length < 10) {
-      setError('Audit rationale must be at least 10 characters long.');
+    if (rationale.trim().length < 20) {
+      setError('Audit rationale must be at least 20 characters long.');
       return;
     }
     setSubmitting(true);
@@ -81,7 +81,7 @@ export function DecisionModal({
         <form onSubmit={handleSubmit}>
           <div className="form-group" style={{ marginBottom: 'var(--space-4)' }}>
             <label className="form-label" htmlFor="decision-rationale">
-              Audit Rationale (min 10 characters) <span style={{ color: 'var(--color-error)' }}>*</span>
+              Audit Rationale (min 20 characters) <span style={{ color: 'var(--color-error)' }}>*</span>
             </label>
             <textarea
               id="decision-rationale"
@@ -94,8 +94,8 @@ export function DecisionModal({
                 : 'e.g., Unsubstantiated claims remain in paragraph 2; please re-align with 14-day trial guidelines.'}
               required
             />
-            <div style={{ fontSize: '0.75rem', color: rationale.trim().length >= 10 ? 'var(--color-success)' : 'var(--text-muted)', marginTop: '4px' }}>
-              {rationale.trim().length} / 10 characters minimum
+            <div style={{ fontSize: '0.75rem', color: rationale.trim().length >= 20 ? 'var(--color-success)' : 'var(--text-muted)', marginTop: '4px' }}>
+              {rationale.trim().length} / 20 characters minimum
             </div>
           </div>
 
@@ -113,7 +113,7 @@ export function DecisionModal({
             <button
               type="submit"
               className={`btn ${isApproval ? 'btn--primary' : 'btn--secondary'}`}
-              disabled={submitting || rationale.trim().length < 10}
+              disabled={submitting || rationale.trim().length < 20}
             >
               {submitting ? 'Recording decision…' : isApproval ? '✓ Confirm Approval' : '⟲ Submit Changes Request'}
             </button>

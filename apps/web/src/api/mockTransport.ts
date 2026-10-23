@@ -284,6 +284,8 @@ export const mockTransport = async (
       creator_id: mockSession.email,
       reviewer_id: body.reviewer_id || null,
       current_revision: 1,
+      workflow_version: 1,
+      approval_stale: false,
       state: 'draft',
       revisions: [firstRev],
     };
@@ -429,6 +431,16 @@ export const mockTransport = async (
     if (!mockSession) return jsonResponse(401, FIXTURE_ERROR_UNAUTHENTICATED);
     const findingId = resolutionMatch[1];
     const body = JSON.parse((init?.body as string) ?? '{}');
+
+    if (!body.rationale || body.rationale.length < 20) {
+      return jsonResponse(422, {
+        code: 'validation_error',
+        message: 'Resolution rationale must be at least 20 characters.',
+        request_id: 'mock',
+        details: {},
+      });
+    }
+
     const res: ResolutionOut = {
       id: 'res-' + Math.random().toString(36).substring(2, 9),
       finding_id: findingId,
@@ -507,10 +519,10 @@ export const mockTransport = async (
     const revId = decisionMatch[1];
     const body = JSON.parse((init?.body as string) ?? '{}');
 
-    if (!body.rationale || body.rationale.length < 10) {
+    if (!body.rationale || body.rationale.length < 20) {
       return jsonResponse(422, {
         code: 'validation_error',
-        message: 'Decision rationale must be at least 10 characters.',
+        message: 'Decision rationale must be at least 20 characters.',
         request_id: 'mock',
         details: {},
       });

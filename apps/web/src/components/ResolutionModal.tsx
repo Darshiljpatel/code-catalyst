@@ -32,8 +32,8 @@ export function ResolutionModal({
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (rationale.trim().length < 10) {
-      setError('Resolution rationale must be at least 10 characters long.');
+    if (rationale.trim().length < 20) {
+      setError('Resolution rationale must be at least 20 characters long.');
       return;
     }
     setSubmitting(true);
@@ -110,7 +110,7 @@ export function ResolutionModal({
 
           <div className="form-group" style={{ marginBottom: 'var(--space-4)' }}>
             <label className="form-label" htmlFor="resolution-rationale">
-              Audit Rationale (min 10 characters) <span style={{ color: 'var(--color-error)' }}>*</span>
+              Audit Rationale (min 20 characters) <span style={{ color: 'var(--color-error)' }}>*</span>
             </label>
             <textarea
               id="resolution-rationale"
@@ -121,8 +121,8 @@ export function ResolutionModal({
               placeholder="Explain the reason for this human disposition record…"
               required
             />
-            <div style={{ fontSize: '0.75rem', color: rationale.trim().length >= 10 ? 'var(--color-success)' : 'var(--text-muted)', marginTop: '4px' }}>
-              {rationale.trim().length} / 10 characters minimum
+            <div style={{ fontSize: '0.75rem', color: rationale.trim().length >= 20 ? 'var(--color-success)' : 'var(--text-muted)', marginTop: '4px' }}>
+              {rationale.trim().length} / 20 characters minimum
             </div>
           </div>
 
@@ -133,7 +133,7 @@ export function ResolutionModal({
             <button
               type="submit"
               className="btn btn--primary"
-              disabled={submitting || rationale.trim().length < 10}
+              disabled={submitting || rationale.trim().length < 20}
             >
               {submitting ? 'Recording…' : 'Record Disposition'}
             </button>
