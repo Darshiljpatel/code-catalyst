@@ -1,0 +1,13 @@
+============================= test session starts =============================
+platform win32 -- Python 3.13.7, pytest-9.1.1, pluggy-1.6.0 -- C:\Users\surya\AppData\Local\Programs\Python\Python313\python.exe
+cachedir: .pytest_cache
+rootdir: D:\KEN\code-catalyst
+configfile: pyproject.toml
+plugins: anyio-4.13.0
+collecting ... collected 3 items
+
+tests/evaluation/test_evaluation_metrics.py::test_compute_metrics PASSED [ 33%]
+tests/evaluation/test_evaluation_metrics.py::test_compute_metrics_zero_division PASSED [ 66%]
+tests/evaluation/test_evaluation_metrics.py::test_evaluate_fixtures_structure_and_performance PASSED [100%]
+
+============================== 3 passed in 0.43s ==============================

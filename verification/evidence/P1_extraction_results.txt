@@ -1,0 +1,17 @@
+============================= test session starts =============================
+platform win32 -- Python 3.13.7, pytest-9.1.1, pluggy-1.6.0 -- C:\Users\surya\AppData\Local\Programs\Python\Python313\python.exe
+cachedir: .pytest_cache
+rootdir: D:\KEN\code-catalyst
+configfile: pyproject.toml
+plugins: anyio-4.13.0
+collecting ... collected 7 items
+
+tests/review_engine/test_extraction.py::test_extract_plain_text PASSED   [ 14%]
+tests/review_engine/test_extraction.py::test_extract_png_metadata PASSED [ 28%]
+tests/review_engine/test_extraction.py::test_extract_jpeg_metadata PASSED [ 42%]
+tests/review_engine/test_extraction.py::test_extract_pdf_with_text PASSED [ 57%]
+tests/review_engine/test_extraction.py::test_extract_docx_paragraphs PASSED [ 71%]
+tests/review_engine/test_extraction.py::test_extract_unsupported_media_type PASSED [ 85%]
+tests/review_engine/test_extraction.py::test_extract_size_limit_exceeded PASSED [100%]
+
+============================== 7 passed in 0.53s ==============================

@@ -1,0 +1,23 @@
+============================= test session starts =============================
+platform win32 -- Python 3.13.7, pytest-9.1.1, pluggy-1.6.0 -- C:\Users\surya\AppData\Local\Programs\Python\Python313\python.exe
+cachedir: .pytest_cache
+rootdir: D:\KEN\code-catalyst
+configfile: pyproject.toml
+plugins: anyio-4.13.0
+collecting ... collected 13 items
+
+tests/review_engine/test_deterministic.py::test_t05_brand_1_lumadesk_terminology_and_facts PASSED [  7%]
+tests/review_engine/test_deterministic.py::test_t05_brand_2_apexcloud_proves_no_hardcoding PASSED [ 15%]
+tests/review_engine/test_deterministic.py::test_t05_word_boundary_near_matches PASSED [ 23%]
+tests/review_engine/test_deterministic.py::test_t05_sanath_database_list_of_sources_shape PASSED [ 30%]
+tests/review_engine/test_deterministic.py::test_t10_asset_hash_original_vs_altered PASSED [ 38%]
+tests/review_engine/test_deterministic.py::test_t10_image_dimension_bounds PASSED [ 46%]
+tests/review_engine/test_deterministic.py::test_t10_contrast_449_vs_450_boundary_normal_text PASSED [ 53%]
+tests/review_engine/test_deterministic.py::test_t10_contrast_299_vs_300_boundary_large_text PASSED [ 61%]
+tests/review_engine/test_deterministic.py::test_t10_contrast_unknown_font_size_honest_uncertainty PASSED [ 69%]
+tests/review_engine/test_deterministic.py::test_clean_draft_produces_zero_findings_with_complete_status PASSED [ 76%]
+tests/review_engine/test_deterministic.py::test_contrast_is_not_rounded_up_before_threshold_comparison PASSED [ 84%]
+tests/review_engine/test_deterministic.py::test_equivalent_numeric_trial_duration_is_not_a_contradiction[014] PASSED [ 92%]
+tests/review_engine/test_deterministic.py::test_equivalent_numeric_trial_duration_is_not_a_contradiction[14.0] PASSED [100%]
+
+============================= 13 passed in 0.41s ==============================

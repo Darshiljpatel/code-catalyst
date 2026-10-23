@@ -1,0 +1,21 @@
+============================= test session starts =============================
+platform win32 -- Python 3.13.7, pytest-9.1.1, pluggy-1.6.0 -- C:\Users\surya\AppData\Local\Programs\Python\Python313\python.exe
+cachedir: .pytest_cache
+rootdir: D:\KEN\code-catalyst
+configfile: pyproject.toml
+plugins: anyio-4.13.0
+collecting ... collected 11 items
+
+tests/worker/test_adapter.py::test_adapter_all_deterministic_categories_present PASSED [  9%]
+tests/worker/test_adapter.py::test_adapter_lumadesk_findings_formatting PASSED [ 18%]
+tests/worker/test_adapter.py::test_adapter_clean_draft_returns_zero_findings PASSED [ 27%]
+tests/worker/test_adapter.py::test_adapter_passes_orchestration_checked_engine_result PASSED [ 36%]
+tests/worker/test_adapter.py::test_adapter_hardened_invariants PASSED    [ 45%]
+tests/worker/test_runner.py::test_runner_once_mode_exits_after_single_job PASSED [ 54%]
+tests/worker/test_runner.py::test_runner_once_mode_exits_when_queue_empty PASSED [ 63%]
+tests/worker/test_runner.py::test_runner_catches_unexpected_exception_safely PASSED [ 72%]
+tests/worker/test_runner.py::test_get_reviewer_fallback_stub PASSED      [ 81%]
+tests/worker/test_runner.py::test_t14_attempts_exhaustion_in_orchestration PASSED [ 90%]
+tests/worker/test_runner.py::test_t15_deadline_exceeded_in_orchestration PASSED [100%]
+
+============================= 11 passed in 1.61s ==============================

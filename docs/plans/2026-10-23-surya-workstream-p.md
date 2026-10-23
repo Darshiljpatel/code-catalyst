@@ -867,7 +867,7 @@ pytest tests/evaluation/test_evaluation_metrics.py -v
 ```
 Expected: PASS (1 passed).
 
-- [ ] **Step 5: Commit on master**
+- [x] **Step 5: Commit on master**
 
 ```powershell
 git add evaluation/fixtures/lumadesk_campaign.json evaluation/evaluate.py tests/evaluation/test_evaluation_metrics.py
@@ -888,7 +888,7 @@ git commit -m "feat(evaluation): add synthetic campaign fixtures and benchmark m
 - Consumes: Environment variables (`DATABASE_URL`, `POSTGRES_USER`, etc.).
 - Produces: Fully reproducible container composition for API, Worker, Database, and Web.
 
-- [ ] **Step 1: Write test validating docker-compose configuration**
+- [x] **Step 1: Write test validating docker-compose configuration**
 
 Create `tests/infra/test_docker_syntax.py`:
 ```python
@@ -905,7 +905,7 @@ def test_compose_file_exists_and_declares_services():
     assert "web:" in content
 ```
 
-- [ ] **Step 2: Run test to verify it fails**
+- [x] **Step 2: Run test to verify it fails**
 
 Run:
 ```powershell
@@ -913,7 +913,7 @@ pytest tests/infra/test_docker_syntax.py -v
 ```
 Expected: FAIL with `AssertionError: assert compose_path.exists()`.
 
-- [ ] **Step 3: Implement docker-compose.yml and Dockerfile.worker**
+- [x] **Step 3: Implement docker-compose.yml and Dockerfile.worker**
 
 Create `infra/Dockerfile.worker`:
 ```dockerfile
@@ -996,7 +996,7 @@ volumes:
   pgdata:
 ```
 
-- [ ] **Step 4: Run test to verify it passes**
+- [x] **Step 4: Run test to verify it passes**
 
 Run:
 ```powershell
@@ -1004,7 +1004,7 @@ pytest tests/infra/test_docker_syntax.py -v
 ```
 Expected: PASS (1 passed).
 
-- [ ] **Step 5: Commit on master**
+- [x] **Step 5: Commit on master**
 
 ```powershell
 git add infra/docker-compose.yml infra/Dockerfile.worker tests/infra/test_docker_syntax.py
@@ -1020,7 +1020,7 @@ git commit -m "feat(infra): add docker-compose configuration and worker containe
 - Create: `verification/evidence/P2_deterministic_results.txt`
 - Run: `python scripts/verify_plan.py`
 
-- [ ] **Step 1: Run complete test suite for Workstream P**
+- [x] **Step 1: Run complete test suite for Workstream P**
 
 Run:
 ```powershell
@@ -1028,7 +1028,7 @@ pytest tests/ -v
 ```
 Expected: All tests pass (0 failures).
 
-- [ ] **Step 2: Generate test evidence output**
+- [x] **Step 2: Generate test evidence output**
 
 Run:
 ```powershell
@@ -1036,7 +1036,7 @@ pytest tests/review_engine/ -v > verification/evidence/P1_extraction_results.txt
 pytest tests/review_engine/test_deterministic.py -v > verification/evidence/P2_deterministic_results.txt
 ```
 
-- [ ] **Step 3: Run plan verification script**
+- [x] **Step 3: Run plan verification script**
 
 Run:
 ```powershell
@@ -1047,9 +1047,10 @@ Expected:
 PASS: 26 requirements mapped to 30 cases. Product tests are not executed by this command.
 ```
 
-- [ ] **Step 4: Commit on master**
+- [x] **Step 4: Commit on master**
 
 ```powershell
 git add verification/evidence/
 git commit -m "test: record verified unit test evidence for workstream P"
 ```
+
