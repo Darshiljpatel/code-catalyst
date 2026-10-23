@@ -122,3 +122,23 @@ Next investigation: campaign creation and analysis start share one error path.
 If creation succeeds but analysis fails, the intake form implies nothing saved
 and allows duplicate campaigns on retry. Separate these outcomes and guide the
 user to the saved campaign with an analysis retry.
+
+## Overnight iteration 5: recover intake after queue failures
+
+Separated campaign creation from analysis-start failure. If the draft saves but
+the analysis request fails, the creator now opens the existing campaign with a
+clear saved-state notice and a retry instruction. Retrying analysis does not
+POST another campaign. The recovery notice clears after a successful retry.
+The intake submit handler also ignores repeated submission while busy, and
+analysis idempotency keys use the browser's UUID generator.
+
+Verification: production build and lint passed. Intake failure/recovery and both
+export browser regressions passed (3 tests). The intake test counts exactly one
+campaign POST across failed analysis and successful retry, and checks saved-state
+navigation and findings after recovery. The final rebuilt intake check also
+passed (1 test); its notice assertion was scoped to avoid ambiguity with the
+discussion loading status. No provider calls are involved.
+
+Next candidate: manual category review currently lets reviewers choose categories
+already completed and gives no category-specific source guidance. Guide reviewers
+through outstanding checks while preserving the server's evidence restrictions.

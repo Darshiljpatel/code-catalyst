@@ -62,6 +62,7 @@ export function NewReviewPage() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (submitting) return;
     if (!brandId) {
       setError('Please select a brand.');
       return;
@@ -89,15 +90,20 @@ export function NewReviewPage() {
       // 2. Start review run on first revision
       const firstRev = content.revisions[0];
       if (firstRev) {
-        const idempotencyKey = 'run-' + Math.random().toString(36).substring(2, 15);
-        await startAnalysis(
-          firstRev.id,
-          {
-            external_processing_consent: policy?.enabled ? consent : false,
-            policy_version: policy?.enabled && consent ? policy.version : null,
-          },
-          idempotencyKey
-        );
+        try {
+          await startAnalysis(
+            firstRev.id,
+            {
+              external_processing_consent: policy?.enabled ? consent : false,
+              policy_version: policy?.enabled && consent ? policy.version : null,
+            },
+            'run-' + crypto.randomUUID()
+          );
+        } catch {
+          // Creation succeeded. Retrying intake would create a second campaign.
+          navigate(`/content/${content.id}`, { state: { analysisStartFailed: true } });
+          return;
+        }
       }
 
       // 3. Navigate to workspace

@@ -3,7 +3,7 @@ import { resolutionActions } from '../api/resolutionActions';
 import React from 'react';
 import { workingDraft, changeDraftText, stageDraftEdit, projectDraftRange, undoDraftChange } from '../api/draftEdits';
 import { submissionIssues } from '../api/reviewReadiness';
-import { useParams, useNavigate } from 'react-router-dom';
+import { useParams, useNavigate, useLocation } from 'react-router-dom';
 import {
   getContent,
   getReviewRecord,
@@ -44,6 +44,7 @@ import { useAuth } from '../context/AuthContext';
 export function ContentDetailPage() {
   const { contentId } = useParams<{ contentId: string }>();
   const navigate = useNavigate();
+  const location = useLocation();
 
   const [content, setContent] = React.useState<ContentOut | null>(null);
   const [sources, setSources] = React.useState<SourceOut[]>([]);
@@ -72,7 +73,8 @@ export function ContentDetailPage() {
   const [draft, setDraft] = React.useState(() => workingDraft(''));
   const draftText = draft.text;
   const resetDraft = React.useCallback((text: string) => setDraft(workingDraft(text)), []);
-  const [draftNotice, setDraftNotice] = React.useState<string | null>(null);
+  const [draftNotice, setDraftNotice] = React.useState<string | null>(() => location.state?.analysisStartFailed === true
+    ? 'Your campaign is saved, but analysis could not start. Use Run Compliance Check to retry; you do not need to create the campaign again.' : null);
   const [submitAfterRun, setSubmitAfterRun] = React.useState<string | null>(null);
   const [draftChannel, setDraftChannel] = React.useState('');
   const [draftAudience, setDraftAudience] = React.useState('');
@@ -253,6 +255,7 @@ export function ContentDetailPage() {
         idempotencyKey
       );
       setRun(newRun);
+      setDraftNotice(null);
       if (thenSubmit) setSubmitAfterRun(newRun.id);
     } catch (err) {
       setError(err instanceof ApiResponseError ? err.body.message : 'Analysis request failed. Your draft is saved; retry when the service is available.');
