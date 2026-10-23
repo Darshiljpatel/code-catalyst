@@ -1,3 +1,4 @@
+import { categoryLabel } from './categoryLabel';
 import { useDialogFocus } from '../hooks/useDialogFocus';
 import React from 'react';
 import type { FindingOut, SourceOut } from '../api/types';
@@ -54,10 +55,10 @@ export function EvidenceDrawer({
         <div className="drawer-header">
           <div>
             <span style={{ fontSize: '0.75rem', textTransform: 'uppercase', color: 'var(--text-muted)', letterSpacing: '0.05em' }}>
-              Evidence & Grounding Drawer
+              FOLLOW THE SOURCE
             </span>
             <h2 id="evidence-title" style={{ margin: '4px 0 0', fontSize: '1.2rem' }}>
-              Finding #{finding.id.slice(0, 8)}
+              Source evidence
             </h2>
           </div>
           <button className="btn btn--ghost btn--sm" onClick={onClose} aria-label="Close evidence drawer">
@@ -73,7 +74,7 @@ export function EvidenceDrawer({
               {statusInfo.label}
             </span>
             <span className="badge badge--neutral">
-              {finding.category}
+              {categoryLabel(finding.category)}
             </span>
             <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>
               Origin: <strong>{finding.origin}</strong>

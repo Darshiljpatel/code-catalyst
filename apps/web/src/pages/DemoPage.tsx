@@ -39,7 +39,7 @@ export function DemoPage() {
         </p>
       </div>
 
-      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 'var(--space-6)' }}>
+      <div className="demo-grid">
         {/* Draft panel */}
         <section aria-labelledby="draft-heading">
           <h2 id="draft-heading" style={{ marginBottom: 'var(--space-4)' }}>Draft content</h2>

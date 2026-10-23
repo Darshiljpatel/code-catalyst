@@ -2,6 +2,8 @@ import React, { useId } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { Alert, Spinner } from '../components/Primitives';
+import { BrandMark } from '../components/BrandMark';
+import { ReviewSample } from '../components/ReviewSample';
 
 export function LoginPage() {
   const { signIn, status, error, clearError } = useAuth();
@@ -37,97 +39,109 @@ export function LoginPage() {
 
   return (
     <main className="login-page" id="main-content">
-      <div className="login-card animate-fade-in-up" role="region" aria-label="Sign in">
-        <div className="login-card__logo" aria-hidden="true">BG</div>
-        <h1 className="login-card__title">Sign in to BrandGuard</h1>
-        <p className="login-card__subtitle">
-          Pre-publication brand review with source-linked findings.
-        </p>
+      <div className="login-wordmark"><BrandMark /><span>BrandGuard<span className="wordmark-period">.</span></span></div>
+      <section className="login-panel" aria-labelledby="signin-heading">
+        <div className="login-card animate-fade-in-up">
+          <span className="eyebrow">YOUR REVIEW STUDIO</span>
+          <h2 id="signin-heading" className="login-card__title">Welcome back<span className="wordmark-period">.</span></h2>
+          <p className="login-card__subtitle">
+            Your next great campaign starts here.<br />Sign in to your workspace to continue.
+          </p>
 
-        {error && (
-          <div style={{ marginBottom: 'var(--space-5)' }}>
-            <Alert kind="error" id={errorId}>{error}</Alert>
-          </div>
-        )}
+          {error && (
+            <div style={{ marginBottom: 'var(--space-5)' }}>
+              <Alert kind="error" id={errorId}>{error}</Alert>
+            </div>
+          )}
 
-        <form
-          className="login-form"
-          onSubmit={handleSubmit}
-          aria-describedby={error ? errorId : undefined}
-          noValidate
-        >
-          <div className="field">
-            <label className="label label--required" htmlFor="login-email">
-              Email
-            </label>
-            <input
-              id="login-email"
-              name="email"
-              type="email"
-              className="input"
-              autoComplete="email"
-              value={form.email}
-              onChange={handleChange}
-              required
-              placeholder="creator@lumadesk.test"
-              aria-required="true"
-            />
-          </div>
-
-          <div className="field">
-            <label className="label label--required" htmlFor="login-password">
-              Password
-            </label>
-            <input
-              id="login-password"
-              name="password"
-              type="password"
-              className="input"
-              autoComplete="current-password"
-              value={form.password}
-              onChange={handleChange}
-              required
-              aria-required="true"
-            />
-          </div>
-
-          <div className="field">
-            <label className="label label--required" htmlFor="login-org-id">
-              Workspace ID
-            </label>
-            <input
-              id="login-org-id"
-              name="org_id"
-              type="text"
-              className="input"
-              autoComplete="off"
-              value={form.org_id}
-              onChange={handleChange}
-              required
-              placeholder="Organisation UUID"
-              aria-required="true"
-            />
-            <span style={{ fontSize: '0.8125rem', color: 'var(--text-muted)' }}>
-              For the synthetic demo, use the org ID printed when running{' '}
-              <code>python -m brandguard.seed</code>.
-            </span>
-          </div>
-
-          <button
-            id="btn-login-submit"
-            type="submit"
-            className="btn btn--primary"
-            disabled={submitting || !form.email || !form.password || !form.org_id}
-            aria-busy={submitting}
+          <form
+            className="login-form"
+            onSubmit={handleSubmit}
+            aria-describedby={error ? errorId : undefined}
+            noValidate
           >
-            {submitting ? <Spinner size="sm" label="Signing in…" /> : 'Sign in'}
-          </button>
-        </form>
+            <div className="field">
+              <label className="label label--required" htmlFor="login-email">
+                Email
+              </label>
+              <input
+                id="login-email"
+                name="email"
+                type="email"
+                className="input"
+                autoComplete="email"
+                value={form.email}
+                onChange={handleChange}
+                required
+                placeholder="you@company.com"
+                aria-required="true"
+              />
+            </div>
 
-        <p style={{ marginTop: 'var(--space-6)', fontSize: '0.8rem', color: 'var(--text-muted)', textAlign: 'center' }}>
-          Review your workspace processing notice before starting an analysis.
-        </p>
-      </div>
+            <div className="field">
+              <label className="label label--required" htmlFor="login-password">
+                Password
+              </label>
+              <input
+                id="login-password"
+                name="password"
+                type="password"
+                className="input"
+                autoComplete="current-password"
+                value={form.password}
+                onChange={handleChange}
+                required
+                aria-required="true"
+              />
+            </div>
+
+            <div className="field">
+              <label className="label label--required" htmlFor="login-org-id">
+                Workspace ID
+              </label>
+              <input
+                id="login-org-id"
+                name="org_id"
+                type="text"
+                className="input"
+                autoComplete="off"
+                value={form.org_id}
+                onChange={handleChange}
+                required
+                placeholder="Your workspace ID"
+                aria-required="true"
+              />
+              <span style={{ fontSize: '0.8125rem', color: 'var(--text-muted)' }}>
+                Use the workspace ID provided by your administrator.
+              </span>
+            </div>
+
+            <button
+              id="btn-login-submit"
+              type="submit"
+              className="btn btn--primary"
+              disabled={submitting || !form.email || !form.password || !form.org_id}
+              aria-busy={submitting}
+            >
+              {submitting ? <Spinner size="sm" label="Signing in…" /> : <>Sign in <span aria-hidden="true">↗</span></>}
+            </button>
+          </form>
+
+          <p className="login-notice">
+            Review your workspace processing notice before starting an analysis.
+          </p>
+        </div>
+        <div className="login-panel__footer"><span>YOUR VOICE. YOUR STANDARDS.</span><BrandMark /></div>
+      </section>
+      <section className="login-story" aria-labelledby="login-headline">
+        <div className="login-story__intro animate-fade-in-up">
+          <p className="eyebrow"><span className="accent-dash" /> GOOD WORK. ON BRAND.</p>
+          <h1 id="login-headline">Keep the voice.<br />Lose the <em>risk.</em></h1>
+          <p>A sharper eye on every campaign. Check the claim,<br className="desktop-break" /> trace the source, and put your best work forward.</p>
+        </div>
+        <ReviewSample />
+        <div className="login-story__footer"><span>MADE FOR THE WORK BEFORE PUBLISH.</span><span>HUMAN APPROVED ↗</span></div>
+      </section>
     </main>
   );
 }

@@ -1,5 +1,6 @@
 import React from 'react';
-import { Link } from 'react-router-dom';
+import { Link, NavLink } from 'react-router-dom';
+import { BrandMark } from './BrandMark';
 import { useAuth } from '../context/AuthContext';
 import { Spinner } from './Primitives';
 import { PolicySettingsModal } from './PolicySettingsModal';
@@ -22,9 +23,14 @@ export function TopNav() {
     <>
       <nav className="topnav" aria-label="Main navigation">
         <Link to="/" className="topnav__brand" aria-label="BrandGuard home">
-          <span className="topnav__logo" aria-hidden="true">BG</span>
-          BrandGuard
+          <BrandMark />
+          <span>BrandGuard<span className="wordmark-period">.</span></span>
         </Link>
+
+        <div className="topnav__links">
+          <NavLink to="/" end>Campaigns</NavLink>
+          <NavLink to="/demo">Guided example <span aria-hidden="true">↗</span></NavLink>
+        </div>
 
         <div className="topnav__actions">
           {status === 'authenticated' && user && (
@@ -36,11 +42,11 @@ export function TopNav() {
                   onClick={() => setShowPolicyModal(true)}
                   style={{ marginRight: 'var(--space-2)' }}
                 >
-                  ⚙ Processing Policy
+                  Processing policy
                 </button>
               )}
               <div className="topnav__user">
-                <span>{user.user_id.slice(0, 8)}…</span>
+                <span className="topnav__avatar" aria-hidden="true">{user.role.slice(0, 1).toUpperCase()}</span>
                 <span className="topnav__role-badge">{user.role}</span>
               </div>
               <button

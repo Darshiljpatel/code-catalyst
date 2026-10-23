@@ -15,7 +15,8 @@
  *   - AND VITE_USE_MOCK_API=true in .env.local
  * It is never activated in production builds.
  */
-import { BrowserRouter, Routes, Route, Outlet } from 'react-router-dom';
+import { useLayoutEffect } from 'react';
+import { BrowserRouter, Routes, Route, Outlet, useLocation } from 'react-router-dom';
 import { AuthProvider } from './context/AuthContext';
 import { RequireAuth } from './components/RequireAuth';
 import { TopNav } from './components/TopNav';
@@ -26,6 +27,14 @@ import { BrandDetailPage } from './pages/BrandDetailPage';
 import { NewReviewPage } from './pages/NewReviewPage';
 import { ContentDetailPage } from './pages/ContentDetailPage';
 import { NotFoundPage } from './pages/NotFoundPage';
+
+function ScrollToTop() {
+  const { pathname } = useLocation();
+  useLayoutEffect(() => {
+    window.scrollTo({ top: 0, left: 0, behavior: 'instant' });
+  }, [pathname]);
+  return null;
+}
 
 function AuthenticatedLayout() {
   return (
@@ -39,6 +48,7 @@ function AuthenticatedLayout() {
 export function App() {
   return (
     <BrowserRouter>
+      <ScrollToTop />
       <AuthProvider>
         {/* Skip-to-content link for keyboard/screen-reader users */}
         <a
