@@ -15,11 +15,17 @@ router=APIRouter(prefix='/api/v1')
 @router.get('/content',response_model=ContentPageOut)
 def content_queue(member=Depends(identity),session:Session=Depends(db),limit:int=Query(20,ge=1,le=50),
                   offset:int=Query(0,ge=0,le=10000),
+                  q:str=Query('',max_length=200),
                   state:Literal['draft','analysing','needs_changes','ready_for_review','incomplete','in_review','approved','changes_requested']|None=None):
     conditions=[ContentItem.org_id==member.org_id]
     if member.role!='manager':
         conditions.append(or_(ContentItem.creator_id==member.id,ContentItem.reviewer_id==member.id))
     if state:conditions.append(ContentItem.state==state)
+    search=q.strip()
+    if search:
+        # Treat user-entered SQL LIKE wildcards as literal characters.
+        pattern='%' + search.replace('\\','\\\\').replace('%','\\%').replace('_','\\_') + '%'
+        conditions.append(or_(ContentItem.title.ilike(pattern,escape='\\'),ContentItem.id.ilike(pattern,escape='\\')))
     total=session.scalar(select(func.count()).select_from(ContentItem).where(*conditions))
     items=list(session.scalars(select(ContentItem).where(*conditions).order_by(
         ContentItem.created_at.desc(),ContentItem.id.desc()).limit(limit).offset(offset)))

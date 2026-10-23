@@ -285,11 +285,13 @@ export async function assignReviewer(
 }
 
 export async function getContentPage(params?: {
+  q?: string;
   state?: string;
   limit?: number;
   offset?: number;
 }): Promise<ContentPageOut> {
   const query = new URLSearchParams();
+  if (params?.q) query.set('q', params.q);
   if (params?.state) query.set('state', params.state);
   if (params?.limit !== undefined) query.set('limit', String(params.limit));
   if (params?.offset !== undefined) query.set('offset', String(params.offset));
