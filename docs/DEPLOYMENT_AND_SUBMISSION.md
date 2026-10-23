@@ -1,10 +1,10 @@
 # Deployment and submission runbook
 
-Deployment is part of Round 2 scope. This file is a concrete implementation runbook, not evidence of an existing deployment. Hosting account, domain, budget and model availability have not been supplied. Surya resolves these at the first checkpoint using a team-controlled account; actual paid provisioning needs the account owner's authorisation.
+Deployment is part of Round 2 scope. This file is a concrete implementation runbook, not evidence of an existing deployment. The team has supplied a purchased model catalogue in `models.txt`; selected candidates and remaining endpoint checks are in [the model plan](MODEL_PLAN.md). Hosting account, domain, hosting budget and exact model-provider connection details have not been supplied. Surya resolves these at the first checkpoint using a team-controlled account; actual paid provisioning needs the account owner's authorisation.
 
 ## Deployment topology
 
-Use one team-controlled Linux VM with Docker Compose, Caddy for HTTPS/static React files, FastAPI API, separate review worker and PostgreSQL. Private uploads and database use persistent volumes. This avoids coordinating several service-specific networking/auth boundaries during the event. Initial sizing assumption: 2–4 vCPU and 4–8 GB RAM excluding a local language model; verify with measured load. If local-model hardware cannot meet latency gates, apply the explicit provider decision in the implementation plan. Do not pretend this VM estimate includes a capable local LLM.
+Use one team-controlled Linux VM with Docker Compose, Caddy for HTTPS/static React files, FastAPI API, separate review worker and PostgreSQL. Private uploads and database use persistent volumes. This avoids coordinating several service-specific networking/auth boundaries during the event. Initial sizing assumption: 2–4 vCPU and 4–8 GB RAM excluding a local language model; verify with measured load. The planned semantic model runs through the purchased hosted access, subject to the endpoint checks in the model plan; this VM estimate does not include local LLM inference.
 
 Use a DNS hostname pointed at the VM, public ports 80/443 only, restricted administrative SSH, and an internal Compose network for DB/API/worker. Caddy routes `/api/*` to FastAPI and serves the versioned SPA build; authenticated file downloads go through the API. Keep certificate storage persistent. The host is a single failure domain; disclose this as an event-scale deployment.
 

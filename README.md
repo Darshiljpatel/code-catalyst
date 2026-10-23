@@ -7,6 +7,7 @@ Pre-publication brand review with source-linked findings and human approval of a
 Planning and verification scaffolding only. The application, deployment, product tests and user research have not been completed. The three original brief files remain the source of truth.
 
 - [Implementation plan and balanced assignments](docs/IMPLEMENTATION_PLAN.md)
+- [Purchased-model selection and evaluation](docs/MODEL_PLAN.md)
 - [Integration and security contracts](docs/CONTRACTS.md)
 - [Verification specification](docs/VERIFICATION.md)
 - [Deployment and submission runbook](docs/DEPLOYMENT_AND_SUBMISSION.md)
