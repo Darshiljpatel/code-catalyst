@@ -227,3 +227,27 @@ the complete side-by-side versions without losing content.
 Next candidate: let creators import a UTF-8 text draft into intake locally, with
 explicit replacement preview and validation, before any network submission.
 Avoid pretending that PDF/image ingestion is implemented by a text importer.
+
+## Overnight iteration 10: local text-file intake
+
+Creators can now import `.txt` and `.md` drafts into intake. The file is read in
+the browser, validated and previewed before an explicit replacement action.
+Markdown is imported as plain text. Cancellation and rejected files leave the
+current draft untouched; obsolete asynchronous reads cannot replace a newer
+preview. Import alone makes no campaign POST or analysis request. Submitting
+uses the existing API text and consent flow, with no file-storage claim.
+
+Validation rejects unsupported extensions, empty/whitespace-only files, malformed
+UTF-8, binary/control characters, files over 256 KiB, and text over the API's
+100,000-code-point limit. Line endings, Unicode and meaningful whitespace are
+preserved by decoding. A UTF-8 byte-order marker is consumed by the decoder.
+
+Verification: build and lint passed. Four tests passed: decoder validation,
+preview/cancel/confirm and exact submitted text, rejected-file and late-read
+protection, plus the existing intake recovery case. The preview/confirm test
+also checks literal script text stays inert and the importer's scoped Axe scan
+has zero violations in that state. No provider calls were used.
+
+Next candidate: source editing dialogs have unlabelled rule controls, fixed-width
+rows and incomplete keyboard focus handling. Improve guideline authoring for
+keyboard and small-screen use, then verify it alongside timezone submission.

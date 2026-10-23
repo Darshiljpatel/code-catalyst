@@ -37,6 +37,13 @@ campaigns or activated guidelines. There are no one-click production logins.
 
 ## Review journey
 
+On the `experiments` branch, campaign intake also supports local UTF-8 `.txt` and
+`.md` import. Choose a file (up to 256 KiB / 100,000 characters), inspect its plain
+text preview, then choose **Replace draft with imported text**. **Cancel import**
+keeps the current draft. Import makes no analysis request; use the normal submit
+and external-processing consent controls after reviewing the imported copy.
+PDF/image file intake is not provided by this text importer.
+
 1. As manager, open the brand, create a source with rules and literal source
    quotes, and explicitly verify and activate it. The fictional source in
    `verification/fixtures/lumadesk.json` is a reproducible example.

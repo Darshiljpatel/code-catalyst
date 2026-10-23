@@ -11,6 +11,7 @@ import {
 import type { Brand, PolicyOut, ReviewerOut } from '../api/types';
 import { FIXTURE_LUMADESK_DRAFT_TEXT } from '../api/fixtures';
 import { Alert, Spinner, ProcessingMode } from '../components/Primitives';
+import { ImportDraft } from '../components/ImportDraft';
 
 export function NewReviewPage() {
   const navigate = useNavigate();
@@ -282,6 +283,7 @@ export function NewReviewPage() {
           </div>
 
           <div className="form-group" style={{ marginBottom: 'var(--space-6)' }}>
+            <ImportDraft onImported={setText} disabled={submitting} />
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', marginBottom: 'var(--space-2)' }}>
               <label htmlFor="txt-content-text" className="form-label" style={{ margin: 0 }}>
                 Draft Campaign Copy <span style={{ color: 'var(--color-blocker)' }}>*</span>

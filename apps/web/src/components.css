@@ -265,3 +265,8 @@
 .manual-check-card fieldset fieldset { border: 1px solid var(--border-default); border-radius: var(--radius-sm); padding: var(--space-3); }
 .manual-check-card blockquote { border-left: 2px solid var(--accent); margin: var(--space-2) 0; padding-left: var(--space-3); overflow-wrap: anywhere; }
 .manual-check-card summary { cursor: pointer; }
+.draft-import { border: 1px solid var(--border-default); border-radius: var(--radius-sm); padding: var(--space-4); margin-bottom: var(--space-5); min-width: 0; overflow-wrap: anywhere; }
+.draft-import p { margin: var(--space-2) 0; color: var(--text-secondary); font-size: 0.875rem; }
+.draft-import label { display: block; margin: var(--space-2) 0; }
+.draft-import input[type="file"] { max-width: 100%; }
+.draft-import__actions { display: flex; gap: var(--space-2); flex-wrap: wrap; margin-top: var(--space-3); }
