@@ -1,0 +1,36 @@
+round 2:
+The PS will be the same which was given in start of round 1 now u have to make project.
+
+Round 2 submission link: https://forms.gle/gyRiHtQT3AnC3MdV6
+
+## Round 2 — The Build
+
+*Dates:* 22–25 October
+*Start Time:* 22 October at 10:00 AM IST
+*End Time:* 25 October at 10:00 AM IST
+
+In Round 2, teams must turn their Round 1 idea into a functional project. The main workflow and essential features must work from beginning to end. The product does not need to be perfect, but judges should be able to open the link and use its core features without assistance.
+
+A total of *300 teams* will compete in this round, and *100 teams* will qualify for Round 3.
+
+What You Must Submit
+
+- Working project link
+- Source-code repository link
+- Updated project PDF
+- List of completed features
+- Technology and implementation details
+- Explanation of any changes made to the original plan
+- Three major improvements you will complete in Round 3
+
+The three improvements must be meaningful additions to the product, not small design or cosmetic changes.
+
+Judging Criteria — 100 Points
+
+- *Working core workflow — 30 points:* The main product journey must work from start to finish.
+- *Technical depth and reliability — 25 points:* Integrations, data flow and AI components should function properly.
+- *Progress from Round 1 — 20 points:* Your project should show clear development based on your original proposal.
+- *Three planned improvements — 15 points:* Your proposed Round 3 improvements must be substantial and useful.
+- *Usability — 10 points:* Judges should be able to understand and use the functioning part of the product without guidance.
+
+Certificate Information: If your team qualifies for Round 3 but chooses not to continue, you will still receive a *Round 2 Completion Certificate*. This will be the final certificate issued to your team and cannot be upgraded later.
