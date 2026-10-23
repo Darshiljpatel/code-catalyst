@@ -1,15 +1,18 @@
 /**
- * BrandGuard API types — generated from contracts/openapi.json v0.1.0 (S1 scope).
- * DO NOT edit by hand. Re-generate from the committed OpenAPI spec when Sanath
- * publishes a new contract version.
+ * BrandGuard API types — generated from contracts/openapi.json v0.3.0.
  *
- * Phase coverage: sessions, /me, brands, health.
- * S2+ endpoints (sources, content, revisions, runs, findings, decisions, export,
- * insights, demo-sessions) are PENDING — stubs marked with @pending.
+ * Covers:
+ *  - Authentication & Sessions (POST /sessions, DELETE /sessions/current, GET /me)
+ *  - Brands (GET /brands, POST /brands, GET /brands/{id})
+ *  - Sources (GET /brands/{id}/sources, POST /brands/{id}/sources, POST /sources/{id}/activate)
+ *  - Content & Revisions (POST /content, GET /content/{id}, POST /content/{id}/revisions)
+ *  - Analysis & Runs (POST /revisions/{id}/analysis, GET /runs/{id})
+ *  - Processing Policy (GET /processing-policy, PUT /processing-policy)
+ *  - S4 remaining stubs (decisions, comments, insights, export)
  */
 
 // ---------------------------------------------------------------------------
-// Shared error envelope  (CONTRACTS.md: {code, message, request_id, details})
+// Shared error envelope (CONTRACTS.md: {code, message, request_id, details})
 // ---------------------------------------------------------------------------
 export interface ApiError {
   code: string;
@@ -19,7 +22,7 @@ export interface ApiError {
 }
 
 // ---------------------------------------------------------------------------
-// Sessions  POST /api/v1/sessions
+// Sessions POST /api/v1/sessions
 // ---------------------------------------------------------------------------
 export interface LoginRequest {
   email: string;
@@ -27,7 +30,6 @@ export interface LoginRequest {
   org_id: string;
 }
 
-/** Response body from POST /api/v1/sessions (200) */
 export interface LoginResponse {
   csrf_token: string;
   org_id: string;
@@ -35,7 +37,7 @@ export interface LoginResponse {
 }
 
 // ---------------------------------------------------------------------------
-// Me  GET /api/v1/me
+// Me GET /api/v1/me
 // ---------------------------------------------------------------------------
 export interface MeResponse {
   user_id: string;
@@ -44,7 +46,7 @@ export interface MeResponse {
 }
 
 // ---------------------------------------------------------------------------
-// Brands  GET /api/v1/brands, GET /api/v1/brands/:id, POST /api/v1/brands
+// Brands GET /api/v1/brands, GET /api/v1/brands/{id}, POST /api/v1/brands
 // ---------------------------------------------------------------------------
 export interface Brand {
   id: string;
@@ -59,7 +61,7 @@ export interface NewBrandRequest {
 }
 
 // ---------------------------------------------------------------------------
-// Health  GET /api/v1/health/live, GET /api/v1/health/ready
+// Health GET /api/v1/health/live, GET /api/v1/health/ready
 // ---------------------------------------------------------------------------
 export interface LiveResponse {
   status: 'live';
@@ -72,31 +74,121 @@ export interface ReadyResponse {
 }
 
 // ---------------------------------------------------------------------------
-// @pending — S2 types (stubs only; do not implement UI against these yet)
+// Sources (S2)
 // ---------------------------------------------------------------------------
+export type RuleCategory =
+  | 'terminology'
+  | 'tone'
+  | 'messaging'
+  | 'facts_claims'
+  | 'visual'
+  | 'accessibility';
 
-/** @pending S2 — source lifecycle */
-export interface SourceVersion {
+export type RuleKind =
+  | 'terminology'
+  | 'fact'
+  | 'claim_policy'
+  | 'guidance'
+  | 'asset'
+  | 'contrast'
+  | 'alt_text';
+
+export interface RuleInput {
+  id: string;
+  category: RuleCategory;
+  kind: RuleKind;
+  key: string;
+  value: string;
+  evidence_quote: string;
+}
+
+export interface SourceInput {
+  source_key: string;
+  title: string;
+  text: string;
+  rules: RuleInput[];
+  valid_from: string; // ISO datetime with timezone
+  valid_until?: string | null;
+}
+
+export type SourceState = 'draft' | 'active' | 'retired' | string;
+
+export interface SourceOut {
   id: string;
   brand_id: string;
-  org_id: string;
+  source_key: string;
   version: number;
+  owner_id: string;
+  title: string;
+  text: string;
   text_hash: string;
-  activated_at: string | null;
-  valid_from: string | null;
+  rules: RuleInput[];
+  valid_from: string;
   valid_until: string | null;
-  is_active: boolean;
+  state: SourceState;
+  created_at: string;
+  activated_by: string | null;
+  activated_at: string | null;
 }
 
-/** @pending S2 — content + revision */
-export interface ContentItem {
-  id: string;
-  org_id: string;
+export interface ActivationInput {
+  expected_epoch: number;
+  verified: true;
+  retire_source_ids: string[];
+  rationale: string;
+}
+
+// Backward-compatibility alias
+export type SourceVersion = SourceOut;
+
+// ---------------------------------------------------------------------------
+// Content Items & Revisions (S2)
+// ---------------------------------------------------------------------------
+export interface ContentInput {
   brand_id: string;
-  state: ContentState;
-  current_revision_id: string | null;
+  title: string;
+  text: string;
+  channel: string;
+  audience: string;
+  purpose: string;
+  reviewer_id?: string | null;
 }
 
+export interface NewRevisionInput {
+  parent_revision_id: string;
+  text: string;
+  channel: string;
+  audience: string;
+  purpose: string;
+}
+
+export interface RevisionOut {
+  id: string;
+  item_id: string;
+  number: number;
+  author_id: string;
+  text: string;
+  text_hash: string;
+  channel: string;
+  audience: string;
+  purpose: string;
+  created_at: string;
+}
+
+export interface ContentOut {
+  id: string;
+  brand_id: string;
+  title: string;
+  creator_id: string;
+  reviewer_id: string | null;
+  current_revision: number;
+  state: string;
+  revisions: RevisionOut[];
+}
+
+// Compatibility aliases
+export type ContentItem = ContentOut;
+export type ContentRevision = RevisionOut;
 export type ContentState =
   | 'draft'
   | 'analysing'
@@ -105,69 +197,36 @@ export type ContentState =
   | 'incomplete'
   | 'in_review'
   | 'approved'
-  | 'changes_requested';
+  | 'changes_requested'
+  | string;
 
-export interface ContentRevision {
-  id: string;
-  content_id: string;
-  parent_revision_id: string | null;
-  author_id: string;
-  created_at: string;
-  channel: string | null;
-  audience: string | null;
-  purpose: string | null;
-  text_hash: string;
+// ---------------------------------------------------------------------------
+// Processing Policy (S3)
+// ---------------------------------------------------------------------------
+export interface PolicyOut {
+  version: number;
+  enabled: boolean;
+  provider: string;
+  model: string;
+  boundary: string;
+  notice: string;
 }
 
-/** @pending S3 — finding (CONTRACTS.md full shape) */
-export type FindingCategory =
-  | 'terminology'
-  | 'tone'
-  | 'messaging'
-  | 'facts_claims'
-  | 'visual'
-  | 'accessibility';
-
-export type FindingSeverity = 'blocker' | 'warning' | 'advisory';
-
-export type FindingEvidenceStatus =
-  | 'supported_violation'
-  | 'contradicted'
-  | 'unsupported'
-  | 'conflicting'
-  | 'manual';
-
-export type FindingOrigin = 'deterministic' | 'model' | 'human';
-
-export type FindingResolution = 'open' | 'accepted' | 'dismissed' | 'exception';
-
-export interface Finding {
-  id: string;
-  org_id: string;
-  revision_id: string;
-  run_id: string;
-  category: FindingCategory;
-  severity: FindingSeverity;
-  evidence_status: FindingEvidenceStatus;
-  origin: FindingOrigin;
-  location: FindingLocation;
-  rule_id: string | null;
-  source_version_id: string | null;
-  evidence_quote: string | null;
+export interface PolicyInput {
+  enabled: boolean;
+  expected_version: number;
+  notice: string;
   rationale: string;
-  suggested_edit: string | null;
-  resolution: FindingResolution;
 }
 
-export interface FindingLocation {
-  block_id: string;
-  start: number;
-  end: number;
-  image_bbox?: [number, number, number, number];
-  field_name?: string;
+// ---------------------------------------------------------------------------
+// Analysis & Runs (S2 & S3)
+// ---------------------------------------------------------------------------
+export interface AnalysisInput {
+  external_processing_consent?: boolean;
+  policy_version?: number | null;
 }
 
-/** @pending S3 — review run */
 export type CheckStatus =
   | 'complete'
   | 'unavailable'
@@ -175,20 +234,71 @@ export type CheckStatus =
   | 'needs_manual_review'
   | 'not_applicable';
 
-export interface ReviewRun {
-  id: string;
-  revision_id: string;
-  source_snapshot_epoch: number;
-  started_at: string;
-  completed_at: string | null;
-  check_statuses: Record<string, CheckStatus>;
-  incomplete_reason: string | null;
-  model_id: string | null;
-  prompt_version: string | null;
-  engine_version: string | null;
+export interface CheckOut {
+  category: RuleCategory;
+  status: CheckStatus;
+  reason: string;
 }
 
-/** @pending S4 — decision */
+export interface FindingLocation {
+  block_id?: string;
+  start?: number;
+  end?: number;
+  quote?: string;
+  image_bbox?: [number, number, number, number];
+  field_name?: string;
+  [key: string]: unknown;
+}
+
+export interface FindingOut {
+  id: string;
+  revision_id: string;
+  run_id: string;
+  category: string;
+  severity: string;
+  evidence_status: string;
+  origin: string;
+  source_version_id: string;
+  rule_id: string;
+  evidence_quote: string;
+  location: FindingLocation;
+  rationale: string;
+  suggested_edit: string | null;
+  resolution: string;
+}
+
+export interface RunOut {
+  id: string;
+  revision_id: string;
+  source_epoch: number;
+  source_snapshot: SourceOut[];
+  checks: CheckOut[];
+  status: string;
+  created_at: string;
+  stale: boolean;
+  processing_snapshot: Record<string, unknown>;
+  engine_metadata: Record<string, unknown>;
+  findings: FindingOut[];
+}
+
+// Compatibility aliases
+export type Finding = FindingOut;
+export type ReviewRun = RunOut;
+export type FindingCategory = RuleCategory;
+export type FindingSeverity = 'blocker' | 'warning' | 'advisory' | string;
+export type FindingEvidenceStatus =
+  | 'supported_violation'
+  | 'contradicted'
+  | 'unsupported'
+  | 'conflicting'
+  | 'manual'
+  | string;
+export type FindingOrigin = 'deterministic' | 'model' | 'human' | string;
+export type FindingResolution = 'open' | 'accepted' | 'dismissed' | 'exception' | string;
+
+// ---------------------------------------------------------------------------
+// @pending S4 — Decision, Comment, Insights, Export
+// ---------------------------------------------------------------------------
 export type DecisionKind = 'approved' | 'changes_requested';
 
 export interface Decision {
@@ -203,7 +313,6 @@ export interface Decision {
   is_stale: boolean;
 }
 
-/** @pending S4 — comment */
 export interface Comment {
   id: string;
   revision_id: string;
@@ -213,7 +322,6 @@ export interface Comment {
   created_at: string;
 }
 
-/** @pending S4 — insights */
 export interface BrandInsights {
   brand_id: string;
   confirmed_total: number;
@@ -222,7 +330,6 @@ export interface BrandInsights {
   reviewed_items_denominator: number;
 }
 
-/** @pending S4 — export */
 export interface ExportRecord {
   revision_id: string;
   decision: Decision;

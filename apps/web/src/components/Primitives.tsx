@@ -59,7 +59,15 @@ export function SeverityBadge({ severity }: { severity: FindingSeverity }) {
 import type { CheckStatus } from '../api/types';
 import React from 'react';
 
-export function CheckStatusChip({ status }: { status: CheckStatus }) {
+export function CheckStatusChip({
+  status,
+  name,
+  title,
+}: {
+  status: CheckStatus;
+  name?: string;
+  title?: string;
+}) {
   const map: Record<CheckStatus, { label: string; cls: string }> = {
     complete:           { label: 'Complete',              cls: 'complete' },
     unavailable:        { label: 'Unavailable',           cls: 'unavailable' },
@@ -67,8 +75,17 @@ export function CheckStatusChip({ status }: { status: CheckStatus }) {
     needs_manual_review:{ label: 'Manual review required', cls: 'manual' },
     not_applicable:     { label: 'Not applicable',        cls: 'unavailable' },
   };
-  const { label, cls } = map[status];
-  return <span className={`status-chip status-chip--${cls}`}>{label}</span>;
+  const { label, cls } = map[status] || { label: status, cls: 'unavailable' };
+  return (
+    <span
+      className={`status-chip status-chip--${cls}`}
+      title={title}
+      style={{ display: 'inline-flex', alignItems: 'center', gap: '4px' }}
+    >
+      {name && <strong style={{ textTransform: 'capitalize' }}>{name}:</strong>}
+      <span>{label}</span>
+    </span>
+  );
 }
 
 /** Processing mode indicator (shows local vs external) */

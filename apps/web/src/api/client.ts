@@ -18,6 +18,16 @@ import type {
   NewBrandRequest,
   LiveResponse,
   ReadyResponse,
+  SourceOut,
+  SourceInput,
+  ActivationInput,
+  ContentInput,
+  ContentOut,
+  NewRevisionInput,
+  AnalysisInput,
+  RunOut,
+  PolicyOut,
+  PolicyInput,
   ApiError,
 } from './types';
 
@@ -71,10 +81,12 @@ export class ApiResponseError extends Error {
 async function request<T>(
   method: string,
   path: string,
-  body?: unknown
+  body?: unknown,
+  extraHeaders?: Record<string, string>
 ): Promise<T> {
   const headers: Record<string, string> = {
     'Content-Type': 'application/json',
+    ...(extraHeaders || {}),
   };
   // CSRF required for mutations (CONTRACTS.md)
   if (!['GET', 'HEAD', 'OPTIONS'].includes(method) && _csrfToken) {
@@ -129,6 +141,86 @@ export async function getBrand(brandId: string): Promise<Brand> {
 
 export async function createBrand(payload: NewBrandRequest): Promise<Brand> {
   return request<Brand>('POST', '/brands', payload);
+}
+
+// ---------------------------------------------------------------------------
+// Sources (S2)
+// ---------------------------------------------------------------------------
+
+export async function getSources(brandId: string): Promise<SourceOut[]> {
+  return request<SourceOut[]>('GET', `/brands/${brandId}/sources`);
+}
+
+export async function createSource(
+  brandId: string,
+  payload: SourceInput
+): Promise<SourceOut> {
+  return request<SourceOut>('POST', `/brands/${brandId}/sources`, payload);
+}
+
+export async function activateSource(
+  sourceId: string,
+  payload: ActivationInput
+): Promise<SourceOut> {
+  return request<SourceOut>('POST', `/sources/${sourceId}/activate`, payload);
+}
+
+// ---------------------------------------------------------------------------
+// Content Items & Revisions (S2)
+// ---------------------------------------------------------------------------
+
+export async function createContent(payload: ContentInput): Promise<ContentOut> {
+  return request<ContentOut>('POST', '/content', payload);
+}
+
+export async function getContent(itemId: string): Promise<ContentOut> {
+  return request<ContentOut>('GET', `/content/${itemId}`);
+}
+
+export async function createRevision(
+  itemId: string,
+  payload: NewRevisionInput
+): Promise<ContentOut> {
+  return request<ContentOut>('POST', `/content/${itemId}/revisions`, payload);
+}
+
+// ---------------------------------------------------------------------------
+// Analysis & Runs (S2 & S3)
+// ---------------------------------------------------------------------------
+
+export async function startAnalysis(
+  revisionId: string,
+  payload?: AnalysisInput,
+  idempotencyKey?: string
+): Promise<RunOut> {
+  const headers: Record<string, string> = {};
+  if (idempotencyKey) {
+    headers['Idempotency-Key'] = idempotencyKey;
+  }
+  return request<RunOut>(
+    'POST',
+    `/revisions/${revisionId}/analysis`,
+    payload || {},
+    headers
+  );
+}
+
+export async function getRun(runId: string): Promise<RunOut> {
+  return request<RunOut>('GET', `/runs/${runId}`);
+}
+
+// ---------------------------------------------------------------------------
+// Processing Policy (S3)
+// ---------------------------------------------------------------------------
+
+export async function getProcessingPolicy(): Promise<PolicyOut> {
+  return request<PolicyOut>('GET', '/processing-policy');
+}
+
+export async function updateProcessingPolicy(
+  payload: PolicyInput
+): Promise<PolicyOut> {
+  return request<PolicyOut>('PUT', '/processing-policy', payload);
 }
 
 // ---------------------------------------------------------------------------
