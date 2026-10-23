@@ -97,3 +97,28 @@ Use that database for further overnight PostgreSQL checks.
 Next candidate: the export dialog reports clipboard success before the clipboard
 promise resolves. It also lacks a retry path after export retrieval failure.
 Investigate clipboard rejection, retrieval cancellation and download feedback.
+
+## Overnight iteration 4: reliable exports and plain-text download
+
+Clipboard success now waits for the browser's write promise, permission failures
+show recovery guidance, and action errors do not hide the approved export. Export
+retrieval has an explicit retry. Requests from closed dialogs cannot update a
+reopened export, and export state is scoped to its revision. Object URLs are
+released after the browser has had time to start downloading.
+
+Added a plain UTF-8 `.txt` download alongside the unchanged JSON audit record.
+The text file preserves the exact approved text; approval evidence remains in
+the JSON. Download notices say the download was requested rather than claiming
+the browser saved a file.
+
+Verification: build and lint passed. Seven focused tests (export, discussion,
+dispositions and queue) passed, followed by both export tests including the
+new delayed-request race regression. Browser assertions cover rejected and
+successful clipboard writes, fetch failure/retry, exact emoji/accents/newline/
+trailing-space preservation in the actual downloaded text and JSON equality.
+No paid inference calls were used for these tests.
+
+Next investigation: campaign creation and analysis start share one error path.
+If creation succeeds but analysis fails, the intake form implies nothing saved
+and allows duplicate campaigns on retry. Separate these outcomes and guide the
+user to the saved campaign with an analysis retry.

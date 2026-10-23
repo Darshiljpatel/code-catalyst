@@ -10,11 +10,24 @@ interface ExportModalProps {
 }
 
 export function ExportModal({ revisionId, onClose }: ExportModalProps) {
+  return <RevisionExport key={revisionId} revisionId={revisionId} onClose={onClose} />;
+}
+
+function RevisionExport({ revisionId, onClose }: ExportModalProps) {
   const dialogRef = useDialogFocus();
   const [exportData, setExportData] = React.useState<ExportOut | null>(null);
   const [loading, setLoading] = React.useState(true);
   const [error, setError] = React.useState<string | null>(null);
   const [copied, setCopied] = React.useState(false);
+  const [copying, setCopying] = React.useState(false);
+  const [actionError, setActionError] = React.useState('');
+  const [notice, setNotice] = React.useState('');
+  const [refresh, setRefresh] = React.useState(0);
+  const alive = React.useRef(true);
+  React.useEffect(() => {
+    alive.current = true;
+    return () => { alive.current = false; };
+  }, []);
 
   React.useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
@@ -25,29 +38,47 @@ export function ExportModal({ revisionId, onClose }: ExportModalProps) {
   }, [onClose]);
 
   React.useEffect(() => {
+    let cancelled = false;
     setLoading(true);
+    setExportData(null);
+    setError(null);
     exportRevision(revisionId)
-      .then(setExportData)
-      .catch(err => setError(err instanceof Error ? err.message : 'Failed to retrieve export record'))
-      .finally(() => setLoading(false));
-  }, [revisionId]);
+      .then(data => { if (!cancelled) setExportData(data); })
+      .catch(err => { if (!cancelled) setError(err instanceof Error ? err.message : 'Failed to retrieve export record'); })
+      .finally(() => { if (!cancelled) setLoading(false); });
+    return () => { cancelled = true; };
+  }, [revisionId, refresh]);
 
-  const handleCopyText = () => {
-    if (!exportData) return;
-    navigator.clipboard.writeText(exportData.text);
-    setCopied(true);
-    setTimeout(() => setCopied(false), 2000);
+  const handleCopyText = async () => {
+    if (!exportData || copying) return;
+    setCopying(true); setCopied(false); setActionError(''); setNotice('');
+    try {
+      await navigator.clipboard.writeText(exportData.text);
+      if (alive.current) { setCopied(true); setNotice('Approved text copied to clipboard.'); }
+    } catch {
+      if (alive.current) setActionError('Clipboard access was denied. Select the approved text to copy it manually, or download the text file.');
+    } finally {
+      if (alive.current) setCopying(false);
+    }
   };
 
-  const handleDownloadJson = () => {
+  const handleDownload = (format: 'json' | 'txt') => {
     if (!exportData) return;
-    const blob = new Blob([JSON.stringify(exportData, null, 2)], { type: 'application/json' });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = `brandguard-export-${exportData.content_id}-rev-${exportData.revision_id.slice(0, 8)}.json`;
-    a.click();
-    URL.revokeObjectURL(url);
+    setActionError(''); setNotice('');
+    try {
+      const blob = new Blob([format === 'json' ? JSON.stringify(exportData, null, 2) : exportData.text], { type: format === 'json' ? 'application/json' : 'text/plain;charset=utf-8' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `brandguard-export-${exportData.content_id}-rev-${exportData.revision_id.slice(0, 8)}.${format}`;
+      document.body.appendChild(a);
+      a.click(); a.remove();
+      // Give the browser time to consume the URL before releasing it.
+      setTimeout(() => URL.revokeObjectURL(url), 1000);
+      setNotice(format === 'json' ? 'Audit record download requested.' : 'Approved text download requested. The audit record contains its approval evidence.');
+    } catch {
+      setActionError('The download could not start. Try again or copy the approved text.');
+    }
   };
 
   return (
@@ -65,9 +96,11 @@ export function ExportModal({ revisionId, onClose }: ExportModalProps) {
             <Spinner size="lg" label="Loading approved export…" />
           </div>
         ) : error ? (
-          <Alert kind="error">{error}</Alert>
+          <Alert kind="error">{error} <button className="btn btn--secondary btn--sm" onClick={() => setRefresh(n => n + 1)}>Retry export</button></Alert>
         ) : exportData ? (
           <div>
+            {actionError && <Alert kind="error">{actionError}</Alert>}
+            {notice && <p role="status">{notice}</p>}
             {/* Hash & Verification Stamp */}
             <div style={{ background: 'var(--accent-muted)', padding: 'var(--space-4)', borderRadius: 'var(--radius-sm)', marginBottom: 'var(--space-4)', borderLeft: '4px solid var(--color-success)' }}>
               <div style={{ fontSize: '0.75rem', fontWeight: 600, textTransform: 'uppercase', color: 'var(--text-secondary)', marginBottom: '4px' }}>
@@ -92,8 +125,9 @@ export function ExportModal({ revisionId, onClose }: ExportModalProps) {
                   type="button"
                   className="btn btn--ghost btn--sm"
                   onClick={handleCopyText}
+                  disabled={copying}
                 >
-                  {copied ? '✓ Copied to clipboard!' : 'Copy approved text'}
+                  {copying ? 'Copying…' : copied ? '✓ Copied to clipboard!' : 'Copy approved text'}
                 </button>
               </div>
               <div
@@ -135,10 +169,11 @@ export function ExportModal({ revisionId, onClose }: ExportModalProps) {
               <button
                 type="button"
                 className="btn btn--primary"
-                onClick={handleDownloadJson}
+                onClick={() => handleDownload('json')}
               >
                 ⬇ Download Audit Record (.json)
               </button>
+              <button type="button" className="btn btn--secondary" onClick={() => handleDownload('txt')}>Download approved text (.txt)</button>
             </div>
           </div>
         ) : null}
