@@ -164,3 +164,19 @@ progression, “not applicable” without source references, and final completio
 Next investigation: guideline creation initializes a datetime-local input with
 UTC clock digits. In non-UTC browsers this silently shifts the effective time.
 Use local wall-clock digits and verify submission in multiple time zones.
+
+## Overnight iteration 7: correct source effective times across time zones
+
+Guideline creation now initializes its `datetime-local` field with local wall-clock
+digits. The request still converts the chosen local time to UTC, and the form
+discloses the browser's time zone. Previously the UTC digits were interpreted as
+local time, silently shifting a newly created guideline's effective instant.
+
+Verification: build and lint passed. Three browser contexts with a fixed instant
+passed (Asia/Kolkata, America/Los_Angeles, UTC). Each asserts the local input
+represents the current instant and the actual source POST contains the same UTC
+instant. India and Los Angeles wall-clock values are explicitly checked.
+
+Next investigation: the revision-conflict dialog uses technical wording and its
+save action can be clicked repeatedly while a save is pending. Review conflict
+recovery and keyboard behaviour without overwriting a collaborator's saved work.

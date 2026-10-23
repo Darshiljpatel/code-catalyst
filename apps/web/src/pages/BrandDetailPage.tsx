@@ -1,4 +1,5 @@
 import React from 'react';
+import { localDateTimeInput } from '../api/localDateTime';
 import { useParams, useNavigate } from 'react-router-dom';
 import {
   getBrand,
@@ -366,7 +367,7 @@ function AddSourceModal({
   const [sourceKey, setSourceKey] = React.useState('trial_terms');
   const [title, setTitle] = React.useState('Approved trial terms');
   const [text, setText] = React.useState('The trial lasts 14 days. No credit card is required.');
-  const [validFrom, setValidFrom] = React.useState(new Date().toISOString().slice(0, 16));
+  const [validFrom, setValidFrom] = React.useState(() => localDateTimeInput(new Date()));
   const [rules, setRules] = React.useState<RuleInput[]>([
     {
       id: 'F-01',
@@ -521,6 +522,7 @@ function AddSourceModal({
               onChange={e => setValidFrom(e.target.value)}
               required
             />
+            <small>Local time in {Intl.DateTimeFormat().resolvedOptions().timeZone}; saved as a UTC timestamp.</small>
           </div>
 
           <div style={{ marginTop: 'var(--space-6)' }}>
