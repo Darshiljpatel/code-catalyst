@@ -4,7 +4,7 @@ Pre-publication brand review with source-linked findings and human approval of a
 
 ## Current status
 
-Planning and verification scaffolding only. The application, deployment, product tests and user research have not been completed. The three original brief files remain the source of truth.
+Sanath phase S1 is implemented: PostgreSQL identity/tenant foundation, session authentication and scoped brand APIs. Eight backend integration tests pass locally against PostgreSQL. Review workflow, model integration, frontend, deployment and user research remain pending. See [API setup](apps/api/README.md) and [phase progress](docs/SANATH_PROGRESS.md). The three original brief files remain the source of truth.
 
 - [Implementation plan and balanced assignments](docs/IMPLEMENTATION_PLAN.md)
 - [Purchased-model selection and evaluation](docs/MODEL_PLAN.md)
