@@ -189,7 +189,7 @@ export function ContentDetailPage() {
     setSavingRevision(true);
     setError(null);
     setDraftNotice(null);
-    setConflictServerRevision(null);
+    if (!customParentId) setConflictServerRevision(null);
 
     const parentId = customParentId || currentRevision.id;
 
@@ -227,10 +227,15 @@ export function ContentDetailPage() {
         try {
           const fresh = await getContent(content.id);
           setContent(fresh);
+          // Keep the local draft, but let the editor continue against the latest
+          // saved parent after the user inspects or closes the comparison.
+          setSelectedRevIndex(fresh.revisions.length - 1);
+          setRun(null);
+          setActiveFinding(null);
           const latestServerRev = fresh.revisions[fresh.revisions.length - 1];
           setConflictServerRevision(latestServerRev);
         } catch {
-          setConflictServerRevision(currentRevision);
+          setError('A newer revision exists, but it could not be loaded. Your edits are preserved. Retry saving when the connection is available.');
         }
       } else {
         setError('Failed to save new revision');
@@ -869,6 +874,8 @@ export function ContentDetailPage() {
         <ConflictResolutionModal
           serverRevision={conflictServerRevision}
           localDraftText={draftText}
+          saving={savingRevision}
+          error={error}
           onOverwrite={() => handleSaveRevision(undefined, conflictServerRevision.id)}
           onDiscard={() => {
             setSelectedRevIndex(content.revisions.findIndex(revision => revision.id === conflictServerRevision.id));

@@ -180,3 +180,28 @@ instant. India and Los Angeles wall-clock values are explicitly checked.
 Next investigation: the revision-conflict dialog uses technical wording and its
 save action can be clicked repeatedly while a save is pending. Review conflict
 recovery and keyboard behaviour without overwriting a collaborator's saved work.
+
+## Overnight iteration 8: revision-conflict recovery
+
+The conflict dialog now explains the saved-versus-working-draft choice directly,
+keeps the comparison visible during recovery saves, disables actions during a
+pending save, and shows recovery errors inside the dialog. Escape closes the
+comparison when no save is pending. Saving creates a new revision with the latest
+saved parent; existing history remains available.
+
+Fixed a state bug where closing the comparison could leave the preserved local
+draft in a read-only historical view. The selected revision now tracks the latest
+server parent while the user's local text and metadata remain intact. A failed
+refresh after a 409 reports the failure instead of presenting the previous local
+revision as though it were newly fetched server data.
+
+Verification: production build and lint passed. The browser regression passed:
+initial 409 → latest comparison → pending recovery save → ignored Escape while
+saving → failed save → Escape back to an editable local draft → successful retry.
+It checks exact Unicode/trailing-space preservation and POST parent IDs, plus the
+retained prior saved revision. Network and API responses are intercepted here;
+server revision immutability is covered by existing PostgreSQL workflow tests.
+
+Next investigation: word-level diff allocates a full quadratic matrix for long
+documents. Bound comparison work while preserving exact before/after text and
+clearly label coarser comparisons for unusually large rewrites.
