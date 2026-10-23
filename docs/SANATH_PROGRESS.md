@@ -46,6 +46,10 @@ D2 arrived during integration. Removed its fixture fallback on failed analysis, 
 
 Validation: 133 combined backend/engine/P3 worker tests passed, along with six planning-verifier tests and the frontend production TypeScript/Vite build. Alembic reports no schema drift. The live synthetic workflow passed with real Nebius calls and the real checker; the earlier failed development attempts remain disclosed. The upstream httpx test-client deprecation warning remains. See the S5 handoff for runtime/dependency commands, scope limits and evidence. No S5 migration is needed. Deployment, private file intake, retention, held-out evaluation and user testing remain incomplete team deliverables; no release gate is marked complete merely because component tests pass.
 
-## Next — S6 preparation
+## S6 — submission preparation and evidence packaging
 
-Prepare architecture, contributions, tool/model disclosures, Round 1 deltas and submission documentation using actual evidence. Finalise them after the team's browser/deployment/evaluation results arrive. Complete the remaining release gates rather than inventing screenshots, research or quality metrics.
+Prepared architecture and implemented/partial feature inventory against the S5 baseline, actual-commit contribution ledger, tool/model/dependency disclosures, page-referenced Round 1 change log, three substantive Round 3 additions and submission coordination record. No member confirmation, peer review, research, deployment or final sign-off is invented. The updated project PDF remains Darshilkumar's D6 deliverable.
+
+Added `scripts/package_submission.py`: packages a fixed committed-file allowlist plus referenced evidence, with per-file SHA-256/size and code/package provenance. Draft mode retains blockers; release mode invokes the existing evidence inventory and rejects dirty trees or application/verification changes after the tested code commit. It reads Git objects, excludes private local configuration and refuses to overwrite an archive. The bundle is documentation/evidence, not deployment or full source.
+
+Final S6 sign-off and submission remain open until browser/file-lifecycle/deployment/evaluation evidence, updated PDF and member confirmations arrive. See `docs/SUBMISSION_STATUS.md` for the owner checklist and commands. The release register remains unpassed.

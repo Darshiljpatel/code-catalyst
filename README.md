@@ -7,6 +7,12 @@ Pre-publication brand review with source-linked findings and human approval of a
 Sanath phases S1–S5 now provide an integrated backend text-review workflow: real deterministic checks, controlled Nebius review, immutable revisions, human decisions and approved export, plus scoped queues and governance counts. Backend integration tests run against PostgreSQL; see [S2 integration handoff](docs/S2_HANDOFF.md). Full browser workflow verification, document/image API intake, retention/deletion, deployment and user/evaluation evidence remain pending. See [API setup](apps/api/README.md) and [phase progress](docs/SANATH_PROGRESS.md). The three original brief files remain the source of truth.
 
 - [Implementation plan and balanced assignments](docs/IMPLEMENTATION_PLAN.md)
+- [S6 submission status and bundle commands](docs/SUBMISSION_STATUS.md)
+- [Implemented features and remaining work](docs/COMPLETED_FEATURES.md)
+- [Implementation architecture](docs/ARCHITECTURE.md)
+- [Changes from Round 1](docs/CHANGELOG_FROM_ROUND1.md)
+- [Contributions](docs/CONTRIBUTIONS.md) and [technology/AI disclosures](docs/DISCLOSURES.md)
+- [Three Round 3 improvements](docs/ROUND3_IMPROVEMENTS.md)
 - [S5 integration status and team handoff](docs/S5_HANDOFF.md)
 - [S4 review and export integration handoff](docs/S4_HANDOFF.md)
 - [S3 model/worker integration handoff](docs/S3_HANDOFF.md)
