@@ -15,6 +15,14 @@ export function ExportModal({ revisionId, onClose }: ExportModalProps) {
   const [copied, setCopied] = React.useState(false);
 
   React.useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') onClose();
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [onClose]);
+
+  React.useEffect(() => {
     setLoading(true);
     exportRevision(revisionId)
       .then(setExportData)

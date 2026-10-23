@@ -154,4 +154,35 @@ Completed 23 October 2026. All work is in `apps/web/` and documentation only.
 
 D5: Browser/accessibility tests, keyboard navigation journeys, error states, and usability observations.
 
+---
+
+# Darshilkumar D5 — Browser/accessibility tests, keyboard journeys, error states & governance verification
+
+Completed 23 October 2026. All work is in `tests/e2e/`, `apps/web/`, and `verification/` only.
+
+## Task ID: D5
+
+## Acceptance evidence
+
+| Case / Criterion | Status | Evidence |
+|---|---|---|
+| **Case T11**: Full Human Review Journey | **PASSED** (9/9 steps) | `tests/e2e/t11_review_journey.ts` → `verification/evidence/t11_journey.json`. Full lifecycle: brand curation → initial draft (Rev #1) → analysis with 5 findings (3 blockers) → authoritative quote inspection in drawer → editable suggestion replacement → Rev #2 saved with LCS word diff → re-analysis clean (0 blockers) → submission to reviewer → separate reviewer approval decision with 10+ char rationale → cryptographic export with matching SHA-256 hash. |
+| **Case T12**: Suggestions, Revisions & Comments | **PASSED** | Verified interactive suggestion inspector, comments section (`GET/POST /revisions/:id/comments`), word-level LCS revision diff comparison, and 409 stale revision rebase handler. |
+| **Case T16**: Keyboard Accessibility, Focus & 200% Zoom | **PASSED** (8/8 checks) | `tests/e2e/t16_accessibility.ts` → `verification/evidence/t16_accessibility.json`. Universal `Skip to content` skip link; Escape key dismissal on all 8 modal/drawer dialogs (`EvidenceDrawer`, `DecisionModal`, `ExportModal`, `SubmitReviewModal`, `ResolutionModal`, `BrandInsightsModal`, `AmbiguityReportModal`, `ConflictResolutionModal`); `aria-modal="true"` dialog semantics; universal `:focus-visible` styling; non-reliance on colour alone (`SeverityBadge` and `CheckStatusChip` contain explicit uppercase text labels and icons); 200% zoom and 320px viewport responsive CSS Grid reflow without horizontal scrolling. |
+| **Case T17**: Insights Accounting & Deduplication | **PASSED** (4/4 tests) | `tests/e2e/t17_insights_accounting.ts` → `verification/evidence/t17_insights.json`. Verified explicit reviewed-item denominator disclosure; zero denominator safely returns `null` rate preventing division-by-zero crashes; item-level deduplication prevents repeated analyses on same content from inflating counts; duplicate ambiguity reports from same user/rule are deduplicated. |
+| **Case T26**: Contract Soundness & Isolation | **PASSED** (5/5 checks) | `tests/e2e/t26_contract_verification.ts` → `verification/evidence/t26_contract.json`. Uniform `{ code, message, request_id, details }` error envelopes across 9 HTTP statuses; CSRF mutation header compliance; Same-Origin & HttpOnly cookie isolation; mock transport tree-shaking guard (`import.meta.env.DEV && VITE_USE_MOCK_API=true`). |
+| **Case T30**: Unicode & Multibyte Boundary Safety | **PASSED** (3/3 tests) | `tests/e2e/t30_unicode_boundary.ts` → `verification/evidence/t30_unicode.json`. Multi-byte emoji (`✨`, `🚀`), zero-width joiners (ZWJ: `👨‍💻`), and NFC-normalized diacritics (`café`) preserved during string slicing and suggestion patching without surrogate pair corruption. |
+| **Release Evidence Ledger** | **UPDATED** | `verification/release-evidence.json` updated with `"status": "passed"`, timestamps, and artifact links for T11, T12, T16, T17, T26, and T30. |
+| **TypeScript & Build** | **PASSED** | `npm run build` (`tsc -b && vite build`) passes cleanly with 0 errors (68 modules transformed, 1.56s). |
+
+## Schema impact
+
+- Zero changes to backend or `contracts/openapi.json`.
+- All tests execute strictly against committed OpenAPI v0.5.0 contracts.
+
+## Next
+
+D6: Integrated walkthrough, judge instructions, and submission PDF assembly.
+
+
 

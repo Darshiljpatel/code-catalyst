@@ -1,3 +1,4 @@
+import React from 'react';
 import type { FindingOut, SourceOut } from '../api/types';
 import { SeverityBadge } from './Primitives';
 
@@ -14,6 +15,14 @@ export function EvidenceDrawer({
   onClose,
   onJumpToText,
 }: EvidenceDrawerProps) {
+  React.useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') onClose();
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [onClose]);
+
   if (!finding) return null;
 
   // Find corresponding source

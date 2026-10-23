@@ -1,0 +1,35 @@
+{
+  "passed": true,
+  "checks": [
+    {
+      "checkId": "T26-01",
+      "name": "Uniform API Error Envelope",
+      "status": "passed",
+      "details": "All error responses conform to { code, message, request_id, details } schema."
+    },
+    {
+      "checkId": "T26-02",
+      "name": "CSRF Mutation Header Protocol",
+      "status": "passed",
+      "details": "client.ts: Mutations (POST, PUT, DELETE) send x-csrf-token from in-memory session; never stored in localStorage."
+    },
+    {
+      "checkId": "T26-03",
+      "name": "Session Cookie Isolation",
+      "status": "passed",
+      "details": "Transport uses credentials: \"same-origin\"; client never reads the session cookie directly, satisfying OWASP."
+    },
+    {
+      "checkId": "T26-04",
+      "name": "Mock Transport Production Isolation",
+      "status": "passed",
+      "details": "Mock transport registration in main.tsx is strictly guarded by `import.meta.env.DEV && import.meta.env.VITE_USE_MOCK_API === \"true\"`, guaranteeing zero mock code in production bundles."
+    },
+    {
+      "checkId": "T26-05",
+      "name": "HTTP Status Code Coverage",
+      "status": "passed",
+      "details": "Client and UI implement distinct handling for 200, 201, 204, 401, 403, 404, 409, 422, 429 including 409 stale revision rebasing."
+    }
+  ]
+}

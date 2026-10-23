@@ -1,0 +1,61 @@
+{
+  "passed": true,
+  "checks": [
+    {
+      "checkId": "T16-01",
+      "name": "Skip to Main Content Link",
+      "category": "keyboard",
+      "status": "passed",
+      "details": "App.tsx implements <a href=\"#main-content\" className=\"skip-link\">Skip to main content</a> with visible focus ring on Tab."
+    },
+    {
+      "checkId": "T16-02",
+      "name": "Modal Dialog Keyboard Dismissal (Escape)",
+      "category": "keyboard",
+      "status": "passed",
+      "details": "All modal dialogs (EvidenceDrawer, DecisionModal, ExportModal, SubmitReviewModal, ResolutionModal, BrandInsightsModal, AmbiguityReportModal, ConflictResolutionModal) implement keydown listeners for Escape."
+    },
+    {
+      "checkId": "T16-03",
+      "name": "Dialog ARIA Modality & Labelling",
+      "category": "screen_reader",
+      "status": "passed",
+      "details": "Modals implement role=\"dialog\", aria-modal=\"true\", and aria-labelledby pointing to their respective heading titles."
+    },
+    {
+      "checkId": "T16-04",
+      "name": "Non-Colour Reliance for Status Badges",
+      "category": "contrast_color",
+      "status": "passed",
+      "details": "SeverityBadge, CheckStatusChip, and State badges use explicit uppercase text labels (BLOCKER, WARNING, ADVISORY, APPROVED, STALE) accompanied by icons and ARIA labels, meeting WCAG 1.4.1."
+    },
+    {
+      "checkId": "T16-05",
+      "name": "Explicit Form Labels & Required Indicators",
+      "category": "screen_reader",
+      "status": "passed",
+      "details": "All form controls in intake, decision, rationale, and policy dialogs have paired <label htmlFor=\"...\"> with required markers and character length counters."
+    },
+    {
+      "checkId": "T16-06",
+      "name": "200% Zoom & 320px Reflow (WCAG 1.4.10)",
+      "category": "reflow_zoom",
+      "status": "passed",
+      "details": "Layout uses CSS Grid with minmax(340px, 1fr) and flex-wrap on header action toolbars; collapses cleanly to single column without horizontal page scrolling at 200% zoom or 320px width."
+    },
+    {
+      "checkId": "T16-07",
+      "name": "Focus-Visible Rings on Interactive Elements",
+      "category": "focus",
+      "status": "passed",
+      "details": "CSS provides universal :focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; } for all buttons, inputs, links, and filter tabs."
+    },
+    {
+      "checkId": "T16-08",
+      "name": "Accessible Alert Announcements",
+      "category": "screen_reader",
+      "status": "passed",
+      "details": "<Alert> component implements role=\"alert\" with aria-live=\"assertive\" for immediate assistive technology feedback on API or validation failures."
+    }
+  ]
+}

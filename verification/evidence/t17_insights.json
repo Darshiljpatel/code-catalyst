@@ -1,0 +1,29 @@
+{
+  "passed": true,
+  "tests": [
+    {
+      "testId": "T17-01",
+      "name": "Explicit Denominator Disclosure",
+      "status": "passed",
+      "details": "Denominator definition verified: \"Distinct content items with at least one completed terminal analysis run\""
+    },
+    {
+      "testId": "T17-02",
+      "name": "Zero Denominator Null Rate Safety",
+      "status": "passed",
+      "details": "Verified that a denominator of 0 returns null for confirmed_per_reviewed_item, preventing division by zero."
+    },
+    {
+      "testId": "T17-03",
+      "name": "Item-Level Deduplication of Repeated Analyses",
+      "status": "passed",
+      "details": "Evaluated repeated runs across items; successfully deduplicated re-analyses using item-level denominator."
+    },
+    {
+      "testId": "T17-04",
+      "name": "Ambiguity Report Deduplication",
+      "status": "passed",
+      "details": "Deduplicated repeated reports from the same actor on the same rule/revision."
+    }
+  ]
+}

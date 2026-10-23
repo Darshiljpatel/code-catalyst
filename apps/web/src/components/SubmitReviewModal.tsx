@@ -29,6 +29,14 @@ export function SubmitReviewModal({
   const [error, setError] = React.useState<string | null>(null);
 
   React.useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') onClose();
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [onClose]);
+
+  React.useEffect(() => {
     getReviewers()
       .then(list => {
         setReviewers(list);
