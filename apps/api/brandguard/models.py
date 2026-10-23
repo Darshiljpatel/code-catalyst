@@ -139,6 +139,8 @@ class ReviewRun(Base):
     source_snapshot: Mapped[list] = mapped_column(JSON)
     checks: Mapped[list] = mapped_column(JSON)
     status: Mapped[str] = mapped_column(String(20), default='queued')
+    processing_snapshot: Mapped[dict] = mapped_column(JSON, default=dict, server_default='{}')
+    engine_metadata: Mapped[dict] = mapped_column(JSON, default=dict, server_default='{}')
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True))
 
 class RunSource(Base):
@@ -179,3 +181,43 @@ class AuditEvent(Base):
     object_id: Mapped[str] = mapped_column(String(36))
     details: Mapped[dict] = mapped_column(JSON)
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True))
+
+class ProcessingPolicy(Base):
+    __tablename__ = 'processing_policies'
+    __table_args__ = (
+        ForeignKeyConstraint(['org_id', 'approved_by'], ['memberships.org_id', 'memberships.id']),
+        CheckConstraint('version > 0'),
+    )
+    org_id: Mapped[str] = mapped_column(ForeignKey('organisations.id'), primary_key=True)
+    version: Mapped[int] = mapped_column(Integer)
+    enabled: Mapped[bool]
+    model: Mapped[str] = mapped_column(String(200))
+    notice: Mapped[str] = mapped_column(Text)
+    approved_by: Mapped[str] = mapped_column(String(36))
+    updated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True))
+
+ReviewRun.__table__.append_constraint(UniqueConstraint('org_id', 'id', 'revision_id', name='uq_run_revision'))
+
+class Finding(Base):
+    __tablename__ = 'findings'
+    __table_args__ = (
+        ForeignKeyConstraint(['org_id', 'run_id', 'revision_id'], ['review_runs.org_id', 'review_runs.id', 'review_runs.revision_id']),
+        ForeignKeyConstraint(['run_id', 'source_version_id'], ['run_sources.run_id', 'run_sources.source_id']),
+        CheckConstraint("origin IN ('model','deterministic')"),
+        CheckConstraint("severity IN ('blocker','warning','advisory')"),
+    )
+    id: Mapped[str] = mapped_column(String(36), primary_key=True, default=uid)
+    org_id: Mapped[str] = mapped_column(String(36), index=True)
+    run_id: Mapped[str] = mapped_column(String(36), index=True)
+    revision_id: Mapped[str] = mapped_column(String(36))
+    category: Mapped[str] = mapped_column(String(30))
+    severity: Mapped[str] = mapped_column(String(20))
+    evidence_status: Mapped[str] = mapped_column(String(30))
+    origin: Mapped[str] = mapped_column(String(20))
+    source_version_id: Mapped[str] = mapped_column(String(36))
+    rule_id: Mapped[str] = mapped_column(String(100))
+    evidence_quote: Mapped[str] = mapped_column(Text)
+    location: Mapped[dict] = mapped_column(JSON)
+    rationale: Mapped[str] = mapped_column(Text)
+    suggested_edit: Mapped[str | None] = mapped_column(Text)
+    resolution: Mapped[str] = mapped_column(String(30), default='unresolved')

@@ -21,8 +21,11 @@ class Settings:
     database_url: str
     public_origin: str = 'http://localhost:8000'
     environment: str = 'development'
+    max_external_runs_per_day: int = 100
 
     def __post_init__(self):
+        if not 1 <= self.max_external_runs_per_day <= 10000:
+            raise ValueError('Invalid external run budget')
         if not self.database_url.startswith('postgresql+psycopg://'):
             raise ValueError('PostgreSQL with psycopg is required')
         from urllib.parse import urlsplit

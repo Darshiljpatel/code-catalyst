@@ -1,6 +1,6 @@
-# BrandGuard API — Sanath phases S1–S2
+# BrandGuard API — Sanath phases S1–S3
 
-Implemented: identity/tenant schema, versioned migration, Argon2 credentials, eight-hour opaque hashed sessions, origin + CSRF mutation checks, persistent login throttling, manager-only brand creation and tenant-scoped brand reads. Each identity currently has one role per workspace. S2 adds versioned sources, verified activation, immutable revisions and atomic review-run/job enqueue. See [S2 handoff](../../docs/S2_HANDOFF.md) for the API sequence and worker boundary. No approval, analysis worker or AI inference is implemented yet.
+Implemented: identity/tenant schema, versioned migration, Argon2 credentials, eight-hour opaque hashed sessions, origin + CSRF mutation checks, persistent login throttling, manager-only brand creation and tenant-scoped brand reads. Each identity currently has one role per workspace. S2 adds versioned sources, verified activation, immutable revisions and atomic review-run/job enqueue. See [S2 handoff](../../docs/S2_HANDOFF.md) for the API sequence and worker boundary. S3 adds workspace policy, creator consent, a Nebius adapter and durable runner. See [S3 handoff](../../docs/S3_HANDOFF.md). Approval/export and real deterministic-engine integration are still pending.
 
 ## Local setup (from repository root)
 
@@ -22,7 +22,7 @@ export PYTHONPATH=apps/api
 
 Seed creates four synthetic identities (`creator`, `manager`, `reviewer`, `admin` at `lumadesk.test`) and prints the workspace ID. It refuses to overwrite existing identities. Supply email, password and that `org_id` to `POST /api/v1/sessions`; browser requests must carry the exact `Origin`. Store returned `csrf_token` in memory and send `X-CSRF-Token` on mutations. Session cookies are HTTP-only, same-site strict and secure outside development. No bearer token or frontend-selected role is accepted. Production requires HTTPS. Keep API and web same-origin behind the future proxy.
 
-Frontend contract: `contracts/openapi.json`. Published endpoints cover sessions, `/me`, brands, source curation, content revisions, queued review runs and health. Health readiness validates the S2 migration and explicitly excludes a worker. No migrations run implicitly at server startup.
+Frontend contract: `contracts/openapi.json`. Published endpoints cover sessions, `/me`, brands, source curation, content revisions, review runs/findings, processing policy and health. Health readiness validates the S3 migration and explicitly excludes a worker. No migrations run implicitly at server startup.
 
 ```bash
 # Create a separate UTF-8 database named brandguard_s1_test and migrate it first.
@@ -31,4 +31,4 @@ DATABASE_URL="$TEST_DATABASE_URL" .venv/bin/alembic -c apps/api/alembic.ini upgr
 PYTHONPATH=apps/api .venv/bin/pytest apps/api/tests -q
 ```
 
-Tests erase identity/brand rows only in the dedicated test database. They cover the S1 portion of T01/T22; neither complete test-register case is satisfied across future content APIs yet. Access control is enforced in API queries, not PostgreSQL RLS; every future object route must use the same tenant-scoping pattern. Login throttling is by direct client IP; proxy-aware trusted client identification must be configured during deployment. Expired session/throttle cleanup and full audit logging remain follow-up work. No public account provisioning or demo-session endpoint exists in S1.
+Database tests erase S1–S3 test records only in the dedicated test database. They exercise the implemented parts of tenant isolation, request security, source/revision integrity and semantic review; full release-register cases remain open until workflow/deployment integration. Access control is enforced in API queries, not PostgreSQL RLS; every future object route must use the same tenant-scoping pattern. Login throttling is by direct client IP; proxy-aware trusted client identification must be configured during deployment. Expired session/throttle cleanup and full audit logging remain follow-up work. No public account provisioning or demo-session endpoint exists in S1.

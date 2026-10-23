@@ -4,9 +4,10 @@ Pre-publication brand review with source-linked findings and human approval of a
 
 ## Current status
 
-Sanath phases S1–S2 are implemented: tenant authentication, versioned source curation, immutable content revisions and atomic persistent analysis-job enqueue. Backend integration tests run against PostgreSQL; see [S2 integration handoff](docs/S2_HANDOFF.md). Review workflow, model integration, frontend, deployment and user research remain pending. See [API setup](apps/api/README.md) and [phase progress](docs/SANATH_PROGRESS.md). The three original brief files remain the source of truth.
+Sanath phases S1–S3 are implemented: tenant authentication, source curation, immutable revisions, durable analysis jobs, workspace-controlled Nebius semantic review and grounded findings. Backend integration tests run against PostgreSQL; see [S2 integration handoff](docs/S2_HANDOFF.md). Approval/export workflow, real deterministic-engine integration, frontend, deployment and user research remain pending. See [API setup](apps/api/README.md) and [phase progress](docs/SANATH_PROGRESS.md). The three original brief files remain the source of truth.
 
 - [Implementation plan and balanced assignments](docs/IMPLEMENTATION_PLAN.md)
+- [S3 model/worker integration handoff](docs/S3_HANDOFF.md)
 - [Purchased-model selection and evaluation](docs/MODEL_PLAN.md)
 - [Integration and security contracts](docs/CONTRACTS.md)
 - [Verification specification](docs/VERIFICATION.md)

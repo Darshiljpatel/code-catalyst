@@ -1,13 +1,13 @@
-"""Source curation and durable analysis submission. No analysis is executed in S2."""
+"""Source curation and durable analysis submission. Execution is delegated to the S3 worker."""
 from datetime import datetime, timezone
 from typing import Annotated
-from fastapi import APIRouter, Depends, Header
-from sqlalchemy import select, or_
+from fastapi import APIRouter, Depends, Header, Body, Request
+from sqlalchemy import select, or_, func
 from sqlalchemy.orm import Session
 from .core import db, identity, manager, Problem, digest
-from .models import Brand, Membership, SourceVersion, ContentItem, ContentRevision, ReviewRun, RunSource, Job, AuditEvent
+from .models import Brand, Membership, SourceVersion, ContentItem, ContentRevision, ReviewRun, RunSource, Job, AuditEvent, ProcessingPolicy, Organisation, Finding
 from .schemas import (SourceInput, ActivationInput, ContentInput, NewRevisionInput,
-                      SourceOut, ContentOut, RevisionOut, RunOut)
+                      SourceOut, ContentOut, RevisionOut, RunOut, AnalysisInput, FindingOut)
 
 router = APIRouter(prefix='/api/v1')
 CATEGORIES = ('terminology','tone','messaging','facts_claims','visual','accessibility')
@@ -63,7 +63,9 @@ def run_out(session, member, run, revision, item):
              or active_ids != {s['id'] for s in run.source_snapshot})
     return RunOut(id=run.id, revision_id=run.revision_id, source_epoch=run.source_epoch,
                   source_snapshot=run.source_snapshot, checks=run.checks, status=run.status,
-                  created_at=run.created_at, stale=stale)
+                  created_at=run.created_at, stale=stale, processing_snapshot=run.processing_snapshot,
+                  engine_metadata=run.engine_metadata, findings=[FindingOut.model_validate(f) for f in session.scalars(
+                      select(Finding).where(Finding.org_id==member.org_id, Finding.run_id==run.id).order_by(Finding.id))])
 
 @router.get('/brands/{brand_id}/sources', response_model=list[SourceOut])
 def list_sources(brand_id: str, member=Depends(identity), session: Session=Depends(db)):
@@ -162,7 +164,8 @@ def create_revision(item_id: str, body: NewRevisionInput, member=Depends(identit
     return content_out(session, item)
 
 @router.post('/revisions/{revision_id}/analysis', status_code=202, response_model=RunOut)
-def queue_analysis(revision_id: str, idempotency_key: Annotated[str, Header(min_length=8, max_length=100)],
+def queue_analysis(revision_id: str, request: Request, idempotency_key: Annotated[str, Header(min_length=8, max_length=100)],
+                   body: AnalysisInput = Body(default=AnalysisInput()),
                    member=Depends(identity), session: Session=Depends(db)):
     revision, item = revision_for(session, member, revision_id, lock=True, edit=True)
     existing = session.scalar(select(ReviewRun).where(ReviewRun.org_id == member.org_id,
@@ -175,6 +178,21 @@ def queue_analysis(revision_id: str, idempotency_key: Annotated[str, Header(min_
         ReviewRun.revision_id == revision_id, ReviewRun.status.in_(('queued','running')))):
         raise Problem(409, 'analysis_pending', 'An analysis of this revision is already pending.')
     brand = brand_for(session, member, item.brand_id, lock=True)
+    # Serialise consent with policy updates. Never enable external processing from a request alone.
+    session.scalar(select(Organisation).where(Organisation.id==member.org_id).with_for_update())
+    policy = session.get(ProcessingPolicy,member.org_id)
+    processing = dict(enabled=False, provider='nebius', consent=False)
+    if body.external_processing_consent:
+        if policy is None or not policy.enabled or policy.version != body.policy_version:
+            raise Problem(409,'policy_changed','External processing requires consent to the current enabled policy.')
+        start_of_day=now().replace(hour=0,minute=0,second=0,microsecond=0)
+        reserved=session.scalar(select(func.count()).select_from(ReviewRun).where(
+            ReviewRun.org_id==member.org_id, ReviewRun.created_at>=start_of_day,
+            ReviewRun.processing_snapshot['enabled'].as_boolean()==True))
+        if reserved>=request.app.state.settings.max_external_runs_per_day:
+            raise Problem(429,'external_budget_exceeded','The workspace daily external-review limit has been reached.')
+        processing = dict(enabled=True, provider='nebius', model=policy.model,
+                          policy_version=policy.version, notice=policy.notice, consent=True)
     at = now()
     sources = eligible_sources(session, member, brand.id, at)
     if not sources:
@@ -182,7 +200,7 @@ def queue_analysis(revision_id: str, idempotency_key: Annotated[str, Header(min_
     run = ReviewRun(org_id=member.org_id, revision_id=revision.id, idempotency_key=idempotency_key,
         source_epoch=brand.source_epoch, source_snapshot=[SourceOut.model_validate(s).model_dump(mode='json') for s in sources],
         checks=[dict(category=c, status='unavailable', reason='Queued; no worker has completed this check.') for c in CATEGORIES],
-        status='queued', created_at=at)
+        status='queued', created_at=at, processing_snapshot=processing)
     session.add(run); session.flush()
     for source in sources:
         session.add(RunSource(org_id=member.org_id, run_id=run.id, source_id=source.id))

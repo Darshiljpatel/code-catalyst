@@ -1,6 +1,6 @@
 # Model selection from the team's purchased catalogue
 
-Updated 23 October 2026 using `models.txt`. The team reports purchased access; the file is a catalogue snapshot, not a successful API connection or evidence that a dedicated deployment is provisioned. The team has now identified Nebius Token Factory and supplied the API example: base URL `https://api.tokenfactory.nebius.com/v1/`, primary ID `Qwen/Qwen3-235B-A22B-Instruct-2507`, key environment variable `NEBIUS_API_KEY`. Exact account access, quotas and fallback ID still need verification. No live request has been made. Use a replacement key supplied through the environment after revoking the key exposed in chat. Keep credentials out of this file and the repository.
+Updated 23 October 2026 using `models.txt`. The team reports purchased access; the file is a catalogue snapshot, not a successful API connection or evidence that a dedicated deployment is provisioned. The team has now identified Nebius Token Factory and supplied the API example: base URL `https://api.tokenfactory.nebius.com/v1/`, primary ID `Qwen/Qwen3-235B-A22B-Instruct-2507`, key environment variable `NEBIUS_API_KEY`. Exact account access, quotas and fallback ID still need verification. The S3 adapter has now been connection-tested on a synthetic example; see [S3 handoff](S3_HANDOFF.md) for the result and remaining evaluation. Use a replacement key supplied through the environment after revoking the key exposed in chat. Keep credentials out of this file and the repository.
 
 ## Proposed selection
 
@@ -46,4 +46,6 @@ This changes the Round 1 preference for a locally hosted model: Round 2 now plan
 
 Configuration names to add during implementation: `MODEL_PROVIDER`, `MODEL_BASE_URL`, `MODEL_PRIMARY_ID`, optional `MODEL_FALLBACK_ID`, `MODEL_API_KEY`, `MODEL_TIMEOUT_SECONDS`, `MODEL_MAX_INPUT_TOKENS`, `MODEL_MAX_OUTPUT_TOKENS`, and `MODEL_DAILY_BUDGET_USD`. Use exact console/API values for IDs. Make fallback disabled by default. Do not create a pretend working endpoint in `.env.example`.
 
-Provider reference: [Nebius API introduction](https://docs.tokenfactory.nebius.com/api-reference/introduction), checked 23 October 2026, documents the OpenAI-compatible base URL and environment-key pattern. `.env.example` records only non-secret configuration placeholders; the S3 adapter is not implemented by S2.
+Provider reference: [Nebius API introduction](https://docs.tokenfactory.nebius.com/api-reference/introduction), checked 23 October 2026, documents the OpenAI-compatible base URL and environment-key pattern. `.env.example` records only non-secret configuration placeholders; S3 implements the adapter and policy controls; no runtime fallback is enabled.
+
+S3 configuration update: runtime uses `NEBIUS_API_KEY`, `MODEL_MAX_INPUT_BYTES=24000`, `MODEL_MAX_OUTPUT_TOKENS=1200`, `MODEL_TIMEOUT_SECONDS=40` and `MODEL_DAILY_RUN_LIMIT=100`. These measured-byte/request-count limits replace provisional token-estimate/dollar-cap suggestions; a currency budget and automatic chunking are not implemented. See S3_HANDOFF.md for the precise failure behaviour.

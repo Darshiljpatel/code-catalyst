@@ -6,7 +6,7 @@ from sqlalchemy import delete, select
 from sqlalchemy.orm import Session
 from brandguard.main import create_app, Settings, passwords, digest
 from brandguard.models import (Brand, Organisation, User, Membership, SessionRecord, LoginAttempt,
-    AuditEvent, RunSource, Job, ReviewRun, ContentRevision, ContentItem, SourceVersion)
+    AuditEvent, RunSource, Job, ReviewRun, ContentRevision, ContentItem, SourceVersion, Finding, ProcessingPolicy)
 
 @pytest.fixture()
 def setup():
@@ -16,7 +16,7 @@ def setup():
     app = create_app(Settings(url, 'https://testserver', 'test'))
     engine = app.state.engine
     with Session(engine) as db:
-        for cls in (AuditEvent, RunSource, Job, ReviewRun, ContentRevision, ContentItem, SourceVersion,
+        for cls in (Finding, ProcessingPolicy, AuditEvent, RunSource, Job, ReviewRun, ContentRevision, ContentItem, SourceVersion,
                     SessionRecord, LoginAttempt, Brand, Membership, User, Organisation):
             db.execute(delete(cls))
         orgs = [Organisation(name='One'), Organisation(name='Two')]

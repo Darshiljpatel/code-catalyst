@@ -125,3 +125,27 @@ class RunOut(BaseModel):
     status: str
     created_at: datetime
     stale: bool
+    processing_snapshot: dict
+    engine_metadata: dict
+    findings: list['FindingOut']
+
+class AnalysisInput(StrictInput):
+    external_processing_consent: bool = False
+    policy_version: int | None = Field(default=None, ge=1)
+
+class FindingOut(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+    id: str
+    revision_id: str
+    run_id: str
+    category: str
+    severity: str
+    evidence_status: str
+    origin: str
+    source_version_id: str
+    rule_id: str
+    evidence_quote: str
+    location: dict
+    rationale: str
+    suggested_edit: str | None
+    resolution: str

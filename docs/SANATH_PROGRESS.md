@@ -20,9 +20,17 @@ Handoff: `docs/S2_HANDOFF.md` and expanded `contracts/openapi.json`. The worker 
 
 Nebius Token Factory is now identified from the team's example and official provider docs. Non-secret endpoint/model placeholders are in `.env.example`; no credential was written to project files or used for a live request. A replacement key must be supplied through the environment for S3.
 
-## Next — S3
+## S3 — grounded Nebius review and orchestration
 
-Implement the evidence-grounded Nebius adapter and orchestration, validating model JSON, supplied-source citations, literal evidence and content locations. Default external processing to disabled until configured policy/disclosure is in place. Integrate deterministic checks through Surya's agreed interface; use explicit unavailable/incomplete status while those modules are absent. Record request/returned model ID, prompt version, usage, latency and failure reason without logging content or credentials.
+Implemented 23 October 2026 with Codex assistance. Added the bounded async Nebius adapter, strict response schema, literal source/rule validation, deterministic unique-quote location mapping, advisory tone enforcement, numeric-edit guard and safe provider telemetry. Missing/invalid/truncated responses fail visibly. External processing requires current admin policy plus revision-specific creator consent; old S2 jobs remain opted out. Daily external-submission reservations are tenant-scoped and serialised.
+
+Migration `0003_semantic` adds processing policies, findings, immutable processing snapshots and result metadata. The runner claims jobs with leases/attempt limits and guards result persistence against expired or superseded leases. It preserves valid deterministic findings on semantic failure and does not overwrite a newer draft's state. The async deterministic checker remains injectable; absent real modules, the runtime reports incomplete coverage rather than using fixture results.
+
+Provider smoke: first request rejected invalid model offsets; quote-based location mapping then produced one validated synthetic trial-duration finding in about 3.7 seconds (727 prompt/202 completion tokens). This is a connection check, not measured accuracy. Validation: 63 backend tests passed, including the PostgreSQL orchestration/security cases and OpenAPI drift check; eight existing extraction/scaffolding tests and six planning-verifier tests also passed. Alembic reports no schema drift, and the S3 migration was exercised through downgrade/re-upgrade in the disposable database. The upstream httpx test-client deprecation warning remains. Tests and remaining integration boundaries are detailed in `docs/S3_HANDOFF.md`. Credentials remain outside tracked files. No deployment or complete evaluation is claimed.
+
+## Next — S4
+
+Implement review assignment, comments, reasoned findings/exception decisions, self-approval denial, atomic exact-revision approval, source freshness guards, export and audit. All approval paths must treat unavailable/failed required checks as incomplete. Coordinate the expanded screens with Darshilkumar and plug in Surya's real checks before declaring a full review complete.
 
 ## Later
 

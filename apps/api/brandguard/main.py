@@ -10,16 +10,23 @@ from .core import Settings, Problem, NewBrand, db, identity, manager, passwords,
 from .models import Brand
 from .auth import router as auth_router
 
-def create_app(settings=None):
-    settings = settings or Settings(os.environ['DATABASE_URL'], os.getenv('PUBLIC_ORIGIN', 'http://localhost:8000'), os.getenv('APP_ENV', 'development'))
+def create_app(settings=None, provider_config=None):
+    from .semantic import ProviderConfig
+    if settings is None:
+        from dotenv import load_dotenv
+        from pathlib import Path
+        load_dotenv(Path(__file__).resolve().parents[3] / '.env')
+        provider_config = provider_config or ProviderConfig.from_env()
+    settings = settings or Settings(os.environ['DATABASE_URL'], os.getenv('PUBLIC_ORIGIN', 'http://localhost:8000'), os.getenv('APP_ENV', 'development'), int(os.getenv('MODEL_DAILY_RUN_LIMIT', '100')))
     engine = create_engine(settings.database_url, pool_pre_ping=True)
     @asynccontextmanager
     async def lifespan(app):
         yield
         engine.dispose()
-    app = FastAPI(title='BrandGuard API', version='0.2.0', lifespan=lifespan)
+    app = FastAPI(title='BrandGuard API', version='0.3.0', lifespan=lifespan)
     app.state.engine = engine
     app.state.settings = settings
+    app.state.provider_config = provider_config or ProviderConfig()
     @app.middleware('http')
     async def security(request, call_next):
         request.state.request_id = str(uuid.uuid4())
@@ -60,19 +67,21 @@ def create_app(settings=None):
 
     @app.get('/api/v1/health/live')
     def live():
-        return {'status': 'live', 'phase': 'S2'}
+        return {'status': 'live', 'phase': 'S3'}
 
     @app.get('/api/v1/health/ready')
     def ready(session: Session = Depends(db)):
         try:
             revision = session.execute(text('select version_num from alembic_version')).scalar_one()
-            if revision != '0002_review_foundation':
+            if revision != '0003_semantic':
                 raise ValueError('Unexpected schema')
         except Exception:
             raise Problem(503, 'not_ready', 'Database schema is not ready.')
-        return {'status': 'ready', 'scope': 'S2 API/queue only; worker not implemented'}
+        return {'status': 'ready', 'scope': 'S3 API/schema only; check worker process separately'}
 
     from .review import router as review_router
+    from .policy import router as policy_router
+    app.include_router(policy_router)
     app.include_router(auth_router)
     app.include_router(review_router)
     return app

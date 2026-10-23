@@ -2,7 +2,7 @@
   "openapi": "3.1.0",
   "info": {
     "title": "BrandGuard API",
-    "version": "0.2.0"
+    "version": "0.3.0"
   },
   "paths": {
     "/api/v1/brands": {
@@ -118,6 +118,60 @@
             "content": {
               "application/json": {
                 "schema": {}
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/processing-policy": {
+      "get": {
+        "summary": "Get Policy",
+        "operationId": "get_policy_api_v1_processing_policy_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PolicyOut"
+                }
+              }
+            }
+          }
+        }
+      },
+      "put": {
+        "summary": "Update Policy",
+        "operationId": "update_policy_api_v1_processing_policy_put",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/PolicyInput"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PolicyOut"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
               }
             }
           }
@@ -478,6 +532,18 @@
             }
           }
         ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AnalysisInput",
+                "default": {
+                  "external_processing_consent": false
+                }
+              }
+            }
+          }
+        },
         "responses": {
           "202": {
             "description": "Successful Response",
@@ -579,6 +645,30 @@
           "rationale"
         ],
         "title": "ActivationInput"
+      },
+      "AnalysisInput": {
+        "properties": {
+          "external_processing_consent": {
+            "type": "boolean",
+            "title": "External Processing Consent",
+            "default": false
+          },
+          "policy_version": {
+            "anyOf": [
+              {
+                "type": "integer",
+                "minimum": 1.0
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Policy Version"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "title": "AnalysisInput"
       },
       "CheckOut": {
         "properties": {
@@ -740,6 +830,92 @@
         ],
         "title": "ContentOut"
       },
+      "FindingOut": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "title": "Id"
+          },
+          "revision_id": {
+            "type": "string",
+            "title": "Revision Id"
+          },
+          "run_id": {
+            "type": "string",
+            "title": "Run Id"
+          },
+          "category": {
+            "type": "string",
+            "title": "Category"
+          },
+          "severity": {
+            "type": "string",
+            "title": "Severity"
+          },
+          "evidence_status": {
+            "type": "string",
+            "title": "Evidence Status"
+          },
+          "origin": {
+            "type": "string",
+            "title": "Origin"
+          },
+          "source_version_id": {
+            "type": "string",
+            "title": "Source Version Id"
+          },
+          "rule_id": {
+            "type": "string",
+            "title": "Rule Id"
+          },
+          "evidence_quote": {
+            "type": "string",
+            "title": "Evidence Quote"
+          },
+          "location": {
+            "additionalProperties": true,
+            "type": "object",
+            "title": "Location"
+          },
+          "rationale": {
+            "type": "string",
+            "title": "Rationale"
+          },
+          "suggested_edit": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Suggested Edit"
+          },
+          "resolution": {
+            "type": "string",
+            "title": "Resolution"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "revision_id",
+          "run_id",
+          "category",
+          "severity",
+          "evidence_status",
+          "origin",
+          "source_version_id",
+          "rule_id",
+          "evidence_quote",
+          "location",
+          "rationale",
+          "suggested_edit",
+          "resolution"
+        ],
+        "title": "FindingOut"
+      },
       "HTTPValidationError": {
         "properties": {
           "detail": {
@@ -840,6 +1016,79 @@
           "parent_revision_id"
         ],
         "title": "NewRevisionInput"
+      },
+      "PolicyInput": {
+        "properties": {
+          "enabled": {
+            "type": "boolean",
+            "title": "Enabled"
+          },
+          "expected_version": {
+            "type": "integer",
+            "minimum": 0.0,
+            "title": "Expected Version"
+          },
+          "notice": {
+            "type": "string",
+            "maxLength": 2000,
+            "minLength": 20,
+            "title": "Notice"
+          },
+          "rationale": {
+            "type": "string",
+            "maxLength": 2000,
+            "minLength": 10,
+            "title": "Rationale"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "enabled",
+          "expected_version",
+          "notice",
+          "rationale"
+        ],
+        "title": "PolicyInput"
+      },
+      "PolicyOut": {
+        "properties": {
+          "version": {
+            "type": "integer",
+            "title": "Version"
+          },
+          "enabled": {
+            "type": "boolean",
+            "title": "Enabled"
+          },
+          "provider": {
+            "type": "string",
+            "title": "Provider"
+          },
+          "model": {
+            "type": "string",
+            "title": "Model"
+          },
+          "boundary": {
+            "type": "string",
+            "title": "Boundary"
+          },
+          "notice": {
+            "type": "string",
+            "title": "Notice"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "version",
+          "enabled",
+          "provider",
+          "model",
+          "boundary",
+          "notice"
+        ],
+        "title": "PolicyOut"
       },
       "RevisionOut": {
         "properties": {
@@ -1004,6 +1253,23 @@
           "stale": {
             "type": "boolean",
             "title": "Stale"
+          },
+          "processing_snapshot": {
+            "additionalProperties": true,
+            "type": "object",
+            "title": "Processing Snapshot"
+          },
+          "engine_metadata": {
+            "additionalProperties": true,
+            "type": "object",
+            "title": "Engine Metadata"
+          },
+          "findings": {
+            "items": {
+              "$ref": "#/components/schemas/FindingOut"
+            },
+            "type": "array",
+            "title": "Findings"
           }
         },
         "type": "object",
@@ -1015,7 +1281,10 @@
           "checks",
           "status",
           "created_at",
-          "stale"
+          "stale",
+          "processing_snapshot",
+          "engine_metadata",
+          "findings"
         ],
         "title": "RunOut"
       },
