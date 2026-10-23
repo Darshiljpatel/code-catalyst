@@ -357,3 +357,26 @@ Next investigation: campaign intake does not explain the external model's input
 limit before submission. Help creators see whether external semantic review can
 accept their draft, using the server's declared policy rather than guessing model
 limits in the UI.
+
+## Overnight iteration 15: external review input guidance
+
+Processing-policy responses now disclose the configured maximum request bytes,
+from the same provider configuration used by semantic review. Intake and saved
+drafts show their UTF-8 byte count and warn when the draft alone exceeds that
+limit. The disclosure explains that instructions, context and approved source
+rules also consume space; a smaller draft does not guarantee acceptance.
+Creators can shorten a draft or explicitly choose local checks plus manual review.
+Saving remains available and consent is never changed automatically. Missing
+budget data does not produce a guessed limit.
+
+Verification: 2 PostgreSQL/API-contract checks passed, including a custom 4,096
+byte configuration on policy reads and updates without exposing its key. The
+browser check passed for intake, saved drafts, multi-byte emoji, the exact limit,
+unchanged consent, disabled processing and older policy responses. Build and
+lint passed. Browser requests here use synthetic intercepted policy responses;
+these checks make no external inference calls.
+All 27 semantic-adapter checks also passed, including the existing guard that
+rejects over-budget requests before any outbound request.
+
+Next investigation: make analysis failures easier to recover from by displaying
+actionable explanations for provider/coverage failures in the results view.

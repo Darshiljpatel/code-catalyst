@@ -2327,6 +2327,10 @@
           "notice": {
             "type": "string",
             "title": "Notice"
+          },
+          "max_input_bytes": {
+            "type": "integer",
+            "title": "Max Input Bytes"
           }
         },
         "additionalProperties": false,
@@ -2337,7 +2341,8 @@
           "provider",
           "model",
           "boundary",
-          "notice"
+          "notice",
+          "max_input_bytes"
         ],
         "title": "PolicyOut"
       },

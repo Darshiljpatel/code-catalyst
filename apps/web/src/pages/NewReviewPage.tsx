@@ -12,6 +12,7 @@ import type { Brand, PolicyOut, ReviewerOut } from '../api/types';
 import { FIXTURE_LUMADESK_DRAFT_TEXT } from '../api/fixtures';
 import { Alert, Spinner, ProcessingMode } from '../components/Primitives';
 import { ImportDraft } from '../components/ImportDraft';
+import { ExternalInputBudget } from '../components/ExternalInputBudget';
 
 export function NewReviewPage() {
   const navigate = useNavigate();
@@ -172,6 +173,7 @@ export function NewReviewPage() {
                   I consent to external semantic evaluation under workspace policy v{policy.version}
                 </span>
               </label>
+              <ExternalInputBudget text={text} policy={policy} />
             </div>
           ) : (
             <p style={{ fontSize: '0.8125rem', color: 'var(--text-muted)', margin: 0 }}>

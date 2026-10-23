@@ -1,4 +1,5 @@
 import { categoryLabel } from '../components/categoryLabel';
+import { ExternalInputBudget } from '../components/ExternalInputBudget';
 import { ALL_FINDINGS, filterFindings, type FindingFilters as FilterValues } from '../api/findingFilters';
 import { FindingFilters } from '../components/FindingFilters';
 import { AssignReviewerModal } from '../components/AssignReviewerModal';
@@ -697,6 +698,7 @@ export function ContentDetailPage() {
                 />
                 <span>For the next check: include external semantic review (Nebius Token Factory)</span>
               </label>
+              <ExternalInputBudget text={draftText} policy={policy} />
             </div>
           )}
 
