@@ -88,3 +88,14 @@ Run `pytest apps/api/tests tests -q` with the dedicated migrated
 The production Compose overlay requires [Compose 2.24.4+](https://docs.docker.com/reference/compose-file/merge/).
 Its hostname follows [Caddy site-address rules](https://caddyserver.com/docs/caddyfile/concepts/).
 These documentation references support the configuration, not deployment claims.
+
+## Live browser follow-up
+
+The opt-in `nebius.spec.ts` passed against the production frontend and real worker:
+admin policy enablement → creator consent → queued analysis → live Nebius model
+findings. Tone and facts/claims coverage completed; messaging was explicitly not
+applicable because this source fixture contains no messaging rule. Evidence:
+`verification/evidence/nebius-browser-results.json`. The test workspace policy
+remains enabled for manual exploration. Local regression tests and live provider
+checks are both needed; the latter require explicit opt-in because they incur
+provider usage and depend on network/model availability.

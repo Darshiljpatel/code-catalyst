@@ -43,3 +43,19 @@ database, leave browser services running, and execute `node tests/e2e/run_all.mj
 The PostgreSQL recovery test requires CREATE DATABASE permission and creates and
 drops only its own randomly named recovery database. Logs and browser JSON are
 execution evidence; they do not establish public deployment or full WCAG conformance.
+
+## Live Nebius browser check
+
+Start the worker with the private `NEBIUS_API_KEY` configured (do not export it as
+an empty string). Run from `apps/web`:
+
+```sh
+LIVE_NEBIUS=1 npx playwright test nebius.spec.ts
+```
+
+This opt-in test enables external processing in the isolated synthetic workspace
+through the admin UI, checks creator consent and runs a real paid request through
+the worker. It asserts model findings and completed tone/claims coverage.
+Messaging is not applicable to this fixture because it has no messaging rule.
+The policy remains enabled for manual exploration; consent is still required.
+Ordinary browser checks remain local and the live test is skipped unless opted in.
