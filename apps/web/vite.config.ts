@@ -1,8 +1,8 @@
-import { defineConfig } from 'vite';
+import { defineConfig, loadEnv } from 'vite';
 import react from '@vitejs/plugin-react';
 
 // https://vitejs.dev/config/
-export default defineConfig({
+export default defineConfig(({ mode }) => ({
   plugins: [react()],
   server: {
     port: 5173,
@@ -11,7 +11,7 @@ export default defineConfig({
       // This keeps the frontend same-origin relative to the API,
       // so session cookies and CSRF work correctly.
       '/api': {
-        target: 'http://localhost:8000',
+        target: loadEnv(mode, '.', 'BRANDGUARD_').BRANDGUARD_API_TARGET || 'http://localhost:8000',
         changeOrigin: false, // preserve Host so CSRF origin check passes
       },
     },
@@ -21,4 +21,4 @@ export default defineConfig({
     minify: true,
     sourcemap: false,
   },
-});
+}));

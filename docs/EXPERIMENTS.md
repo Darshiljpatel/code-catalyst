@@ -322,3 +322,38 @@ Next investigation: run the current interface against a separate real API/worker
 stack, avoiding the other active development server and shared fixture databases.
 Refresh outdated end-to-end selectors where necessary and identify integration
 gaps that isolated browser transport tests cannot reveal.
+
+## Overnight iteration 14: real isolated integration verification
+
+Added an optional `BRANDGUARD_API_TARGET` for the Vite development/preview proxy,
+so concurrent local stacks can target separate APIs. Default port 8000 and Caddy
+production routing remain as before. Setup commands are in `tests/e2e/README.md`.
+
+Created and migrated `brandguard_browser_test_experiments`, provisioned fresh
+fictional identities privately, and ran an API at 8011, worker and built frontend
+at 5181. External processing is disabled in this workspace and worker. The other
+development server, browser fixture and shared databases were left alone.
+
+Verification: all 6 existing batch/workflow checks passed (56.7 seconds), including
+real worker analysis, multiple local corrections saved once, retry without a
+duplicate revision, manual category checks, separate approval, exact export,
+reload/CSRF recovery, accessibility/reflow, insights and ambiguity feedback.
+
+A new combined real-service journey also passed (final rerun: 14.6 seconds): import UTF-8 text
+locally → create one unassigned campaign → manager assigns a reviewer with audit
+rationale → reviewer records 3 manual checks → creator submits → separate reviewer
+approves → actual text and JSON downloads match exact Unicode/newline/trailing
+spaces and the server-approved SHA-256. There are no API transport stubs in this
+new journey. Synthetic credentials and test traces stay outside tracked evidence.
+Build/type checking and lint were rechecked for the proxy configuration.
+The proxy uses Vite's prefix-scoped `loadEnv` API, avoiding an undeclared Node
+type dependency. After restarting only the owned experiment preview server,
+proxied readiness and the combined real journey passed again with this config.
+
+This verifies local integration only. It does not establish public hosting,
+provider accuracy, retention/deletion compliance or other open release gates.
+
+Next investigation: campaign intake does not explain the external model's input
+limit before submission. Help creators see whether external semantic review can
+accept their draft, using the server's declared policy rather than guessing model
+limits in the UI.
