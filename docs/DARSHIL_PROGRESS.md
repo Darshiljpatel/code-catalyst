@@ -53,7 +53,38 @@ Completed 23 October 2026. All work is in `apps/web/` and `tests/e2e/` only.
 - `src/api/client.ts` — add `POST /content`, `GET /content/:id`, `POST /brands/:id/sources`, etc.
 - `src/components/` — extend with source/intake form components
 
+## D1 Status: COMPLETE ✅
+
+---
+
+# Darshilkumar D2 — Source management, intake, processing mode
+
+Completed 23 October 2026. All work is in `apps/web/` and documentation only.
+
+## Task ID: D2
+
+## Acceptance evidence
+
+| Criterion | Evidence |
+|---|---|
+| Contract & schema alignment | `src/api/types.ts` updated from `contracts/openapi.json` v0.3.0 for all S2/S3 endpoints (`SourceInput`, `SourceOut`, `RuleInput`, `ActivationInput`, `ContentInput`, `ContentOut`, `NewRevisionInput`, `RevisionOut`, `RunOut`, `CheckOut`, `PolicyInput`, `PolicyOut`). |
+| API client functions | `src/api/client.ts` extended with `getSources`, `createSource`, `activateSource`, `createContent`, `getContent`, `createRevision`, `startAnalysis`, `getRun`, `getProcessingPolicy`, `updateProcessingPolicy`. |
+| Source curation & lifecycle screen | `src/pages/BrandDetailPage.tsx` at `/brands/:brandId` — lists sources by state (`all`, `active`, `draft`, `retired`), displays source rules with evidence quotes, raw text viewer, and manager modals for draft creation and epoch-guarded activation. |
+| Source activation & epoch guards | Manager activation modal enforces `expected_epoch` matching brand epoch, handles 409 conflict, allows selective retirement of superseded sources (`retire_source_ids`), and requires minimum 10-char rationale. |
+| Content intake screen | `src/pages/NewReviewPage.tsx` at `/review/new` — intake form with brand selection, channel, audience, purpose, optional reviewer membership ID, live character/word count, and LumaDesk preset. |
+| Processing mode & creator consent | Form dynamically loads `getProcessingPolicy()`. If external processing is enabled, requires explicit creator consent checkbox with displayed notice before sending `{ external_processing_consent: true, policy_version }` to analysis API. When disabled, prominently notes local deterministic processing. |
+| Campaign revision workspace | `src/pages/ContentDetailPage.tsx` at `/content/:contentId` — revision switcher tabs (Rev #1, Rev #2...), draft copy viewer/editor, save new revision with `parent_revision_id` and 409 conflict detection, run compliance check, and findings panel. |
+| Admin processing policy UI | `src/components/PolicySettingsModal.tsx` & `TopNav.tsx` — accessible to admin role to toggle external processing, update disclosure notice, and provide audit rationale via `PUT /api/v1/processing-policy`. |
+| Faithful mock transport | `src/api/mockTransport.ts` updated with stateful in-memory handlers for all S2/S3 endpoints, enabling local frontend testing and preview without running FastAPI. |
+| Layout & routing fix | Fixed missing `<Outlet />` in `src/App.tsx` layout route so child pages render properly. |
+| TypeScript & build | `npx tsc --noEmit` = 0 errors; `npm run build` = 56 modules transformed, 0 errors, 1.25s. |
+| Browser verification | Verified via automated browser subagent with recorded session (`test_d2_screens_1792737522031.webp`) and 3 screenshots: intake, workspace, brand detail. |
+
+## Schema impact
+
+- None on backend (`contracts/openapi.json` owned by Sanath was consumed without modification).
+- All frontend shapes strictly match OpenAPI v0.3.0 schemas.
+
 ## Next
 
-D2: Source management, intake, and processing-mode screens — blocked until Sanath delivers S2
-(`SourceVersion`, `ContentRevision`, `POST /content` in `contracts/openapi.json`).
+D3: Findings, evidence, revisions, corrections — located findings, editable suggestions, comparison and save conflicts.

@@ -1,34 +1,55 @@
 /**
- * Mock transport — DEV-ONLY.
+ * In-memory mock transport for frontend development.
  *
- * Intercepts fetch calls in local dev when VITE_USE_MOCK_API=true.
- * This is a development switch ONLY. It is excluded from the deployed build
- * by the import.meta.env.DEV guard in main.tsx (CONTRACTS.md + CLAUDE.md).
- *
- * To activate: set VITE_USE_MOCK_API=true in apps/web/.env.local
- * Never commit .env.local. Never set this in production .env.
+ * Rules:
+ *  - Only active when import.meta.env.DEV === true AND VITE_USE_MOCK_API=true
+ *  - Faithful to CONTRACTS.md error shapes and response envelopes
+ *  - Stateful for the duration of the browser tab session
  */
 
-import type { Transport } from './client';
 import {
+  FIXTURE_BRAND,
   FIXTURE_LOGIN_CREATOR,
   FIXTURE_LOGIN_MANAGER,
   FIXTURE_LOGIN_REVIEWER,
   FIXTURE_ME_CREATOR,
   FIXTURE_ME_MANAGER,
   FIXTURE_ME_REVIEWER,
-  FIXTURE_BRAND_LIST,
-  FIXTURE_BRAND,
   FIXTURE_LIVE,
   FIXTURE_READY,
+  FIXTURE_SOURCES,
+  FIXTURE_CONTENT_ITEM,
+  FIXTURE_REVIEW_RUN,
+  FIXTURE_POLICY,
   FIXTURE_ERROR_UNAUTHENTICATED,
   FIXTURE_ERROR_FORBIDDEN,
-  FIXTURE_ERROR_INVALID_FIELDS,
   FIXTURE_ERROR_RATE_LIMITED,
+  FIXTURE_ERROR_INVALID_FIELDS,
 } from './fixtures';
+import type {
+  SourceOut,
+  ContentOut,
+  RevisionOut,
+  RunOut,
+  PolicyOut,
+  Brand,
+} from './types';
 
-function jsonResponse(status: number, body: unknown): Response {
-  return new Response(JSON.stringify(body), {
+// Mutable in-memory state for local testing
+let mockSession: { email: string; role: string; user_id?: string } | null = null;
+let loginAttempts = 0;
+const mockBrand: Brand = { ...FIXTURE_BRAND };
+let mockSources: SourceOut[] = [...FIXTURE_SOURCES];
+const mockContent: Record<string, ContentOut> = {
+  [FIXTURE_CONTENT_ITEM.id]: JSON.parse(JSON.stringify(FIXTURE_CONTENT_ITEM)),
+};
+const mockRuns: Record<string, RunOut> = {
+  [FIXTURE_REVIEW_RUN.id]: JSON.parse(JSON.stringify(FIXTURE_REVIEW_RUN)),
+};
+let mockPolicy: PolicyOut = { ...FIXTURE_POLICY };
+
+function jsonResponse(status: number, data: unknown): Response {
+  return new Response(JSON.stringify(data), {
     status,
     headers: { 'Content-Type': 'application/json' },
   });
@@ -38,19 +59,20 @@ function noContent(): Response {
   return new Response(null, { status: 204 });
 }
 
-// Simple session simulation (in-memory; resets on page reload)
-let mockSession: { email: string; role: string } | null = null;
-let loginAttempts = 0;
+export const mockTransport = async (
+  input: RequestInfo,
+  init?: RequestInit
+): Promise<Response> => {
+  const url = typeof input === 'string' ? input : (input as Request).url;
+  const method = init?.method?.toUpperCase() ?? 'GET';
 
-export const mockTransport: Transport = async (input, init) => {
-  const url = typeof input === 'string' ? input : input.toString();
-  const method = (init?.method ?? 'GET').toUpperCase();
+  // Artificial network latency
+  await new Promise(r => setTimeout(r, 60));
 
   // POST /api/v1/sessions
   if (url.endsWith('/api/v1/sessions') && method === 'POST') {
     const body = JSON.parse((init?.body as string) ?? '{}');
-    if (loginAttempts >= 20)
-      return jsonResponse(429, FIXTURE_ERROR_RATE_LIMITED);
+    if (loginAttempts >= 20) return jsonResponse(429, FIXTURE_ERROR_RATE_LIMITED);
     loginAttempts++;
 
     if (!body.email || !body.password || !body.org_id)
@@ -60,13 +82,17 @@ export const mockTransport: Transport = async (input, init) => {
       'creator@lumadesk.test': FIXTURE_LOGIN_CREATOR,
       'manager@lumadesk.test': FIXTURE_LOGIN_MANAGER,
       'reviewer@lumadesk.test': FIXTURE_LOGIN_REVIEWER,
+      'admin@lumadesk.test': {
+        csrf_token: 'fixture-csrf-admin-token',
+        org_id: body.org_id,
+        role: 'admin',
+      },
     };
     const fixture = fixtures[body.email];
-    if (!fixture)
-      return jsonResponse(401, FIXTURE_ERROR_UNAUTHENTICATED);
+    if (!fixture) return jsonResponse(401, FIXTURE_ERROR_UNAUTHENTICATED);
 
-    mockSession = { email: body.email, role: fixture.role };
-    loginAttempts = 0; // reset on success
+    mockSession = { email: body.email, role: fixture.role, user_id: 'user-' + fixture.role };
+    loginAttempts = 0;
     return jsonResponse(200, fixture);
   }
 
@@ -84,14 +110,50 @@ export const mockTransport: Transport = async (input, init) => {
       'creator@lumadesk.test': FIXTURE_ME_CREATOR,
       'manager@lumadesk.test': FIXTURE_ME_MANAGER,
       'reviewer@lumadesk.test': FIXTURE_ME_REVIEWER,
+      'admin@lumadesk.test': {
+        user_id: 'cccccccc-0000-4000-a000-000000000004',
+        org_id: FIXTURE_BRAND.id,
+        role: 'admin',
+      },
     };
-    return jsonResponse(200, meMap[mockSession.email] ?? FIXTURE_ME_CREATOR);
+    return jsonResponse(200, meMap[mockSession.email] ?? {
+      user_id: 'mock-user',
+      org_id: mockBrand.id,
+      role: mockSession.role as any,
+    });
+  }
+
+  // GET /api/v1/processing-policy
+  if (url.endsWith('/api/v1/processing-policy') && method === 'GET') {
+    return jsonResponse(200, mockPolicy);
+  }
+
+  // PUT /api/v1/processing-policy (admin only)
+  if (url.endsWith('/api/v1/processing-policy') && method === 'PUT') {
+    if (!mockSession) return jsonResponse(401, FIXTURE_ERROR_UNAUTHENTICATED);
+    if (mockSession.role !== 'admin') return jsonResponse(403, FIXTURE_ERROR_FORBIDDEN);
+    const body = JSON.parse((init?.body as string) ?? '{}');
+    if (body.expected_version !== mockPolicy.version) {
+      return jsonResponse(409, {
+        code: 'policy_conflict',
+        message: 'Policy version mismatch.',
+        request_id: 'mock',
+        details: {},
+      });
+    }
+    mockPolicy = {
+      ...mockPolicy,
+      enabled: Boolean(body.enabled),
+      notice: body.notice || mockPolicy.notice,
+      version: mockPolicy.version + 1,
+    };
+    return jsonResponse(200, mockPolicy);
   }
 
   // GET /api/v1/brands
   if (url.endsWith('/api/v1/brands') && method === 'GET') {
     if (!mockSession) return jsonResponse(401, FIXTURE_ERROR_UNAUTHENTICATED);
-    return jsonResponse(200, FIXTURE_BRAND_LIST);
+    return jsonResponse(200, [mockBrand]);
   }
 
   // POST /api/v1/brands (manager only)
@@ -101,15 +163,195 @@ export const mockTransport: Transport = async (input, init) => {
       return jsonResponse(403, FIXTURE_ERROR_FORBIDDEN);
     const body = JSON.parse((init?.body as string) ?? '{}');
     if (!body.name) return jsonResponse(422, FIXTURE_ERROR_INVALID_FIELDS);
-    return jsonResponse(201, { ...FIXTURE_BRAND, name: body.name });
+    mockBrand.name = body.name;
+    return jsonResponse(201, mockBrand);
+  }
+
+  // GET /api/v1/brands/:id/sources
+  const brandSourcesMatch = url.match(/\/api\/v1\/brands\/([^/]+)\/sources$/);
+  if (brandSourcesMatch && method === 'GET') {
+    if (!mockSession) return jsonResponse(401, FIXTURE_ERROR_UNAUTHENTICATED);
+    return jsonResponse(200, mockSources);
+  }
+
+  // POST /api/v1/brands/:id/sources (manager only)
+  if (brandSourcesMatch && method === 'POST') {
+    if (!mockSession) return jsonResponse(401, FIXTURE_ERROR_UNAUTHENTICATED);
+    if (mockSession.role !== 'manager')
+      return jsonResponse(403, FIXTURE_ERROR_FORBIDDEN);
+    const body = JSON.parse((init?.body as string) ?? '{}');
+    const newSource: SourceOut = {
+      id: 'src-' + Math.random().toString(36).substring(2, 9),
+      brand_id: brandSourcesMatch[1],
+      source_key: body.source_key,
+      version: 1,
+      owner_id: mockSession.email,
+      title: body.title,
+      text: body.text,
+      text_hash: 'hash-' + Date.now(),
+      rules: body.rules || [],
+      valid_from: body.valid_from || new Date().toISOString(),
+      valid_until: body.valid_until || null,
+      state: 'draft',
+      created_at: new Date().toISOString(),
+      activated_by: null,
+      activated_at: null,
+    };
+    mockSources.push(newSource);
+    return jsonResponse(201, newSource);
+  }
+
+  // POST /api/v1/sources/:id/activate (manager only)
+  const sourceActivateMatch = url.match(/\/api\/v1\/sources\/([^/]+)\/activate$/);
+  if (sourceActivateMatch && method === 'POST') {
+    if (!mockSession) return jsonResponse(401, FIXTURE_ERROR_UNAUTHENTICATED);
+    if (mockSession.role !== 'manager')
+      return jsonResponse(403, FIXTURE_ERROR_FORBIDDEN);
+    const body = JSON.parse((init?.body as string) ?? '{}');
+    if (body.expected_epoch !== mockBrand.source_epoch) {
+      return jsonResponse(409, {
+        code: 'epoch_conflict',
+        message: `Expected source epoch ${body.expected_epoch} does not match current epoch ${mockBrand.source_epoch}.`,
+        request_id: 'mock',
+        details: {},
+      });
+    }
+    const target = mockSources.find(s => s.id === sourceActivateMatch[1]);
+    if (!target) return jsonResponse(404, { code: 'not_found', message: 'Source not found.', request_id: 'mock', details: {} });
+
+    // Retire specified sources
+    if (body.retire_source_ids && Array.isArray(body.retire_source_ids)) {
+      mockSources = mockSources.map(s =>
+        body.retire_source_ids.includes(s.id) ? { ...s, state: 'retired' } : s
+      );
+    }
+
+    target.state = 'active';
+    target.activated_by = mockSession.email;
+    target.activated_at = new Date().toISOString();
+    mockBrand.source_epoch += 1;
+    return jsonResponse(200, target);
+  }
+
+  // POST /api/v1/content
+  if (url.endsWith('/api/v1/content') && method === 'POST') {
+    if (!mockSession) return jsonResponse(401, FIXTURE_ERROR_UNAUTHENTICATED);
+    const body = JSON.parse((init?.body as string) ?? '{}');
+    const contentId = 'cnt-' + Math.random().toString(36).substring(2, 9);
+    const revId = 'rev-' + Math.random().toString(36).substring(2, 9);
+    const firstRev: RevisionOut = {
+      id: revId,
+      item_id: contentId,
+      number: 1,
+      author_id: mockSession.email,
+      text: body.text,
+      text_hash: 'hash-' + Date.now(),
+      channel: body.channel,
+      audience: body.audience,
+      purpose: body.purpose,
+      created_at: new Date().toISOString(),
+    };
+    const newItem: ContentOut = {
+      id: contentId,
+      brand_id: body.brand_id,
+      title: body.title,
+      creator_id: mockSession.email,
+      reviewer_id: body.reviewer_id || null,
+      current_revision: 1,
+      state: 'draft',
+      revisions: [firstRev],
+    };
+    mockContent[contentId] = newItem;
+    return jsonResponse(201, newItem);
+  }
+
+  // GET /api/v1/content/:id
+  const contentMatch = url.match(/\/api\/v1\/content\/([^/]+)$/);
+  if (contentMatch && method === 'GET') {
+    if (!mockSession) return jsonResponse(401, FIXTURE_ERROR_UNAUTHENTICATED);
+    const item = mockContent[contentMatch[1]];
+    if (!item) return jsonResponse(404, { code: 'not_found', message: 'Content item not found.', request_id: 'mock', details: {} });
+    return jsonResponse(200, item);
+  }
+
+  // POST /api/v1/content/:id/revisions
+  const contentRevMatch = url.match(/\/api\/v1\/content\/([^/]+)\/revisions$/);
+  if (contentRevMatch && method === 'POST') {
+    if (!mockSession) return jsonResponse(401, FIXTURE_ERROR_UNAUTHENTICATED);
+    const item = mockContent[contentRevMatch[1]];
+    if (!item) return jsonResponse(404, { code: 'not_found', message: 'Content not found.', request_id: 'mock', details: {} });
+    const body = JSON.parse((init?.body as string) ?? '{}');
+    const latestRev = item.revisions[item.revisions.length - 1];
+    if (body.parent_revision_id !== latestRev.id) {
+      return jsonResponse(409, {
+        code: 'stale_revision',
+        message: 'This revision is no longer current. Another edit has been saved.',
+        request_id: 'mock',
+        details: {},
+      });
+    }
+    const newRevNumber = item.revisions.length + 1;
+    const newRev: RevisionOut = {
+      id: 'rev-' + Math.random().toString(36).substring(2, 9),
+      item_id: item.id,
+      number: newRevNumber,
+      author_id: mockSession.email,
+      text: body.text,
+      text_hash: 'hash-' + Date.now(),
+      channel: body.channel,
+      audience: body.audience,
+      purpose: body.purpose,
+      created_at: new Date().toISOString(),
+    };
+    item.revisions.push(newRev);
+    item.current_revision = newRevNumber;
+    return jsonResponse(201, item);
+  }
+
+  // POST /api/v1/revisions/:id/analysis
+  const analysisMatch = url.match(/\/api\/v1\/revisions\/([^/]+)\/analysis$/);
+  if (analysisMatch && method === 'POST') {
+    if (!mockSession) return jsonResponse(401, FIXTURE_ERROR_UNAUTHENTICATED);
+    const revId = analysisMatch[1];
+    const runId = 'run-' + Math.random().toString(36).substring(2, 9);
+    const newRun: RunOut = {
+      id: runId,
+      revision_id: revId,
+      source_epoch: mockBrand.source_epoch,
+      source_snapshot: mockSources.filter(s => s.state === 'active'),
+      checks: [
+        { category: 'terminology', status: 'complete', reason: 'Checked against active sources' },
+        { category: 'facts_claims', status: 'complete', reason: 'Checked against active sources' },
+        { category: 'tone', status: 'complete', reason: 'Checked against tone guidelines' },
+        { category: 'visual', status: 'complete', reason: 'Checked against visual guidelines' },
+        { category: 'accessibility', status: 'complete', reason: 'Checked accessibility requirements' },
+        { category: 'messaging', status: mockPolicy.enabled ? 'complete' : 'unavailable', reason: mockPolicy.enabled ? 'Evaluated with Nebius Token Factory' : 'External provider disabled by policy' },
+      ],
+      status: 'completed',
+      created_at: new Date().toISOString(),
+      stale: false,
+      processing_snapshot: {},
+      engine_metadata: { engine_version: '0.1.0-deterministic' },
+      findings: FIXTURE_REVIEW_RUN.findings,
+    };
+    mockRuns[runId] = newRun;
+    return jsonResponse(202, newRun);
+  }
+
+  // GET /api/v1/runs/:id
+  const runMatch = url.match(/\/api\/v1\/runs\/([^/]+)$/);
+  if (runMatch && method === 'GET') {
+    if (!mockSession) return jsonResponse(401, FIXTURE_ERROR_UNAUTHENTICATED);
+    const run = mockRuns[runMatch[1]];
+    if (!run) return jsonResponse(404, { code: 'not_found', message: 'Run not found.', request_id: 'mock', details: {} });
+    return jsonResponse(200, run);
   }
 
   // GET /api/v1/brands/:id
   const brandMatch = url.match(/\/api\/v1\/brands\/([^/]+)$/);
   if (brandMatch && method === 'GET') {
     if (!mockSession) return jsonResponse(401, FIXTURE_ERROR_UNAUTHENTICATED);
-    if (brandMatch[1] === FIXTURE_BRAND.id)
-      return jsonResponse(200, FIXTURE_BRAND);
+    if (brandMatch[1] === mockBrand.id) return jsonResponse(200, mockBrand);
     return jsonResponse(404, { code: 'not_found', message: 'Brand not found.', request_id: 'mock', details: {} });
   }
 
@@ -119,7 +361,7 @@ export const mockTransport: Transport = async (input, init) => {
   // GET /api/v1/health/ready
   if (url.endsWith('/api/v1/health/ready')) return jsonResponse(200, FIXTURE_READY);
 
-  // Unhandled — return 404 to surface missing mock coverage
+  // Unhandled
   console.warn('[mock] Unhandled request:', method, url);
   return jsonResponse(404, { code: 'not_found', message: `Mock: no handler for ${method} ${url}`, request_id: 'mock', details: {} });
 };
