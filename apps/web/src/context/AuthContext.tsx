@@ -74,8 +74,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const signOut = async () => {
     try {
       await logout();
-    } catch {
-      // Best-effort; clear state regardless
+    } catch (error) {
+      // A missing server session is already signed out. Other failures must
+      // preserve the editor and identity so the user can recover and retry.
+      if (!(error instanceof ApiResponseError && error.status === 401)) throw error;
     }
     dispatch({ type: 'UNAUTHENTICATED' });
   };

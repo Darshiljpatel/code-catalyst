@@ -45,6 +45,7 @@ import { ExportModal } from '../components/ExportModal';
 import { ManualChecks } from '../components/ManualChecks';
 import { ResolutionModal } from '../components/ResolutionModal';
 import { useAuth } from '../context/AuthContext';
+import { useUnsavedChanges } from '../context/UnsavedChangesContext';
 
 export function ContentDetailPage() {
   const { contentId } = useParams<{ contentId: string }>();
@@ -319,6 +320,7 @@ export function ContentDetailPage() {
 
   const hasDraftChanges = Boolean(currentRevision && (draftText !== currentRevision.text ||
     draftChannel !== currentRevision.channel || draftAudience !== currentRevision.audience || draftPurpose !== currentRevision.purpose));
+  useUnsavedChanges(hasDraftChanges, savingRevision);
   const canEditDraft = Boolean(user?.membership_id === content?.creator_id &&
     currentRevision?.number === content?.current_revision && !savingRevision && !analysing && !['queued', 'running'].includes(run?.status || ''));
   const stagedCount = draft.changes.filter(change => change.findingId).length;
@@ -336,25 +338,6 @@ export function ContentDetailPage() {
       setShowSubmitModal(true);
     }
   }, [submitAfterRun, run, analysing]);
-
-  React.useEffect(() => {
-    if (!hasDraftChanges) return;
-    const beforeUnload = (event: BeforeUnloadEvent) => { event.preventDefault(); event.returnValue = ''; };
-    const preserveDraft = (event: MouseEvent) => {
-      const anchor = event.target instanceof Element ? event.target.closest('a[href]') : null;
-      if (anchor instanceof HTMLAnchorElement && anchor.origin === window.location.origin && anchor.pathname !== window.location.pathname) {
-        event.preventDefault();
-        event.stopPropagation();
-        setError('Your working draft has unsaved changes. Save all changes or discard them before leaving this campaign.');
-      }
-    };
-    window.addEventListener('beforeunload', beforeUnload);
-    document.addEventListener('click', preserveDraft, true);
-    return () => {
-      window.removeEventListener('beforeunload', beforeUnload);
-      document.removeEventListener('click', preserveDraft, true);
-    };
-  }, [hasDraftChanges]);
 
   const applySuggestedEdit = (finding: FindingOut, replacement = finding.suggested_edit) => {
     if (replacement === null || !currentRevision || !canEditDraft || run?.revision_id !== currentRevision.id) return;

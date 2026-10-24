@@ -16,8 +16,9 @@
  * It is never activated in production builds.
  */
 import { useLayoutEffect } from 'react';
-import { BrowserRouter, Routes, Route, Outlet, useLocation } from 'react-router-dom';
+import { createBrowserRouter, createRoutesFromElements, RouterProvider, Route, Outlet, useLocation } from 'react-router-dom';
 import { AuthProvider } from './context/AuthContext';
+import { UnsavedChangesProvider } from './context/UnsavedChangesContext';
 import { RequireAuth } from './components/RequireAuth';
 import { TopNav } from './components/TopNav';
 import { LoginPage } from './pages/LoginPage';
@@ -45,11 +46,11 @@ function AuthenticatedLayout() {
   );
 }
 
-export function App() {
+function RootLayout() {
   return (
-    <BrowserRouter>
-      <ScrollToTop />
-      <AuthProvider>
+    <AuthProvider>
+      <UnsavedChangesProvider>
+        <ScrollToTop />
         {/* Skip-to-content link for keyboard/screen-reader users */}
         <a
           href="#main-content"
@@ -67,24 +68,27 @@ export function App() {
           Skip to main content
         </a>
 
-        <Routes>
-          {/* Public */}
-          <Route path="/login" element={<LoginPage />} />
-
-          {/* Authenticated */}
-          <Route element={<AuthenticatedLayout />}>
-            <Route path="/" element={<HomePage />} />
-            <Route path="/demo" element={<DemoPage />} />
-            <Route path="/brands/:brandId" element={<BrandDetailPage />} />
-            <Route path="/review/new" element={<NewReviewPage />} />
-            <Route path="/content/:contentId" element={<ContentDetailPage />} />
-          </Route>
-
-          {/* Fallbacks */}
-          <Route path="/404" element={<NotFoundPage />} />
-          <Route path="*" element={<NotFoundPage />} />
-        </Routes>
-      </AuthProvider>
-    </BrowserRouter>
+        <Outlet />
+      </UnsavedChangesProvider>
+    </AuthProvider>
   );
+}
+
+const router = createBrowserRouter(createRoutesFromElements(
+  <Route element={<RootLayout />}>
+    <Route path="/login" element={<LoginPage />} />
+    <Route element={<AuthenticatedLayout />}>
+      <Route path="/" element={<HomePage />} />
+      <Route path="/demo" element={<DemoPage />} />
+      <Route path="/brands/:brandId" element={<BrandDetailPage />} />
+      <Route path="/review/new" element={<NewReviewPage />} />
+      <Route path="/content/:contentId" element={<ContentDetailPage />} />
+    </Route>
+    <Route path="/404" element={<NotFoundPage />} />
+    <Route path="*" element={<NotFoundPage />} />
+  </Route>
+));
+
+export function App() {
+  return <RouterProvider router={router} />;
 }

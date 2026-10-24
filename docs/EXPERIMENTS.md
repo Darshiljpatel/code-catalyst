@@ -410,3 +410,63 @@ passed without that artifact error. No Nebius calls were made.
 Next investigation: the campaign already protects ordinary links, page reloads
 and revision switching while edits are unsaved. Check the remaining browser-back
 and sign-out paths without persisting confidential copy in browser storage.
+
+## Overnight iteration 17: unsaved navigation
+
+Confirmed with failing browser regressions that browser Back discarded working
+copy and sign-out reached login without warning. Added a shared leave-confirmation
+provider and moved the existing route table to React Router's data router so its
+supported blocker handles link, imperative and history navigation. Sign-out uses
+the same explicit confirmation before sending logout. The existing native reload
+warning is now registered centrally. Draft copy remains in component memory.
+
+The dialog provides Keep editing, explicit discard, Escape, focus trapping and
+focus restoration. It prevents leaving while a save request is in progress.
+Existing revision-switch controls still require saving or discarding first.
+Build and lint passed. All 4 new browser checks pass: Back/link cancellation and
+discard, focus restoration, scoped accessibility, no logout before confirmation,
+pending/failed save protection and native reload cancellation preserving the copy.
+The native reload test bounds its navigation wait because cancelling intentionally
+prevents a load event; an initial unbounded test waited until its test timeout.
+The pending-save test's error expectation was corrected to the app's general
+save error, rather than assuming it echoed the server message.
+
+The overnight reviewer corrected failed logout clearing client authentication and
+added visible retry guidance; their regression also checks the draft and leave
+protection survive failure. They also corrected missing manual-review categories
+to use the same canonical category inventory as coverage and submission.
+
+The original runtime stopped during an authentication failure, so its last
+browser-suite outcome could not be recovered. On resumption at 07:38 IST, fresh
+build and lint passed. A new loopback PostgreSQL cluster with independent morning
+browser/test databases was provisioned (no existing database reset), along with
+fictional identities in a private fixture. All 173 Python checks passed in 91.83
+seconds. The fresh full browser run passed 46 tests, skipped the explicit paid
+provider journey and exposed the login contrast issue below.
+
+## Morning follow-up: pending logout and entrance contrast
+
+A stronger regression proved browser Back could still discard working copy
+while logout was pending, before its 503 response restored the guard. Navigation
+protection now stays active until the action actually succeeds, with a visible
+progress state and disabled duplicate/cancel controls. Failure cancels pending
+navigation and retains both the session and the editor. Seven focused browser
+checks pass, including the new Back-during-logout regression and native reload.
+
+The full browser run also caught login text falling below AA contrast during an
+opacity entrance animation. Login entrances now animate position at full opacity,
+including the sample's delayed entrance. The accessibility test freezes animation
+midway and checks opacity plus Axe, rather than waiting for a fade to finish.
+Build, lint and this targeted accessibility test pass. The final full browser
+run passed **48 tests**, with **1 opt-in paid provider test skipped**, in 2.0
+minutes. This includes the actual API/database/worker journeys and all feature
+regressions, plus the reviewer's discussion rerun and missing-category fixes.
+No paid inference calls were made. The result establishes local integration and
+the tested accessibility states, not universal accessibility or release approval.
+
+The reviewed discussion/manual-coverage corrections are being integrated with
+their regression tests. The reviewer's separate overnight review log is preserved.
+
+Next investigation: local startup documentation depends on temporary Node-path,
+database and credential files. Make repeated development/testing startup reliable
+after a reboot without exposing provider keys or replacing existing user data.

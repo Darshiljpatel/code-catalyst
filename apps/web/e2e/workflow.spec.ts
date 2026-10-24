@@ -87,6 +87,10 @@ test('real creator → worker → manual reviewer → approval → exact export,
 
 test('login accessibility and narrow viewport reflow', async ({ page }) => {
   await page.goto('/login');
+  // Inspect mid-entrance instead of waiting for an opacity fade to hide defects.
+  await page.evaluate(() => document.getAnimations().forEach(animation => { animation.pause(); animation.currentTime = 100; }));
+  await expect(page.locator('.login-card')).toHaveCSS('opacity', '1');
+  await expect(page.locator('.review-sample')).toHaveCSS('opacity', '1');
   const results = await new AxeBuilder({ page }).withTags(['wcag2a', 'wcag2aa', 'wcag21aa', 'wcag22aa']).analyze();
   expect(results.violations).toEqual([]);
   await page.setViewportSize({ width: 375, height: 812 });
