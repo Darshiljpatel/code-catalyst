@@ -41,18 +41,23 @@ startup failures. Do not delete the database directory to fix an ordinary error.
 
 ## External review
 
-The default launcher explicitly disables the provider key, so it cannot make paid
-inference requests. Semantic categories still require the assigned reviewer's
-manual checks. To exercise your configured Nebius integration instead:
+The launcher enables Nebius by default using your private `.env` or environment
+configuration. On startup it enables the fictional workspace's processing policy
+through the audited admin API. New reviews and rechecks select external semantic
+review by default; uncheck it for an individual local-only analysis. Requests send
+draft text, context and relevant approved source passages to Nebius and may incur
+normal provider charges. No inference request is made just by starting the app.
+
+To disable external processing for the local workspace and explicitly suppress
+the provider key:
 
 ```sh
-python3 scripts/dev_local.py --external
+python3 scripts/dev_local.py --local-only
 ```
 
-Configure the private key in `.env` or the environment first. Workspace
-administrator approval and explicit per-run consent are still required. This flag
-does not enable either automatically. Use fictional copy for testing; normal
-provider charges apply. The launcher never prints the provider key.
+Semantic categories then require the assigned reviewer's manual checks.
+`--external` remains available as an explicit alias for the default mode.
+Use fictional copy for testing. The launcher never prints the provider key.
 
 See [the walkthrough](JUDGE_WALKTHROUGH.md) for the review journey and
 [browser verification](../tests/e2e/README.md) for isolated test databases.

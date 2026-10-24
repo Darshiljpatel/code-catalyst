@@ -69,7 +69,7 @@ function CampaignWorkspace() {
 
   // Policy
   const [policy, setPolicy] = React.useState<PolicyOut | null>(null);
-  const [consent, setConsent] = React.useState(false);
+  const [consent, setConsent] = React.useState(true);
 
   // Active run state
   const [run, setRun] = React.useState<RunOut | null>(null);

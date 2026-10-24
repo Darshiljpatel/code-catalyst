@@ -30,7 +30,7 @@ test('browser consent → real worker → live Nebius semantic coverage', async 
   await creator.locator('#txt-title').fill('Live Nebius browser verification');
   await creator.locator('#txt-reviewer').selectOption({ label: fixture.emails.reviewer });
   await creator.locator('#txt-content-text').fill('Lumadesk guarantees 10x productivity with a 30-day free trial. BUY NOW!!!');
-  await creator.locator('#chk-consent').check();
+  await expect(creator.locator('#chk-consent')).toBeChecked();
   const queued = creator.waitForResponse(r => r.url().endsWith('/analysis') && r.request().method() === 'POST');
   await creator.locator('#btn-submit-review').click();
   const run = await (await queued).json();

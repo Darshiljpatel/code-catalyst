@@ -31,6 +31,19 @@ test('failed or missing coverage never looks like a clean zero-finding review', 
   const axe = await new AxeBuilder({ page }).include('[aria-label="Incomplete check coverage"]').withTags(['wcag2a', 'wcag2aa', 'wcag21aa']).analyze();
   expect(axe.violations).toEqual([]);
 
+  run = {
+    ...run, status: 'incomplete', processing_snapshot: { enabled: false, consent: false, provider: 'nebius' },
+    checks: FIXTURE_REVIEW_RUN.checks.map(check => ['tone', 'messaging', 'facts_claims'].includes(check.category)
+      ? { ...check, status: 'unavailable', reason: 'external_processing_not_authorised' }
+      : { ...check, status: 'complete' }),
+  };
+  await reload();
+  await expect(notice).toContainText('Nebius was not called for this run');
+  await expect(notice).toContainText('Processing policy');
+  await expect(notice).toContainText('For the next check: include external semantic review');
+  await expect(notice).not.toContainText('Some checks could not establish coverage');
+  await expect(page.getByText('Local processing only', { exact: true })).toBeVisible();
+
   run = { ...run, checks: [{ category: 'tone', status: 'failed', reason: 'future_reason' }] };
   await reload();
   await expect(notice).toContainText('Terminology, Tone, Messaging, Claims, Visual, Accessibility');

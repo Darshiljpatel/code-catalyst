@@ -8,6 +8,14 @@ import pytest
 from scripts import dev_local
 
 
+def test_nebius_is_default_with_explicit_local_only_override():
+    assert dev_local.parse_args([]).external is True
+    assert dev_local.parse_args(['--external']).external is True
+    assert dev_local.parse_args(['--local-only']).external is False
+    with pytest.raises(SystemExit):
+        dev_local.parse_args(['--external', '--local-only'])
+
+
 @pytest.mark.parametrize('ports', [(1, 8013, 5183), (55441, 8013, 8013), (65536, 8013, 5183)])
 def test_port_validation(ports):
     with pytest.raises(RuntimeError, match='three distinct ports'):

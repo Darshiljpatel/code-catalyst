@@ -122,10 +122,10 @@ LIVE_NEBIUS=1 npx playwright test nebius.spec.ts
 ```
 
 This opt-in test enables external processing in the isolated synthetic workspace
-through the admin UI, checks creator consent and runs a real paid request through
+through the admin UI, checks that external review defaults on and runs a real paid request through
 the worker. It asserts model findings and completed tone/claims coverage.
 Messaging is not applicable to this fixture because it has no messaging rule.
-The policy remains enabled for manual exploration; consent is still required.
+The policy remains enabled for manual exploration; creators can uncheck external review.
 Ordinary browser checks remain local and the live test is skipped unless opted in.
 
 ## Run alongside another developer without sharing test data

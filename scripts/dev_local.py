@@ -169,6 +169,8 @@ def serve(args):
         else:
             print('Provisioning a fictional workspace and separate team identities…', flush=True)
             run_step('Fictional workspace provisioning', [python, 'scripts/seed_browser_check.py'], env)
+        run_step('Local processing defaults', [python, 'scripts/configure_local_processing.py',
+                 *([] if args.external else ['--local-only'])], env)
         print('Building the frontend…', flush=True)
         run_step('Frontend build', ['npm', '--prefix', 'apps/web', 'run', 'build'], env)
         processes.append(start_process([python, '-m', 'uvicorn', 'brandguard.main:create_app', '--factory',
@@ -177,7 +179,7 @@ def serve(args):
         processes.append(start_process(['npm', '--prefix', 'apps/web', 'run', 'preview', '--', '--host',
                                        '127.0.0.1', '--port', str(args.web_port), '--strictPort'], env, 'web'))
         wait_ready(f'http://localhost:{args.web_port}/api/v1/health/ready', processes)
-        mode = 'external review permitted; provider configuration, workspace approval and per-run consent required' if args.external else 'local checks; external provider key disabled'
+        mode = 'Nebius enabled by default; review requests may incur provider charges' if args.external else 'local checks; external provider key disabled'
         print(f'\nBrandGuard: http://localhost:{args.web_port}\nMode: {mode}\n'
               f'Accounts: python3 scripts/dev_local.py accounts\nLogs and persistent data: {STATE}\n'
               'Press Ctrl+C to stop this stack. Your workspace is preserved.', flush=True)
@@ -194,15 +196,23 @@ def serve(args):
         print('Local stack stopped; data preserved.', flush=True)
 
 
-def main():
+def parse_args(argv=None):
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument('command', nargs='?', choices=('start', 'accounts'), default='start')
     parser.add_argument('--db-port', type=int, default=55441)
     parser.add_argument('--api-port', type=int, default=8013)
     parser.add_argument('--web-port', type=int, default=5183)
     parser.add_argument('--pg-bin', help='Directory containing initdb, pg_ctl, createdb and psql')
-    parser.add_argument('--external', action='store_true', help='Allow your configured Nebius key; inference may incur provider charges')
-    args = parser.parse_args()
+    processing = parser.add_mutually_exclusive_group()
+    processing.add_argument('--external', dest='external', action='store_true', default=True,
+                            help='Use Nebius (default); inference may incur provider charges')
+    processing.add_argument('--local-only', dest='external', action='store_false',
+                            help='Disable external review and use local/manual checks only')
+    return parser.parse_args(argv)
+
+
+def main():
+    args = parse_args()
     os.umask(0o077)
     def stop_requested(_signal, _frame):
         raise KeyboardInterrupt

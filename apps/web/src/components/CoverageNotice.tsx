@@ -5,6 +5,7 @@ import { categoryLabel } from './categoryLabel';
 const guidance: Record<string, string> = {
   input_budget_exceeded: 'The full external request exceeded its byte limit. Shorten the draft or reduce the relevant source material before retrying external review.',
   external_processing_disabled: 'External review was not authorised for this run. Enable it only with workspace approval and explicit consent, or use manual review.',
+  external_processing_not_authorised: 'Nebius was not called for this run. Ask a workspace admin to enable external processing in Processing policy. Then select “For the next check: include external semantic review” and run the compliance check again. Manual review is also available.',
   provider_not_configured: 'External review is not configured on the server. Ask the workspace administrator to check the provider configuration.',
   provider_auth_failed: 'The provider rejected server authentication. Ask the workspace administrator to check its credentials.',
   rate_limited: 'The provider is temporarily rate limited. Wait before retrying, or ask the assigned reviewer to complete the missing checks.',

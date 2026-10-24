@@ -43,11 +43,12 @@ test('context and consent edits also count, and reverting a field clears the war
   await expect(dialog).toBeVisible();
   await page.keyboard.press('Escape');
   await field.selectOption(original);
-  await page.locator('#chk-consent').check();
+  await expect(page.locator('#chk-consent')).toBeChecked();
+  await page.locator('#chk-consent').uncheck();
   await page.getByRole('link', { name: 'Campaigns', exact: true }).click();
   await expect(dialog).toBeVisible();
   await page.keyboard.press('Escape');
-  await page.locator('#chk-consent').uncheck();
+  await page.locator('#chk-consent').check();
   await page.getByRole('link', { name: 'Campaigns', exact: true }).click();
   await expect(page).toHaveURL(/\/$/);
   await expect(dialog).toHaveCount(0);

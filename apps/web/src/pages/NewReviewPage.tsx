@@ -38,7 +38,7 @@ export function NewReviewPage() {
   const [text, setText] = React.useState(FIXTURE_LUMADESK_DRAFT_TEXT);
 
   // Consent
-  const [consent, setConsent] = React.useState(false);
+  const [consent, setConsent] = React.useState(true);
   const [baseline, setBaseline] = React.useState<string | null>(null);
   const [saved, setSaved] = React.useState(false);
   const { setGuard } = useLeaveConfirmation();
@@ -190,7 +190,7 @@ export function NewReviewPage() {
                   style={{ width: '16px', height: '16px', accentColor: 'var(--accent)' }}
                 />
                 <span style={{ fontSize: '0.8125rem', fontWeight: 600, color: 'var(--text-primary)' }}>
-                  I consent to external semantic evaluation under workspace policy v{policy.version}
+                  Include Nebius semantic review under workspace policy v{policy.version} (enabled by default; uncheck for local checks only)
                 </span>
               </label>
               <ExternalInputBudget text={text} policy={policy} />
