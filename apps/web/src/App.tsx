@@ -28,6 +28,7 @@ import { BrandDetailPage } from './pages/BrandDetailPage';
 import { NewReviewPage } from './pages/NewReviewPage';
 import { ContentDetailPage } from './pages/ContentDetailPage';
 import { NotFoundPage } from './pages/NotFoundPage';
+import { JudgeGuide } from './components/JudgeGuide';
 
 function ScrollToTop() {
   const { pathname } = useLocation();
@@ -69,6 +70,7 @@ function RootLayout() {
         </a>
 
         <Outlet />
+        <JudgeGuide />
       </UnsavedChangesProvider>
     </AuthProvider>
   );
