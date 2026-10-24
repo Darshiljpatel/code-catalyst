@@ -1,8 +1,10 @@
-import { useEffect, useRef } from 'react';
+import { useEffect, useLayoutEffect, useRef } from 'react';
 
 /** Keep keyboard focus in the active dialog and restore its triggering control. */
-export function useDialogFocus(active = true) {
+export function useDialogFocus(active = true, onEscape?: () => void) {
   const ref = useRef<HTMLDivElement>(null);
+  const escapeCallback = useRef(onEscape);
+  useLayoutEffect(() => { escapeCallback.current = onEscape; }, [onEscape]);
   useEffect(() => {
     const dialog = ref.current;
     if (!active || !dialog) return;
@@ -12,6 +14,12 @@ export function useDialogFocus(active = true) {
     )).filter(element => element.getClientRects().length);
     (focusable()[0] || dialog).focus();
     const trap = (event: KeyboardEvent) => {
+      if (event.key === 'Escape' && escapeCallback.current) {
+        // A foreground dialog handles dismissal before underlying window listeners.
+        event.stopPropagation();
+        if (!event.defaultPrevented) { event.preventDefault(); escapeCallback.current(); }
+        return;
+      }
       if (event.key !== 'Tab') return;
       const controls = focusable();
       const first = controls[0], last = controls[controls.length - 1];

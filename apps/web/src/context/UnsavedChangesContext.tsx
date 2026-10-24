@@ -26,12 +26,12 @@ export function UnsavedChangesProvider({ children }: { children: React.ReactNode
   const blocker = useBlocker(({ currentLocation, nextLocation }) => (guardRef.current.dirty || guardRef.current.busy || performingAction) &&
     (currentLocation.pathname !== nextLocation.pathname || currentLocation.search !== nextLocation.search));
   const open = blocker.state === 'blocked' || pending !== null;
-  const dialogRef = useDialogFocus(open);
   const cancel = React.useCallback(() => {
     if (performingAction) return;
     setPending(null);
     if (blocker.state === 'blocked') blocker.reset();
   }, [blocker, performingAction]);
+  const dialogRef = useDialogFocus(open, cancel);
 
   React.useEffect(() => {
     if (completedDestination) {
@@ -52,12 +52,6 @@ export function UnsavedChangesProvider({ children }: { children: React.ReactNode
     window.addEventListener('beforeunload', beforeUnload);
     return () => window.removeEventListener('beforeunload', beforeUnload);
   }, [protectedDraft]);
-  React.useEffect(() => {
-    if (!open) return;
-    const escape = (event: KeyboardEvent) => { if (event.key === 'Escape') { event.preventDefault(); cancel(); } };
-    window.addEventListener('keydown', escape);
-    return () => window.removeEventListener('keydown', escape);
-  }, [open, cancel]);
 
   const requestLeave = React.useCallback((action: LeaveAction, label: string, destination: string) => {
     if (protectedDraft) setPending({ action, label, destination });

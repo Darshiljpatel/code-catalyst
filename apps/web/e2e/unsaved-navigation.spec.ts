@@ -148,3 +148,25 @@ test('successful sign-out completes after a blocked browser Back attempt', async
   await expect(page).toHaveURL(/\/login$/);
   await expect(dialog).toHaveCount(0);
 });
+
+test('Tab stays in the dialog while sign-out disables every action', async ({ page }) => {
+  let release!: () => void;
+  const gate = new Promise<void>(resolve => { release = resolve; });
+  await page.route('**/api/v1/sessions/current', async route => {
+    await gate;
+    await route.fulfill({ status: 204 });
+  });
+  await page.getByRole('button', { name: 'Sign out', exact: true }).click();
+  const dialog = page.getByRole('dialog', { name: 'Leave with unsaved changes?' });
+  const started = page.waitForRequest(request => request.method() === 'DELETE' && request.url().endsWith('/sessions/current'));
+  await dialog.getByRole('button', { name: 'Discard edits and sign out', exact: true }).click();
+  await started;
+  await expect(dialog.getByRole('button', { name: 'Keep editing', exact: true })).toBeDisabled();
+  try {
+    await page.keyboard.press('Tab');
+    expect(await dialog.evaluate(element => element.contains(document.activeElement))).toBe(true);
+    await page.keyboard.press('Shift+Tab');
+    expect(await dialog.evaluate(element => element.contains(document.activeElement))).toBe(true);
+  } finally { release(); }
+  await expect(page).toHaveURL(/\/login$/);
+});
