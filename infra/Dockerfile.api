@@ -5,9 +5,12 @@ COPY apps/api/requirements.lock /app/requirements.lock
 RUN pip install --no-cache-dir -r requirements.lock
 COPY packages/ ./packages/
 COPY apps/api/ ./apps/api/
+COPY apps/worker/ ./apps/worker/
 COPY contracts/ ./contracts/
+COPY infra/entrypoint.sh /app/entrypoint.sh
+RUN chmod +x /app/entrypoint.sh
 RUN useradd --create-home app
 USER app
 EXPOSE 8000
 HEALTHCHECK --interval=5s --timeout=5s --retries=10 CMD python -c "import urllib.request; urllib.request.urlopen('http://localhost:8000/api/v1/health/ready', timeout=3)"
-CMD ["uvicorn", "brandguard.main:create_app", "--factory", "--host", "0.0.0.0", "--port", "8000"]
+CMD ["/app/entrypoint.sh"]
