@@ -60,7 +60,7 @@ export function TopNav() {
               <button
                 id="btn-sign-out"
                 className="btn btn--ghost btn--sm"
-                onClick={() => requestLeave(handleSignOut, 'sign out')}
+                onClick={() => requestLeave(handleSignOut, 'sign out', '/login')}
                 disabled={signingOut}
                 aria-busy={signingOut}
               >

@@ -129,3 +129,22 @@ test('browser Back during pending sign-out cannot discard edits if logout then f
   await expect(dialog).toHaveCount(0);
   await expect(page.getByLabel('Copy Text', { exact: true })).toHaveValue('My private unsaved campaign copy.');
 });
+
+test('successful sign-out completes after a blocked browser Back attempt', async ({ page }) => {
+  let release!: () => void;
+  const gate = new Promise<void>(resolve => { release = resolve; });
+  await page.route('**/api/v1/sessions/current', async route => {
+    await gate;
+    await route.fulfill({ status: 204 });
+  });
+  await page.getByRole('button', { name: 'Sign out', exact: true }).click();
+  const dialog = page.getByRole('dialog', { name: 'Leave with unsaved changes?' });
+  const started = page.waitForRequest(request => request.method() === 'DELETE' && request.url().endsWith('/sessions/current'));
+  await dialog.getByRole('button', { name: 'Discard edits and sign out', exact: true }).click();
+  await started;
+  await page.goBack();
+  await expect(page).toHaveURL(new RegExp(`/content/${FIXTURE_CONTENT_ITEM.id}$`));
+  release();
+  await expect(page).toHaveURL(/\/login$/);
+  await expect(dialog).toHaveCount(0);
+});

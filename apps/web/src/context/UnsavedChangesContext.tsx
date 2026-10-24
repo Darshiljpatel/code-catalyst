@@ -1,22 +1,29 @@
 import React from 'react';
-import { useBlocker } from 'react-router-dom';
+import { useBlocker, useNavigate } from 'react-router-dom';
 import { useDialogFocus } from '../hooks/useDialogFocus';
 
 type Guard = { dirty: boolean; busy: boolean };
 type LeaveAction = () => boolean | void | Promise<boolean | void>;
-type PendingAction = { label: string; action: LeaveAction };
+type PendingAction = { label: string; action: LeaveAction; destination: string };
 const UnsavedChangesContext = React.createContext<{
-  setGuard: React.Dispatch<React.SetStateAction<Guard>>;
-  requestLeave: (action: LeaveAction, label: string) => void;
+  setGuard: (guard: Guard) => void;
+  requestLeave: (action: LeaveAction, label: string, destination: string) => void;
 } | null>(null);
 
 export function UnsavedChangesProvider({ children }: { children: React.ReactNode }) {
-  const [guard, setGuard] = React.useState<Guard>({ dirty: false, busy: false });
+  const [guard, setGuardState] = React.useState<Guard>({ dirty: false, busy: false });
+  const guardRef = React.useRef<Guard>({ dirty: false, busy: false });
+  const setGuard = React.useCallback((next: Guard) => {
+    guardRef.current = next;
+    setGuardState(next);
+  }, []);
   const [pending, setPending] = React.useState<PendingAction | null>(null);
   const [performingAction, setPerformingAction] = React.useState(false);
   const [cancelAfterAction, setCancelAfterAction] = React.useState(false);
+  const [completedDestination, setCompletedDestination] = React.useState<string | null>(null);
+  const navigate = useNavigate();
   const protectedDraft = guard.dirty || guard.busy;
-  const blocker = useBlocker(({ currentLocation, nextLocation }) => protectedDraft &&
+  const blocker = useBlocker(({ currentLocation, nextLocation }) => (guardRef.current.dirty || guardRef.current.busy || performingAction) &&
     (currentLocation.pathname !== nextLocation.pathname || currentLocation.search !== nextLocation.search));
   const open = blocker.state === 'blocked' || pending !== null;
   const dialogRef = useDialogFocus(open);
@@ -27,17 +34,21 @@ export function UnsavedChangesProvider({ children }: { children: React.ReactNode
   }, [blocker, performingAction]);
 
   React.useEffect(() => {
-    if (cancelAfterAction) {
+    if (completedDestination) {
+      // Finish the requested action, never replay an unrelated or cancelled Back.
+      navigate(completedDestination, { replace: true });
+      setCompletedDestination(null);
+    } else if (cancelAfterAction) {
       if (blocker.state === 'blocked') blocker.reset();
       setCancelAfterAction(false);
-    } else if (!protectedDraft && !performingAction && blocker.state === 'blocked') {
-      blocker.proceed();
     }
-  }, [blocker, cancelAfterAction, protectedDraft, performingAction]);
+  }, [blocker, cancelAfterAction, completedDestination, navigate]);
 
   React.useEffect(() => {
     if (!protectedDraft) return;
-    const beforeUnload = (event: BeforeUnloadEvent) => { event.preventDefault(); event.returnValue = ''; };
+    const beforeUnload = (event: BeforeUnloadEvent) => {
+      if (guardRef.current.dirty || guardRef.current.busy) { event.preventDefault(); event.returnValue = ''; }
+    };
     window.addEventListener('beforeunload', beforeUnload);
     return () => window.removeEventListener('beforeunload', beforeUnload);
   }, [protectedDraft]);
@@ -48,10 +59,13 @@ export function UnsavedChangesProvider({ children }: { children: React.ReactNode
     return () => window.removeEventListener('keydown', escape);
   }, [open, cancel]);
 
-  const requestLeave = React.useCallback((action: LeaveAction, label: string) => {
-    if (protectedDraft) setPending({ action, label });
-    else action();
-  }, [protectedDraft]);
+  const requestLeave = React.useCallback((action: LeaveAction, label: string, destination: string) => {
+    if (protectedDraft) setPending({ action, label, destination });
+    else void (async () => {
+      try { if (await action() !== false) navigate(destination, { replace: true }); }
+      catch { /* The action displays its own recovery error. */ }
+    })();
+  }, [protectedDraft, navigate]);
   const confirm = async () => {
     if (guard.busy || performingAction) return;
     if (pending) {
@@ -63,7 +77,10 @@ export function UnsavedChangesProvider({ children }: { children: React.ReactNode
       } catch {
         // Preserve the draft and protection when an action fails unexpectedly.
       } finally {
-        if (succeeded) setGuard({ dirty: false, busy: false });
+        if (succeeded) {
+          setGuard({ dirty: false, busy: false });
+          setCompletedDestination(pending.destination);
+        }
         else setCancelAfterAction(true);
         setPending(null);
         setPerformingAction(false);

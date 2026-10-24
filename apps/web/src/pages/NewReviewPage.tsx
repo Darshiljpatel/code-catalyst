@@ -13,6 +13,7 @@ import { FIXTURE_LUMADESK_DRAFT_TEXT } from '../api/fixtures';
 import { Alert, Spinner, ProcessingMode } from '../components/Primitives';
 import { ImportDraft } from '../components/ImportDraft';
 import { ExternalInputBudget } from '../components/ExternalInputBudget';
+import { useLeaveConfirmation, useUnsavedChanges } from '../context/UnsavedChangesContext';
 
 export function NewReviewPage() {
   const navigate = useNavigate();
@@ -36,6 +37,21 @@ export function NewReviewPage() {
 
   // Consent
   const [consent, setConsent] = React.useState(false);
+  const [baseline, setBaseline] = React.useState<string | null>(null);
+  const [saved, setSaved] = React.useState(false);
+  const { setGuard } = useLeaveConfirmation();
+  const fingerprint = JSON.stringify([brandId, title, channel, audience, purpose, reviewerId, text, consent]);
+  React.useLayoutEffect(() => {
+    if (!loading && baseline === null) setBaseline(fingerprint);
+  }, [loading, baseline, fingerprint]);
+  useUnsavedChanges(!saved && baseline !== null && baseline !== fingerprint, submitting && !saved);
+
+  const openSavedCampaign = (id: string, analysisStartFailed = false) => {
+    setSaved(true);
+    // The revision exists now. Clear synchronously before the router evaluates navigation.
+    setGuard({ dirty: false, busy: false });
+    navigate(`/content/${id}`, analysisStartFailed ? { state: { analysisStartFailed: true } } : undefined);
+  };
 
   React.useEffect(() => {
     setLoading(true);
@@ -103,13 +119,13 @@ export function NewReviewPage() {
           );
         } catch {
           // Creation succeeded. Retrying intake would create a second campaign.
-          navigate(`/content/${content.id}`, { state: { analysisStartFailed: true } });
+          openSavedCampaign(content.id, true);
           return;
         }
       }
 
       // 3. Navigate to workspace
-      navigate(`/content/${content.id}`);
+      openSavedCampaign(content.id);
     } catch (err) {
       if (err instanceof ApiResponseError) {
         setError(err.body.message || 'Failed to submit content for review');
@@ -166,6 +182,7 @@ export function NewReviewPage() {
                   type="checkbox"
                   id="chk-consent"
                   checked={consent}
+                  disabled={submitting}
                   onChange={e => setConsent(e.target.checked)}
                   style={{ width: '16px', height: '16px', accentColor: 'var(--accent)' }}
                 />
@@ -183,6 +200,7 @@ export function NewReviewPage() {
         </div>
 
         <form onSubmit={handleSubmit} className="card" style={{ padding: 'var(--space-8)' }}>
+          <fieldset disabled={submitting} style={{ border: 0, margin: 0, padding: 0, minWidth: 0 }}>
           <div className="form-group" style={{ marginBottom: 'var(--space-5)' }}>
             <label htmlFor="sel-brand" className="form-label">
               Brand Guidelines Target <span style={{ color: 'var(--color-blocker)' }}>*</span>
@@ -331,6 +349,7 @@ export function NewReviewPage() {
               {submitting ? 'Creating draft & analysing…' : 'Submit for Compliance Review →'}
             </button>
           </div>
+          </fieldset>
         </form>
       </div>
     </main>
