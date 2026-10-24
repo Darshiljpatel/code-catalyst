@@ -3,6 +3,7 @@ import { createManualCheck } from '../api/client';
 import type { RunOut, ManualCheckInput } from '../api/types';
 import { Alert } from './Primitives';
 import { categoryLabel } from './categoryLabel';
+import { incompleteCategories } from '../api/reviewReadiness';
 
 export function ManualChecks({ run, version, onSaved }: { run: RunOut; version: number; onSaved: () => void }) {
   return <RunManualChecks key={run.id} run={run} version={version} onSaved={onSaved} />;
@@ -15,8 +16,8 @@ function RunManualChecks({ run, version, onSaved }: { run: RunOut; version: numb
   const [sourceIds, setSourceIds] = React.useState<string[]>([]);
   const [busy, setBusy] = React.useState(false);
   const [error, setError] = React.useState('');
-  const incomplete = run.checks.filter(c => !['complete', 'not_applicable'].includes(c.status));
-  const category = incomplete.find(c => c.category === selectedCategory)?.category || incomplete[0]?.category;
+  const incomplete = incompleteCategories(run) as ManualCheckInput['category'][];
+  const category = incomplete.find(category => category === selectedCategory) || incomplete[0];
   const relevantSources = run.source_snapshot.filter(s => s.rules.some(rule => rule.category === category));
   const selectedIds = sourceIds.filter(id => run.source_snapshot.some(s => s.id === id));
   const evidenceValid = outcome === 'not_applicable' ? relevantSources.length === 0
@@ -39,7 +40,7 @@ function RunManualChecks({ run, version, onSaved }: { run: RunOut; version: numb
       <fieldset disabled={busy} style={{ border: 0, padding: 0, margin: 0 }}>
       <label className="label" htmlFor="manual-category">Category</label>
       <select id="manual-category" className="input" value={category} onChange={e => { setCategory(e.target.value as ManualCheckInput['category']); setSourceIds([]); setRationale(''); setOutcome('complete'); setError(''); }}>
-        {incomplete.map(c => <option key={c.category} value={c.category}>{categoryLabel(c.category)}</option>)}
+        {incomplete.map(category => <option key={category} value={category}>{categoryLabel(category)}</option>)}
       </select>
       <label className="label" htmlFor="manual-outcome">Outcome</label>
       <select id="manual-outcome" className="input" value={outcome} onChange={e => setOutcome(e.target.value as ManualCheckInput['outcome'])}>

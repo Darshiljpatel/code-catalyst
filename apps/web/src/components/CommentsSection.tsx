@@ -23,8 +23,11 @@ function RevisionDiscussion({
   activeFindingId: focusedFindingId,
   findings = [],
 }: CommentsSectionProps) {
-  const [selectedFindingId, setSelectedFindingId] = React.useState('');
-  const activeFindingId = selectedFindingId || focusedFindingId;
+  const [selectedFindingId, setSelectedFindingId] = React.useState<string | null>(null);
+  const candidateFindingId = selectedFindingId ?? focusedFindingId;
+  // A rerun replaces finding IDs while keeping this revision and its note draft.
+  const activeFindingId = findings.some(finding => finding.id === candidateFindingId)
+    ? candidateFindingId : null;
   const [comments, setComments] = React.useState<CommentOut[]>([]);
   const [loading, setLoading] = React.useState(true);
   const [newCommentText, setNewCommentText] = React.useState('');

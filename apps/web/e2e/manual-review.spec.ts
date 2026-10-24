@@ -3,6 +3,32 @@ import AxeBuilder from '@axe-core/playwright';
 import { FIXTURE_CONTENT_ITEM, FIXTURE_REVIEW_RUN, FIXTURE_SOURCES } from '../src/api/fixtures';
 import type { CheckOut } from '../src/api/types';
 
+test('manual review offers categories absent from the analysis response', async ({ page }) => {
+  const checks = FIXTURE_REVIEW_RUN.checks.filter(check => check.category !== 'tone').map(check => ({ ...check, status: 'complete' }));
+  const run = { ...FIXTURE_REVIEW_RUN, status: 'incomplete', checks, source_snapshot: [] };
+  let recorded: { category: string; outcome: string } | undefined;
+  await page.route('**/api/v1/**', async route => {
+    const path = new URL(route.request().url()).pathname;
+    if (path.endsWith('/me')) return route.fulfill({ json: { membership_id: FIXTURE_CONTENT_ITEM.reviewer_id, role: 'reviewer' } });
+    if (path.endsWith(`/content/${FIXTURE_CONTENT_ITEM.id}`)) return route.fulfill({ json: { ...FIXTURE_CONTENT_ITEM, latest_run_id: run.id } });
+    if (path.endsWith(`/runs/${run.id}`)) return route.fulfill({ json: run });
+    if (path.endsWith('/review')) return route.fulfill({ json: { evidence: { effective_checks: checks } } });
+    if (path.endsWith('/manual-checks')) {
+      recorded = route.request().postDataJSON();
+      return route.fulfill({ status: 201, json: { id: 'manual-tone' } });
+    }
+    return route.fulfill({ json: [] });
+  });
+  await page.goto(`/content/${FIXTURE_CONTENT_ITEM.id}`);
+  await expect(page.getByRole('region', { name: 'Incomplete check coverage' })).toContainText('Tone');
+  const form = page.locator('.manual-check-card');
+  await expect(form.getByLabel('Category', { exact: true })).toHaveValue('tone');
+  await form.getByLabel('Outcome').selectOption('not_applicable');
+  await form.getByLabel('Review rationale', { exact: false }).fill('Inspected this revision and no approved tone rule applies.');
+  await form.getByRole('button', { name: 'Record manual check' }).click();
+  await expect.poll(() => recorded).toMatchObject({ category: 'tone', outcome: 'not_applicable' });
+});
+
 test('manual review guides outstanding categories and enforces category-specific evidence', async ({ page }) => {
   const toneSource = { ...FIXTURE_SOURCES[0], id: 'tone-source', title: 'Approved tone guide', rules: [{ id: 'tone', category: 'tone', kind: 'guidance', key: 'voice', value: 'Calm language', evidence_quote: 'Use calm language.' }] };
   const otherSource = { ...toneSource, id: 'term-source', title: 'Product naming', rules: [{ ...toneSource.rules[0], id: 'term', category: 'terminology' }] };
