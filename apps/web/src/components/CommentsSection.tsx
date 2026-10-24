@@ -2,6 +2,7 @@ import React from 'react';
 import { getComments, postComment, ApiResponseError } from '../api/client';
 import type { CommentOut } from '../api/types';
 import { Alert, Spinner } from './Primitives';
+import { useDiscussionDrafts } from '../context/DiscussionDraftContext';
 
 interface CommentsSectionProps {
   revisionId: string;
@@ -14,7 +15,7 @@ export function CommentsSection({
   activeFindingId,
   findings,
 }: CommentsSectionProps) {
-  // Draft notes and request state must never migrate to another revision.
+  // Request/attachment state never migrates. Text is cached separately by revision.
   return <RevisionDiscussion key={revisionId} revisionId={revisionId} activeFindingId={activeFindingId} findings={findings} />;
 }
 
@@ -30,8 +31,8 @@ function RevisionDiscussion({
     ? candidateFindingId : null;
   const [comments, setComments] = React.useState<CommentOut[]>([]);
   const [loading, setLoading] = React.useState(true);
-  const [newCommentText, setNewCommentText] = React.useState('');
-  const [submitting, setSubmitting] = React.useState(false);
+  const { drafts, updateDraft, posting: submitting, setPosting, refreshToken, refreshDiscussion } = useDiscussionDrafts();
+  const newCommentText = drafts[revisionId] || '';
   const [error, setError] = React.useState<string | null>(null);
   const [filterByFinding, setFilterByFinding] = React.useState(false);
   const [attachToFinding, setAttachToFinding] = React.useState(false);
@@ -54,13 +55,13 @@ function RevisionDiscussion({
       .catch(() => { if (!cancelled) setLoadError('Discussion could not be loaded.'); })
       .finally(() => { if (!cancelled) setLoading(false); });
     return () => { cancelled = true; };
-  }, [revisionId, refresh]);
+  }, [revisionId, refresh, refreshToken]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!newCommentText.trim() || submitting || loading || loadError) return;
 
-    setSubmitting(true);
+    setPosting(true);
     setError(null);
     setNotice('');
     try {
@@ -68,9 +69,9 @@ function RevisionDiscussion({
         text: newCommentText.trim(),
         finding_id: attachToFinding && activeFindingId ? activeFindingId : null,
       });
-      if (!alive.current) return;
+      updateDraft(revisionId, '');
+      if (!alive.current) { refreshDiscussion(); return; }
       setComments(prev => [...prev, created]);
-      setNewCommentText('');
       setNotice(created.finding_id ? 'Note posted to the selected finding.' : 'Note posted to this revision.');
     } catch (err) {
       if (!alive.current) return;
@@ -80,7 +81,7 @@ function RevisionDiscussion({
         setError('Connection error posting comment');
       }
     } finally {
-      if (alive.current) setSubmitting(false);
+      setPosting(false);
     }
   };
 
@@ -175,13 +176,14 @@ function RevisionDiscussion({
               : 'Add a collaboration note or question for the reviewer…'
           }
           value={newCommentText}
-          onChange={e => setNewCommentText(e.target.value)}
+          onChange={e => updateDraft(revisionId, e.target.value)}
           required
         />
         {activeFindingId && <label style={{ fontSize: '0.8125rem' }}>
           <input type="checkbox" checked={attachToFinding} onChange={e => setAttachToFinding(e.target.checked)} disabled={submitting} /> Attach this note to finding #{activeFindingId.slice(0, 8)}
         </label>}
         <small>{newCommentText.length} / 4000 characters · {attachToFinding && activeFindingId ? 'Finding note' : 'Revision note'}</small>
+        <small style={{ color: 'var(--text-muted)' }}>Unsent text stays with its revision. Select any finding attachment again after switching revisions.</small>
         <div style={{ display: 'flex', justifyContent: 'flex-end' }}>
           <button
             type="submit"

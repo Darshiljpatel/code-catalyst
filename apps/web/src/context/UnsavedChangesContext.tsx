@@ -2,7 +2,7 @@ import React from 'react';
 import { useBlocker, useNavigate } from 'react-router-dom';
 import { useDialogFocus } from '../hooks/useDialogFocus';
 
-type Guard = { dirty: boolean; busy: boolean };
+type Guard = { dirty: boolean; busy: boolean; message?: string; busyMessage?: string };
 type LeaveAction = () => boolean | void | Promise<boolean | void>;
 type PendingAction = { label: string; action: LeaveAction; destination: string };
 const UnsavedChangesContext = React.createContext<{
@@ -92,15 +92,18 @@ export function UnsavedChangesProvider({ children }: { children: React.ReactNode
     {children}
     {open && <div className="modal-backdrop" ref={dialogRef} tabIndex={-1} role="dialog" aria-modal="true" aria-labelledby="unsaved-changes-title" aria-describedby="unsaved-changes-description">
       <div className="modal-card">
-        <div className="modal-header"><h2 id="unsaved-changes-title">Leave with unsaved changes?</h2></div>
+        <div className="modal-header"><h2 id="unsaved-changes-title">{guard.dirty ? 'Leave with unsaved changes?' : guard.busy ? 'Request in progress' : 'Leave this view?'}</h2></div>
         <div className="modal-body">
-          <p id="unsaved-changes-description">Your working draft has changes that have not been saved as a revision. Keep editing to save them, or discard them before leaving. Draft copy is not stored in browser storage.</p>
-          {guard.busy && <p role="status">Saving your revision. Wait for the request to finish before leaving.</p>}
+          <p id="unsaved-changes-description">{guard.dirty
+            ? guard.message || 'Your working draft has changes that have not been saved as a revision. Keep editing to save them, or discard them before leaving. Draft copy is not stored in browser storage.'
+            : guard.busy ? 'A save or post request is still in progress. Wait for it to finish before leaving.'
+            : 'No unsaved work remains in this view. You can leave or keep reviewing.'}</p>
+          {guard.busy && <p role="status">{guard.busyMessage || 'Saving your revision. Wait for the request to finish before leaving.'}</p>}
           {performingAction && <p role="status">Finishing {pending?.label || 'your request'}… Your draft stays protected until the request succeeds.</p>}
         </div>
         <div className="modal-actions">
           <button type="button" className="btn btn--secondary" disabled={performingAction} onClick={cancel}>Keep editing</button>
-          <button type="button" className="btn btn--danger" disabled={guard.busy || performingAction} onClick={confirm}>{guard.dirty ? 'Discard edits and ' : ''}{pending?.label || 'leave'}</button>
+          <button type="button" className="btn btn--danger" disabled={guard.busy || performingAction} onClick={confirm}>{guard.dirty ? `Discard edits and ${pending?.label || 'leave'}` : pending ? pending.label : 'Leave this view'}</button>
         </div>
       </div>
     </div>}
@@ -115,10 +118,10 @@ export function useLeaveConfirmation() {
 }
 
 // eslint-disable-next-line react-refresh/only-export-components -- hooks share the private context
-export function useUnsavedChanges(dirty: boolean, busy = false) {
+export function useUnsavedChanges(dirty: boolean, busy = false, message?: string, busyMessage?: string) {
   const { setGuard } = useLeaveConfirmation();
   React.useEffect(() => {
-    setGuard({ dirty, busy });
+    setGuard({ dirty, busy, message, busyMessage });
     return () => setGuard({ dirty: false, busy: false });
-  }, [dirty, busy, setGuard]);
+  }, [dirty, busy, message, busyMessage, setGuard]);
 }

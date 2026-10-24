@@ -48,9 +48,16 @@ import { ManualChecks } from '../components/ManualChecks';
 import { ResolutionModal } from '../components/ResolutionModal';
 import { useAuth } from '../context/AuthContext';
 import { useUnsavedChanges } from '../context/UnsavedChangesContext';
+import { DiscussionDraftProvider, DiscussionDraftSummary, useDiscussionActivity } from '../context/DiscussionDraftContext';
 
 export function ContentDetailPage() {
   const { contentId } = useParams<{ contentId: string }>();
+  return <DiscussionDraftProvider key={contentId}><CampaignWorkspace /></DiscussionDraftProvider>;
+}
+
+function CampaignWorkspace() {
+  const { contentId } = useParams<{ contentId: string }>();
+  const { hasUnsentNotes, posting: postingNote } = useDiscussionActivity();
   const navigate = useNavigate();
   const location = useLocation();
 
@@ -170,7 +177,7 @@ export function ContentDetailPage() {
 
   // Initialize or update fields when switching revisions
   const handleSelectRevision = (index: number) => {
-    if (!content) return;
+    if (!content || postingNote) return;
     setSelectedRevIndex(index);
     setActiveFinding(null);
     setDraftNotice(null);
@@ -189,7 +196,7 @@ export function ContentDetailPage() {
 
   const handleSaveRevision = async (e?: React.FormEvent, customParentId?: string, thenSubmit = false) => {
     if (e) e.preventDefault();
-    if (!content || !currentRevision || savingRevision || (!hasDraftChanges && !customParentId)) return;
+    if (!content || !currentRevision || savingRevision || postingNote || (!hasDraftChanges && !customParentId)) return;
     const inputIssues = validateDraft({ text: draftText, channel: draftChannel, audience: draftAudience, purpose: draftPurpose });
     if (inputIssues.length) {
       setError(inputIssues.join(' '));
@@ -260,7 +267,7 @@ export function ContentDetailPage() {
   };
 
   const handleRunAnalysis = async (thenSubmit = false) => {
-    if (!currentRevision) return;
+    if (!currentRevision || postingNote) return;
     setAnalysing(true);
     setError(null);
     try {
@@ -326,9 +333,13 @@ export function ContentDetailPage() {
 
   const hasDraftChanges = Boolean(currentRevision && (draftText !== currentRevision.text ||
     draftChannel !== currentRevision.channel || draftAudience !== currentRevision.audience || draftPurpose !== currentRevision.purpose));
-  useUnsavedChanges(hasDraftChanges, savingRevision);
+  useUnsavedChanges(hasDraftChanges || hasUnsentNotes, savingRevision || postingNote,
+    hasUnsentNotes ? (hasDraftChanges
+      ? 'Your campaign edits and discussion notes have not been saved. Save the edits and post the notes, or discard them before leaving.'
+      : 'Your discussion notes have not been posted. Keep editing to post them, or discard them before leaving.') : undefined,
+    postingNote ? 'Posting your discussion note. Wait for the request to finish before leaving.' : undefined);
   const canEditDraft = Boolean(user?.membership_id === content?.creator_id &&
-    currentRevision?.number === content?.current_revision && !savingRevision && !analysing && !['queued', 'running'].includes(run?.status || ''));
+    currentRevision?.number === content?.current_revision && !savingRevision && !postingNote && !analysing && !['queued', 'running'].includes(run?.status || ''));
   const stagedCount = draft.changes.filter(change => change.findingId).length;
   const findingFilterValues = findingFilterState.runId === run?.id ? findingFilterState.values : ALL_FINDINGS;
   const visibleFindings = filterFindings(run?.findings || [], findingFilterValues);
@@ -378,6 +389,7 @@ export function ContentDetailPage() {
   };
 
   const prepareSubmission = () => {
+    if (postingNote) return;
     if (hasDraftChanges) void handleSaveRevision(undefined, undefined, true);
     else if (!run) void handleRunAnalysis(true);
     else setShowSubmitModal(true);
@@ -456,19 +468,19 @@ export function ContentDetailPage() {
             id="btn-run-analysis"
             className="btn btn--secondary"
             onClick={() => { void handleRunAnalysis(); }}
-            disabled={analysing || savingRevision || hasDraftChanges || user?.membership_id !== content.creator_id || content.state === 'approved'}
+            disabled={analysing || savingRevision || postingNote || hasDraftChanges || user?.membership_id !== content.creator_id || content.state === 'approved'}
           >
             {analysing ? 'Analysing…' : 'Run Compliance Check'}
           </button>
 
           {/* Workflow Action 1: Creator Submit for Review */}
-          {user?.role === 'manager' && content.state !== 'approved' && <button type="button" className="btn btn--secondary" onClick={() => setShowAssignment(true)}>{content.reviewer_id ? 'Change reviewer' : 'Assign reviewer'}</button>}
+          {user?.role === 'manager' && content.state !== 'approved' && <button type="button" className="btn btn--secondary" disabled={postingNote} onClick={() => setShowAssignment(true)}>{content.reviewer_id ? 'Change reviewer' : 'Assign reviewer'}</button>}
           {user?.membership_id === content.creator_id && ['draft', 'changes_requested', 'ready_for_review', 'needs_changes', 'incomplete', 'analysing'].includes(content.state) && (
             <button
               id="btn-submit-review"
               className="btn btn--primary"
               onClick={prepareSubmission}
-              disabled={analysing || savingRevision || user?.membership_id !== content.creator_id || currentRevision?.number !== content.current_revision}
+              disabled={analysing || savingRevision || postingNote || user?.membership_id !== content.creator_id || currentRevision?.number !== content.current_revision}
             >
               {savingRevision ? 'Saving all changes…' : hasDraftChanges ? 'Save all & submit →' : 'Submit for Review →'}
             </button>
@@ -526,8 +538,8 @@ export function ContentDetailPage() {
             key={rev.id}
             className={`filter-btn ${selectedRevIndex === idx ? 'filter-btn--active' : ''}`}
             aria-pressed={selectedRevIndex === idx}
-            disabled={hasDraftChanges || savingRevision || analysing}
-            title={hasDraftChanges ? 'Save or discard the working draft before switching revisions.' : undefined}
+            disabled={hasDraftChanges || savingRevision || analysing || postingNote}
+            title={postingNote ? 'Wait for your discussion note to finish posting before switching revisions.' : hasDraftChanges ? 'Save or discard the working draft before switching revisions.' : undefined}
             onClick={() => handleSelectRevision(idx)}
           >
             Rev #{rev.number} {idx === content.revisions.length - 1 ? '(Current)' : ''}
@@ -536,6 +548,8 @@ export function ContentDetailPage() {
       </div>
 
       {/* Revision Diff Viewer if toggled */}
+      <DiscussionDraftSummary revisions={content.revisions} currentId={currentRevision?.id}
+        disabled={hasDraftChanges || savingRevision || analysing || postingNote} onOpen={handleSelectRevision} />
       {showDiff && currentRevision && content.revisions.length > 1 && (
         <div style={{ marginBottom: 'var(--space-6)' }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-3)', marginBottom: 'var(--space-3)' }}>
@@ -584,7 +598,7 @@ export function ContentDetailPage() {
 
           {isEditing ? (
             <form className="document-editor" onSubmit={e => e.preventDefault()}>
-              <fieldset className="document-editor__fields" disabled={savingRevision || analysing}>
+              <fieldset className="document-editor__fields" disabled={savingRevision || analysing || postingNote}>
               <div className="form-group" style={{ marginBottom: 'var(--space-4)' }}>
                 <label htmlFor="edit-copy" className="form-label">Copy Text</label>
                 <textarea
