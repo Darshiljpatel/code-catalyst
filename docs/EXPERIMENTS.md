@@ -470,3 +470,32 @@ their regression tests. The reviewer's separate overnight review log is preserve
 Next investigation: local startup documentation depends on temporary Node-path,
 database and credential files. Make repeated development/testing startup reliable
 after a reboot without exposing provider keys or replacing existing user data.
+
+## Morning iteration 18: persistent local startup
+
+Added `python3 scripts/dev_local.py`: one foreground launcher for a built
+frontend, real API/worker and isolated loopback PostgreSQL. It discovers installed
+Node/PostgreSQL tools, migrates its own database, and provisions a fictional
+workspace only on first use. Database files, private credentials and logs persist
+under ignored `.local/dev/`; account/parent permissions were checked as 600/700.
+`accounts` explicitly displays the local login details when requested.
+
+The default disables the provider key. `--external` allows existing configuration
+without enabling workspace policy or giving per-run consent. It does not print
+provider credentials. Documentation covers dependencies, normal restarts, ports,
+logs, stopping and the separate container deployment path.
+
+Verification: 12 launcher checks pass, including missing tools, invalid/occupied
+ports, immediate reuse of a recently closed listener, explicit provider isolation,
+account validation and ownership-scoped shutdown. A real first startup and the
+full import → assignment → worker/manual review → approval → exact export journey
+passed (10.3 seconds). A second launcher was refused. SIGTERM and SIGINT shutdowns
+closed all owned ports and left the independent 8011/5181 stack ready. Restart
+retained the identical private account-file hash and database counts (1 workspace,
+4 identities, 1 campaign). No accounts or campaigns were regenerated. An initial
+restart exposed TIME_WAIT sockets in the port probe; SO_REUSEADDR and a regression
+now cover that case. Occupied-port refusal was also checked against the independent
+API. External inference remained disabled throughout.
+
+Next investigation: revise the stale submission PDF so the report reflects
+actual implemented behavior, verified evidence and remaining release work.

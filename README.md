@@ -10,6 +10,7 @@ integrated locally with fixes for workflow state, manual checks, session reload,
 source evidence, Unicode edits, recovery and deployment configuration.
 
 - [Judge walkthrough and local setup](docs/JUDGE_WALKTHROUGH.md)
+- [One-command local startup and restart](docs/LOCAL_DEVELOPMENT.md)
 - [Executable browser verification](tests/e2e/README.md)
 
 The existing project PDF contains pre-integration verification claims and needs

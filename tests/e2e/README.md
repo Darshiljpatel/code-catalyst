@@ -13,6 +13,11 @@ edit boundaries. It never marks the release inventory complete.
 
 ## Local testing
 
+For a persistent fictional workspace that survives restart, use the
+[one-command local launcher](../../docs/LOCAL_DEVELOPMENT.md). The manual and
+isolated verification setups below remain useful for browser/CI runs; their
+temporary paths must be provisioned again after a reboot.
+
 ## Start the prepared local demo
 
 This is the quickest way to resume the existing fictional browser workspace.

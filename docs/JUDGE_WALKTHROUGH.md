@@ -7,6 +7,10 @@ must be revised to match the integration report before submission.
 
 ## Local deployment
 
+For local testing without Docker, use the [persistent local launcher](LOCAL_DEVELOPMENT.md).
+It starts the real API, worker and frontend with separate fictional accounts.
+The container instructions below are a separate deployment path.
+
 Create a private `.env` from `.env.example`. Set a strong URL-safe
 `POSTGRES_PASSWORD`, `PUBLIC_ORIGIN=http://localhost:3000`, and
 `APP_ENV=development`. Then run from the repository root:
