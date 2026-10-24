@@ -12,3 +12,6 @@ playwright-report/
 test-results/
 models.txt
 .local/
+
+# Local /brag video projects, media, renders and supporting files.
+/brag-output/
