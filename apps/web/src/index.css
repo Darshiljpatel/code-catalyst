@@ -128,11 +128,10 @@ code, kbd {
   border: none; border-radius: var(--radius-md);
   font-family: var(--font-sans); font-size: 0.9375rem; font-weight: 500;
   cursor: pointer;
+  /* Enabled controls must reach full contrast immediately. */
   transition:
-    background var(--duration-base) var(--ease-out),
     transform var(--duration-fast) var(--ease-out),
-    box-shadow var(--duration-base) var(--ease-out),
-    opacity var(--duration-base) var(--ease-out);
+    box-shadow var(--duration-base) var(--ease-out);
 }
 .btn:focus-visible {
   outline: 2px solid var(--accent);

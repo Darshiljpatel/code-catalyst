@@ -209,6 +209,7 @@ export type ContentState =
 // Processing Policy (S3)
 // ---------------------------------------------------------------------------
 export interface PolicyOut {
+  max_input_bytes: number;
   version: number;
   enabled: boolean;
   provider: string;

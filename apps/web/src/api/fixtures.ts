@@ -248,6 +248,7 @@ export const FIXTURE_SOURCES: SourceOut[] = [
 ];
 
 export const FIXTURE_POLICY: PolicyOut = {
+  max_input_bytes: 24000,
   version: 1,
   enabled: false,
   provider: 'nebius',

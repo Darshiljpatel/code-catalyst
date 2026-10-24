@@ -1,4 +1,6 @@
 import React from 'react';
+import { localDateTimeInput } from '../api/localDateTime';
+import { useDialogFocus } from '../hooks/useDialogFocus';
 import { useParams, useNavigate } from 'react-router-dom';
 import {
   getBrand,
@@ -354,6 +356,16 @@ function SourceCard({
 // Add Source Modal Component
 // ---------------------------------------------------------------------------
 
+function useSourceDialog(onClose: () => void, busy: boolean) {
+  const ref = useDialogFocus();
+  React.useEffect(() => {
+    const close = (event: KeyboardEvent) => { if (event.key === 'Escape' && !busy) onClose(); };
+    window.addEventListener('keydown', close);
+    return () => window.removeEventListener('keydown', close);
+  }, [onClose, busy]);
+  return ref;
+}
+
 function AddSourceModal({
   brandId,
   onClose,
@@ -366,7 +378,7 @@ function AddSourceModal({
   const [sourceKey, setSourceKey] = React.useState('trial_terms');
   const [title, setTitle] = React.useState('Approved trial terms');
   const [text, setText] = React.useState('The trial lasts 14 days. No credit card is required.');
-  const [validFrom, setValidFrom] = React.useState(new Date().toISOString().slice(0, 16));
+  const [validFrom, setValidFrom] = React.useState(() => localDateTimeInput(new Date()));
   const [rules, setRules] = React.useState<RuleInput[]>([
     {
       id: 'F-01',
@@ -381,17 +393,19 @@ function AddSourceModal({
   const [error, setError] = React.useState<string | null>(null);
 
   const addRule = () => {
-    setRules(prev => [
-      ...prev,
-      {
-        id: `R-${prev.length + 1}`,
+    if (rules.length >= 100) return;
+    setRules(prev => {
+      let next = 1;
+      while (prev.some(rule => rule.id === `R-${next}`)) next++;
+      return [...prev, {
+        id: `R-${next}`,
         category: 'terminology',
         kind: 'terminology',
         key: '',
         value: '',
         evidence_quote: '',
-      },
-    ]);
+      }];
+    });
   };
 
   const updateRule = (index: number, updates: Partial<RuleInput>) => {
@@ -404,12 +418,17 @@ function AddSourceModal({
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (submitting) return;
     if (!sourceKey.trim() || !title.trim() || !text.trim()) {
       setError('Key, title, and source text cannot be blank.');
       return;
     }
     if (rules.length === 0) {
       setError('At least one rule must be defined.');
+      return;
+    }
+    if (new Set(rules.map(rule => rule.id.trim())).size !== rules.length) {
+      setError('Each rule needs a unique ID within this source.');
       return;
     }
     // Check evidence quotes
@@ -426,7 +445,7 @@ function AddSourceModal({
       await createSource(brandId, {
         source_key: sourceKey.trim(),
         title: title.trim(),
-        text: text.trim(),
+        text,
         rules,
         valid_from: new Date(validFrom).toISOString(),
         valid_until: null,
@@ -443,20 +462,22 @@ function AddSourceModal({
     }
   };
 
+  const dialogRef = useSourceDialog(onClose, submitting);
   return (
-    <div className="modal-backdrop" role="dialog" aria-modal="true" aria-labelledby="add-source-title">
+    <div className="modal-backdrop source-authoring-dialog" ref={dialogRef} tabIndex={-1} role="dialog" aria-modal="true" aria-labelledby="add-source-title">
       <div className="modal-card modal-card--lg animate-scale-in">
         <div className="modal-header">
           <h2 id="add-source-title" style={{ margin: 0, fontSize: '1.25rem' }}>
             Add Brand Guideline Source Draft
           </h2>
-          <button className="btn btn--ghost btn--sm" onClick={onClose} aria-label="Close dialog">
+          <button className="btn btn--ghost btn--sm" onClick={onClose} aria-label="Close dialog" disabled={submitting}>
             ✕
           </button>
         </div>
 
         <form onSubmit={handleSubmit} className="modal-body">
           {error && <Alert kind="error">{error}</Alert>}
+          <fieldset disabled={submitting} className="source-dialog-fields">
 
           <div className="form-row" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 'var(--space-4)' }}>
             <div className="form-group">
@@ -465,6 +486,7 @@ function AddSourceModal({
               </label>
               <input
                 id="txt-src-key"
+                maxLength={100}
                 type="text"
                 className="input"
                 pattern="^[A-Za-z0-9_-]+$"
@@ -484,6 +506,7 @@ function AddSourceModal({
               </label>
               <input
                 id="txt-src-title"
+                maxLength={200}
                 type="text"
                 className="input"
                 value={title}
@@ -500,6 +523,7 @@ function AddSourceModal({
             </label>
             <textarea
               id="txt-src-text"
+              maxLength={100000}
               className="input"
               rows={4}
               value={text}
@@ -521,12 +545,13 @@ function AddSourceModal({
               onChange={e => setValidFrom(e.target.value)}
               required
             />
+            <small>Local time in {Intl.DateTimeFormat().resolvedOptions().timeZone}; saved as a UTC timestamp.</small>
           </div>
 
           <div style={{ marginTop: 'var(--space-6)' }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 'var(--space-3)' }}>
               <h4 style={{ margin: 0 }}>Structured Rules & Facts ({rules.length})</h4>
-              <button type="button" className="btn btn--secondary btn--sm" onClick={addRule}>
+              <button type="button" className="btn btn--secondary btn--sm" onClick={addRule} disabled={rules.length >= 100}>
                 + Add Rule
               </button>
             </div>
@@ -534,11 +559,13 @@ function AddSourceModal({
             <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-3)' }}>
               {rules.map((rule, idx) => (
                 <div key={idx} className="rule-editor-box">
-                  <div style={{ display: 'grid', gridTemplateColumns: '80px 140px 130px 1fr auto', gap: 'var(--space-2)', alignItems: 'center' }}>
+                  <div className="source-rule-controls" style={{ display: 'grid', gridTemplateColumns: '80px 140px 130px minmax(0, 1fr) auto', gap: 'var(--space-2)', alignItems: 'center' }}>
                     <input
                       type="text"
                       className="input input--sm"
                       placeholder="ID"
+                      aria-label={`Rule ${idx + 1} ID`}
+                      maxLength={100}
                       value={rule.id}
                       onChange={e => updateRule(idx, { id: e.target.value })}
                       required
@@ -546,6 +573,7 @@ function AddSourceModal({
                     <select
                       className="input input--sm"
                       value={rule.category}
+                      aria-label={`Rule ${idx + 1} category`}
                       onChange={e => updateRule(idx, { category: e.target.value as RuleCategory })}
                     >
                       <option value="facts_claims">facts_claims</option>
@@ -558,6 +586,7 @@ function AddSourceModal({
                     <select
                       className="input input--sm"
                       value={rule.kind}
+                      aria-label={`Rule ${idx + 1} kind`}
                       onChange={e => updateRule(idx, { kind: e.target.value as RuleKind })}
                     >
                       <option value="fact">fact</option>
@@ -572,6 +601,8 @@ function AddSourceModal({
                       type="text"
                       className="input input--sm"
                       placeholder="Fact Key (e.g. trial_duration)"
+                      aria-label={`Rule ${idx + 1} key`}
+                      maxLength={100}
                       value={rule.key}
                       onChange={e => updateRule(idx, { key: e.target.value })}
                       required
@@ -582,16 +613,19 @@ function AddSourceModal({
                       onClick={() => removeRule(idx)}
                       disabled={rules.length <= 1}
                       title="Remove rule"
+                      aria-label={`Remove rule ${idx + 1}`}
                     >
                       ✕
                     </button>
                   </div>
 
-                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 'var(--space-2)', marginTop: 'var(--space-2)' }}>
+                  <div className="source-rule-values" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 'var(--space-2)', marginTop: 'var(--space-2)' }}>
                     <input
                       type="text"
                       className="input input--sm"
                       placeholder="Approved value (e.g. 14 days)"
+                      aria-label={`Rule ${idx + 1} approved value`}
+                      maxLength={2000}
                       value={rule.value}
                       onChange={e => updateRule(idx, { value: e.target.value })}
                       required
@@ -600,6 +634,8 @@ function AddSourceModal({
                       type="text"
                       className="input input--sm"
                       placeholder="Evidence Quote (must match source text)"
+                      aria-label={`Rule ${idx + 1} evidence quote`}
+                      maxLength={4000}
                       value={rule.evidence_quote}
                       onChange={e => updateRule(idx, { evidence_quote: e.target.value })}
                       required
@@ -618,6 +654,7 @@ function AddSourceModal({
               {submitting ? 'Creating draft…' : 'Create Source Draft'}
             </button>
           </div>
+          </fieldset>
         </form>
       </div>
     </div>
@@ -641,8 +678,8 @@ function ActivateSourceModal({
   onClose: () => void;
   onSuccess: () => void;
 }) {
-  const [rationale, setRationale] = React.useState('Verified against approved trial terms and brand policy.');
-  const [verified, setVerified] = React.useState(true);
+  const [rationale, setRationale] = React.useState('');
+  const [verified, setVerified] = React.useState(false);
   const [retireIds, setRetireIds] = React.useState<string[]>([]);
   const [submitting, setSubmitting] = React.useState(false);
   const [error, setError] = React.useState<string | null>(null);
@@ -656,6 +693,7 @@ function ActivateSourceModal({
 
   const handleActivate = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (submitting) return;
     if (!verified) {
       setError('You must confirm verification of semantic consistency before activating.');
       return;
@@ -690,20 +728,22 @@ function ActivateSourceModal({
     }
   };
 
+  const dialogRef = useSourceDialog(onClose, submitting);
   return (
-    <div className="modal-backdrop" role="dialog" aria-modal="true" aria-labelledby="activate-source-title">
+    <div className="modal-backdrop" ref={dialogRef} tabIndex={-1} role="dialog" aria-modal="true" aria-labelledby="activate-source-title">
       <div className="modal-card animate-scale-in">
         <div className="modal-header">
           <h2 id="activate-source-title" style={{ margin: 0, fontSize: '1.25rem' }}>
             Activate Guideline Source: {source.title}
           </h2>
-          <button className="btn btn--ghost btn--sm" onClick={onClose} aria-label="Close dialog">
+          <button className="btn btn--ghost btn--sm" onClick={onClose} aria-label="Close dialog" disabled={submitting}>
             ✕
           </button>
         </div>
 
         <form onSubmit={handleActivate} className="modal-body">
           {error && <Alert kind="error">{error}</Alert>}
+          <fieldset disabled={submitting} className="source-dialog-fields">
 
           <div className="info-box" style={{ marginBottom: 'var(--space-4)' }}>
             <div style={{ fontWeight: 600, color: 'var(--text-primary)', marginBottom: '4px' }}>
@@ -740,6 +780,8 @@ function ActivateSourceModal({
             </label>
             <textarea
               id="txt-activate-rationale"
+              maxLength={2000}
+              minLength={10}
               className="input"
               rows={2}
               value={rationale}
@@ -758,7 +800,7 @@ function ActivateSourceModal({
                 style={{ width: '18px', height: '18px', accentColor: 'var(--accent)' }}
               />
               <span style={{ fontSize: '0.875rem', fontWeight: 600, color: 'var(--text-primary)' }}>
-                I confirm semantic consistency with all active guidelines (verified = true)
+                I reviewed this source against the active guidelines and approve its activation.
               </span>
             </label>
           </div>
@@ -767,10 +809,11 @@ function ActivateSourceModal({
             <button type="button" className="btn btn--ghost" onClick={onClose}>
               Cancel
             </button>
-            <button type="submit" className="btn btn--primary" disabled={submitting}>
+            <button type="submit" className="btn btn--primary" disabled={submitting || !verified || rationale.trim().length < 10}>
               {submitting ? 'Activating…' : 'Activate & Advance Epoch'}
             </button>
           </div>
+          </fieldset>
         </form>
       </div>
     </div>

@@ -1,55 +1,11 @@
 import React from 'react';
+import { computeTextDiff, diffWordCounts } from '../api/textDiff';
 
 interface DiffViewerProps {
   originalText: string;
   modifiedText: string;
   originalLabel?: string;
   modifiedLabel?: string;
-}
-
-interface DiffToken {
-  type: 'added' | 'removed' | 'unchanged';
-  value: string;
-}
-
-// Simple word-level LCS diff algorithm
-function computeWordDiff(text1: string, text2: string): DiffToken[] {
-  const words1 = text1.split(/(\s+)/);
-  const words2 = text2.split(/(\s+)/);
-
-  const n = words1.length;
-  const m = words2.length;
-  const dp: number[][] = Array.from({ length: n + 1 }, () => Array(m + 1).fill(0));
-
-  for (let i = 0; i < n; i++) {
-    for (let j = 0; j < m; j++) {
-      if (words1[i] === words2[j]) {
-        dp[i + 1][j + 1] = dp[i][j] + 1;
-      } else {
-        dp[i + 1][j + 1] = Math.max(dp[i + 1][j], dp[i][j + 1]);
-      }
-    }
-  }
-
-  const result: DiffToken[] = [];
-  let i = n;
-  let j = m;
-
-  while (i > 0 || j > 0) {
-    if (i > 0 && j > 0 && words1[i - 1] === words2[j - 1]) {
-      result.unshift({ type: 'unchanged', value: words1[i - 1] });
-      i--;
-      j--;
-    } else if (j > 0 && (i === 0 || dp[i][j - 1] >= dp[i - 1][j])) {
-      result.unshift({ type: 'added', value: words2[j - 1] });
-      j--;
-    } else if (i > 0 && (j === 0 || dp[i][j - 1] < dp[i - 1][j])) {
-      result.unshift({ type: 'removed', value: words1[i - 1] });
-      i--;
-    }
-  }
-
-  return result;
 }
 
 export function DiffViewer({
@@ -60,23 +16,17 @@ export function DiffViewer({
 }: DiffViewerProps) {
   const [mode, setMode] = React.useState<'inline' | 'sideBySide'>('inline');
 
-  const diffTokens = React.useMemo(
-    () => computeWordDiff(originalText, modifiedText),
+  const comparison = React.useMemo(
+    () => computeTextDiff(originalText, modifiedText),
     [originalText, modifiedText]
   );
 
-  const stats = React.useMemo(() => {
-    let additions = 0;
-    let deletions = 0;
-    diffTokens.forEach(t => {
-      if (t.type === 'added' && t.value.trim()) additions++;
-      if (t.type === 'removed' && t.value.trim()) deletions++;
-    });
-    return { additions, deletions };
-  }, [diffTokens]);
+  const diffTokens = comparison.tokens;
+  const stats = React.useMemo(() => diffWordCounts(diffTokens), [diffTokens]);
 
   return (
     <div className="diff-viewer card" style={{ padding: 'var(--space-5)' }}>
+      {comparison.detail === 'passage' && <p role="status">Large rewrite: changes are grouped into passages to keep comparison responsive. Both complete versions are available side by side.</p>}
       {/* Header & Mode Switcher */}
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 'var(--space-4)', flexWrap: 'wrap', gap: 'var(--space-2)' }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-3)' }}>

@@ -15,23 +15,35 @@ export function ReviewQueue({ onItemSelect }: ReviewQueueProps) {
   const [error, setError] = React.useState<string | null>(null);
   const [activeTab, setActiveTab] = React.useState<string>('all');
   const [searchQuery, setSearchQuery] = React.useState('');
-
-  const loadQueue = React.useCallback(async (stateFilter?: string) => {
-    setLoading(true);
-    setError(null);
-    try {
-      const page = await getContentPage(stateFilter && stateFilter !== 'all' ? { state: stateFilter } : undefined);
-      setItems(page.items);
-    } catch (err) {
-      setError(err instanceof Error ? err.message : 'Unable to load campaign review queue');
-    } finally {
-      setLoading(false);
-    }
-  }, []);
+  const [search, setSearch] = React.useState('');
+  const [offset, setOffset] = React.useState(0);
+  const [total, setTotal] = React.useState(0);
+  const [refresh, setRefresh] = React.useState(0);
+  const limit = 20;
 
   React.useEffect(() => {
-    loadQueue(activeTab);
-  }, [activeTab, loadQueue]);
+    if (searchQuery.trim() === search) return;
+    const timer = setTimeout(() => { setSearch(searchQuery.trim()); setOffset(0); }, 300);
+    return () => clearTimeout(timer);
+  }, [searchQuery, search]);
+
+  React.useEffect(() => {
+    let cancelled = false;
+    setLoading(true);
+    setError(null);
+    getContentPage({ state: activeTab === 'all' ? undefined : activeTab, q: search, limit, offset })
+      .then(page => {
+        if (cancelled) return;
+        if (page.total > 0 && offset >= page.total) {
+          setOffset(Math.floor((page.total - 1) / limit) * limit);
+          return;
+        }
+        setItems(page.items); setTotal(page.total);
+      })
+      .catch(err => { if (!cancelled) setError(err instanceof Error ? err.message : 'Unable to load campaign review queue'); })
+      .finally(() => { if (!cancelled) setLoading(false); });
+    return () => { cancelled = true; };
+  }, [activeTab, search, offset, refresh]);
 
   const handleOpenItem = (id: string) => {
     if (onItemSelect) {
@@ -40,12 +52,6 @@ export function ReviewQueue({ onItemSelect }: ReviewQueueProps) {
       navigate(`/content/${id}`);
     }
   };
-
-  const filteredItems = items.filter(item => {
-    if (!searchQuery) return true;
-    const q = searchQuery.toLowerCase();
-    return item.title.toLowerCase().includes(q) || item.id.toLowerCase().includes(q);
-  });
 
   const getStateBadgeClass = (state: string) => {
     switch (state) {
@@ -77,10 +83,12 @@ export function ReviewQueue({ onItemSelect }: ReviewQueueProps) {
             aria-label="Filter campaigns by title or ID"
             className="input input--sm"
             placeholder="Search campaigns…"
+            maxLength={200}
             value={searchQuery}
             onChange={e => setSearchQuery(e.target.value)}
             style={{ width: '220px' }}
           />
+          <button className="btn btn--ghost btn--sm" onClick={() => setRefresh(n => n + 1)} disabled={loading}>Refresh campaigns</button>
           <button
             className="btn btn--ghost btn--sm"
             onClick={() => navigate('/review/new')}
@@ -98,32 +106,36 @@ export function ReviewQueue({ onItemSelect }: ReviewQueueProps) {
           { id: 'changes_requested', label: 'Changes Requested' },
           { id: 'approved', label: 'Approved' },
           { id: 'draft', label: 'Drafts' },
+          { id: 'analysing', label: 'Analysing' },
+          { id: 'needs_changes', label: 'Needs Changes' },
+          { id: 'ready_for_review', label: 'Ready for Review' },
+          { id: 'incomplete', label: 'Incomplete' },
         ].map(tab => (
           <button
             key={tab.id}
             className={`filter-btn ${activeTab === tab.id ? 'filter-btn--active' : ''}`}
             aria-pressed={activeTab === tab.id}
-            onClick={() => setActiveTab(tab.id)}
+            onClick={() => { setActiveTab(tab.id); setOffset(0); }}
           >
             {tab.label}
           </button>
         ))}
       </div>
 
-      {error && <Alert kind="error">{error}</Alert>}
+      {error && <Alert kind="error">{error} <button className="btn btn--ghost btn--sm" onClick={() => setRefresh(n => n + 1)}>Retry loading campaigns</button></Alert>}
 
-      {loading ? (
+      {error ? null : loading ? (
         <div style={{ textAlign: 'center', padding: 'var(--space-8)' }}>
           <Spinner size="md" label="Loading queue items…" />
         </div>
-      ) : filteredItems.length === 0 ? (
+      ) : items.length === 0 ? (
         <EmptyState
           icon="[ / ]"
-          title="No campaigns found"
-          description={activeTab === 'all'
+          title={search ? 'No matching campaigns' : 'No campaigns found'}
+          description={search ? `No campaigns match “${search}” in this filter. Try another title or ID.` : activeTab === 'all'
             ? 'No campaigns exist yet in this workspace. Create the first campaign to start review.'
             : `No campaigns currently in "${activeTab}" status.`}
-          action={activeTab === 'all' ? <button className="btn btn--primary" onClick={() => navigate('/review/new')}>Start your first review ↗</button> : undefined}
+          action={search ? <button className="btn btn--primary" onClick={() => setSearchQuery('')}>Clear search</button> : activeTab === 'all' ? <button className="btn btn--primary" onClick={() => navigate('/review/new')}>Start your first review ↗</button> : undefined}
         />
       ) : (
         <div style={{ overflowX: 'auto' }}>
@@ -139,7 +151,7 @@ export function ReviewQueue({ onItemSelect }: ReviewQueueProps) {
               </tr>
             </thead>
             <tbody>
-              {filteredItems.map(item => (
+              {items.map(item => (
                 <tr
                   key={item.id}
                   style={{
@@ -189,6 +201,11 @@ export function ReviewQueue({ onItemSelect }: ReviewQueueProps) {
           </table>
         </div>
       )}
+      {!loading && !error && total > 0 && <nav aria-label="Campaign pages" style={{ display: 'flex', flexWrap: 'wrap', gap: '12px', alignItems: 'center', marginTop: '16px' }}>
+        <span role="status">Showing {offset + 1}–{Math.min(offset + limit, total)} of {total} campaigns</span>
+        <button className="btn btn--secondary btn--sm" disabled={offset === 0} onClick={() => setOffset(n => Math.max(0, n - limit))}>Previous page</button>
+        <button className="btn btn--secondary btn--sm" disabled={offset + limit >= total || offset + limit > 10000} onClick={() => setOffset(n => n + limit)}>Next page</button>
+      </nav>}
     </div>
   );
 }

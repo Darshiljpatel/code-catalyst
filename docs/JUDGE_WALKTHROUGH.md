@@ -7,6 +7,10 @@ must be revised to match the integration report before submission.
 
 ## Local deployment
 
+For local testing without Docker, use the [persistent local launcher](LOCAL_DEVELOPMENT.md).
+It starts the real API, worker and frontend with separate fictional accounts.
+The container instructions below are a separate deployment path.
+
 Create a private `.env` from `.env.example`. Set a strong URL-safe
 `POSTGRES_PASSWORD`, `PUBLIC_ORIGIN=http://localhost:3000`, and
 `APP_ENV=development`. Then run from the repository root:
@@ -37,6 +41,13 @@ campaigns or activated guidelines. There are no one-click production logins.
 
 ## Review journey
 
+On the `experiments` branch, campaign intake also supports local UTF-8 `.txt` and
+`.md` import. Choose a file (up to 256 KiB / 100,000 characters), inspect its plain
+text preview, then choose **Replace draft with imported text**. **Cancel import**
+keeps the current draft. Import makes no analysis request; use the normal submit
+and external-processing consent controls after reviewing the imported copy.
+PDF/image file intake is not provided by this text importer.
+
 1. As manager, open the brand, create a source with rules and literal source
    quotes, and explicitly verify and activate it. The fictional source in
    `verification/fixtures/lumadesk.json` is a reproducible example.
@@ -51,6 +62,10 @@ campaigns or activated guidelines. There are no one-click production logins.
 5. In local mode, the assigned reviewer must inspect incomplete categories.
    Record each manual check, its source references and a rationale of at least
    20 characters. Use “not applicable” only where no applicable rule exists.
+   If the campaign was created with **Assign later**, a manager first opens it
+   and uses **Assign reviewer**, selects an authorized reviewer, and records an
+   assignment rationale. Managers can change the reviewer before approval; the
+   new reviewer must record their own manual category checks.
 6. Creator submits the exact revision. The assigned separate reviewer approves
    or requests changes with a rationale. Conflicts require fresh state.
 7. Export the approved revision. The JSON contains the exact text checksum,

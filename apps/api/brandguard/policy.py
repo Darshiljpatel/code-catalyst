@@ -25,16 +25,19 @@ class PolicyOut(StrictInput):
     model: str
     boundary: str
     notice: str
+    max_input_bytes: int
 
 
-def policy_out(policy, model):
+def policy_out(policy, model, max_input_bytes):
     return PolicyOut(version=policy.version if policy else 0, enabled=policy.enabled if policy else False,
                      provider='nebius',model=model,boundary=NEBIUS_BASE_URL,
-                     notice=policy.notice if policy else 'External processing is disabled.')
+                     notice=policy.notice if policy else 'External processing is disabled.',
+                     max_input_bytes=max_input_bytes)
 
 @router.get('/processing-policy', response_model=PolicyOut)
 def get_policy(request: Request, member=Depends(identity), session: Session=Depends(db)):
-    return policy_out(session.get(ProcessingPolicy,member.org_id),request.app.state.provider_config.model)
+    config = request.app.state.provider_config
+    return policy_out(session.get(ProcessingPolicy,member.org_id),config.model,config.max_input_bytes)
 
 @router.put('/processing-policy', response_model=PolicyOut)
 def update_policy(body: PolicyInput, request: Request, member=Depends(identity), session: Session=Depends(db)):
@@ -59,4 +62,4 @@ def update_policy(body: PolicyInput, request: Request, member=Depends(identity),
     audit(session,member,'processing_policy.updated',member.org_id,version=policy.version,
           enabled=policy.enabled,rationale=body.rationale.strip())
     session.commit()
-    return policy_out(policy,policy.model)
+    return policy_out(policy,policy.model,request.app.state.provider_config.max_input_bytes)

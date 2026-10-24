@@ -154,6 +154,17 @@
             }
           },
           {
+            "name": "q",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "maxLength": 200,
+              "default": "",
+              "title": "Q"
+            }
+          },
+          {
             "name": "state",
             "in": "query",
             "required": false,
@@ -2316,6 +2327,10 @@
           "notice": {
             "type": "string",
             "title": "Notice"
+          },
+          "max_input_bytes": {
+            "type": "integer",
+            "title": "Max Input Bytes"
           }
         },
         "additionalProperties": false,
@@ -2326,7 +2341,8 @@
           "provider",
           "model",
           "boundary",
-          "notice"
+          "notice",
+          "max_input_bytes"
         ],
         "title": "PolicyOut"
       },

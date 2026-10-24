@@ -35,12 +35,11 @@ test('real creator → worker → manual reviewer → approval → exact export,
   }
   await creator.keyboard.press('Escape');
   await expect(creator.getByRole('dialog')).toHaveCount(0);
-  await creator.getByRole('button', { name: 'Edit Copy / Save Revision' }).click();
+  await creator.getByRole('button', { name: 'Edit draft' }).click();
   const corrected = '✨ LumaDesk offers a 14-day free trial.  ';
-  await creator.locator('form textarea').first().fill(corrected);
-  await creator.getByRole('button', { name: 'Save as Revision #2' }).click();
-  await creator.locator('#btn-run-analysis').click();
-  await expect(creator.getByText('No compliance violations detected', { exact: false })).toBeVisible({ timeout: 25000 });
+  await creator.getByLabel('Copy Text', { exact: true }).fill(corrected);
+  await creator.getByRole('button', { name: 'Save all & recheck' }).click();
+  await expect(creator.getByText('No findings were returned. Review coverage is incomplete;', { exact: false })).toBeVisible({ timeout: 25000 });
   await login(reviewer, 'reviewer');
   await reviewer.goto(url);
   await expect(reviewer.getByRole('heading', { name: 'Manual category review' })).toBeVisible();
@@ -88,6 +87,10 @@ test('real creator → worker → manual reviewer → approval → exact export,
 
 test('login accessibility and narrow viewport reflow', async ({ page }) => {
   await page.goto('/login');
+  // Inspect mid-entrance instead of waiting for an opacity fade to hide defects.
+  await page.evaluate(() => document.getAnimations().forEach(animation => { animation.pause(); animation.currentTime = 100; }));
+  await expect(page.locator('.login-card')).toHaveCSS('opacity', '1');
+  await expect(page.locator('.review-sample')).toHaveCSS('opacity', '1');
   const results = await new AxeBuilder({ page }).withTags(['wcag2a', 'wcag2aa', 'wcag21aa', 'wcag22aa']).analyze();
   expect(results.violations).toEqual([]);
   await page.setViewportSize({ width: 375, height: 812 });

@@ -3,10 +3,12 @@ import React from 'react';
 import type { FindingOut, ResolutionAction } from '../api/types';
 import { postResolution } from '../api/client';
 import { Alert } from './Primitives';
+import { resolutionLabels } from '../api/resolutionActions';
 
 interface ResolutionModalProps {
   finding: FindingOut;
   expectedItemVersion: number;
+  allowedActions: ResolutionAction[];
   onSuccess: () => void;
   onClose: () => void;
 }
@@ -14,11 +16,12 @@ interface ResolutionModalProps {
 export function ResolutionModal({
   finding,
   expectedItemVersion,
+  allowedActions,
   onSuccess,
   onClose,
 }: ResolutionModalProps) {
   const dialogRef = useDialogFocus();
-  const [action, setAction] = React.useState<ResolutionAction>('confirm');
+  const [action, setAction] = React.useState<ResolutionAction>(allowedActions[0] || 'request_exception');
   const [rationale, setRationale] = React.useState('');
   const [exceptionTicket, setExceptionTicket] = React.useState('');
   const [submitting, setSubmitting] = React.useState(false);
@@ -34,6 +37,10 @@ export function ResolutionModal({
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (!allowedActions.includes(action)) {
+      setError('This action is no longer available. Close and refresh the review.');
+      return;
+    }
     if (rationale.trim().length < 20) {
       setError('Resolution rationale must be at least 20 characters long.');
       return;
@@ -87,10 +94,7 @@ export function ResolutionModal({
               value={action}
               onChange={e => setAction(e.target.value as ResolutionAction)}
             >
-              <option value="confirm">Confirm Violation (Enforce guideline)</option>
-              <option value="dismiss">Dismiss Violation (False positive / approved nuance)</option>
-              <option value="grant_exception">Grant Temporary Exception (Requires business rationale)</option>
-              <option value="request_exception">Request Exception from Manager</option>
+              {allowedActions.map(value => <option key={value} value={value}>{resolutionLabels[value]}</option>)}
             </select>
           </div>
 
@@ -101,6 +105,7 @@ export function ResolutionModal({
               </label>
               <input
                 id="exception-ticket"
+                maxLength={180}
                 type="text"
                 className="input"
                 placeholder="e.g., JIRA-LEG-8492"
@@ -118,6 +123,7 @@ export function ResolutionModal({
               id="resolution-rationale"
               className="input"
               rows={3}
+              maxLength={3800}
               value={rationale}
               onChange={e => setRationale(e.target.value)}
               placeholder="Explain the reason for this human disposition record…"
@@ -135,7 +141,7 @@ export function ResolutionModal({
             <button
               type="submit"
               className="btn btn--primary"
-              disabled={submitting || rationale.trim().length < 20}
+              disabled={submitting || rationale.trim().length < 20 || !allowedActions.includes(action)}
             >
               {submitting ? 'Recording…' : 'Record Disposition'}
             </button>

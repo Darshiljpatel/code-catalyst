@@ -13,6 +13,11 @@ edit boundaries. It never marks the release inventory complete.
 
 ## Local testing
 
+For a persistent fictional workspace that survives restart, use the
+[one-command local launcher](../../docs/LOCAL_DEVELOPMENT.md). The manual and
+isolated verification setups below remain useful for browser/CI runs; their
+temporary paths must be provisioned again after a reboot.
+
 ## Start the prepared local demo
 
 This is the quickest way to resume the existing fictional browser workspace.
@@ -122,3 +127,49 @@ the worker. It asserts model findings and completed tone/claims coverage.
 Messaging is not applicable to this fixture because it has no messaging rule.
 The policy remains enabled for manual exploration; consent is still required.
 Ordinary browser checks remain local and the live test is skipped unless opted in.
+
+## Run alongside another developer without sharing test data
+
+Use a separate UTF-8 database (for example `brandguard_browser_test_experiments`)
+and a separate private fixture path. Set `DATABASE_URL` to that database and
+`PUBLIC_ORIGIN=http://localhost:5181`, then migrate and seed:
+
+```sh
+.venv/bin/alembic -c apps/api/alembic.ini upgrade head
+BROWSER_FIXTURE_PATH=/tmp/brandguard-experiments-fixture.json \
+  .venv/bin/python scripts/seed_browser_check.py
+```
+
+Start the API on port 8011 with that database/origin, then start a worker with
+the same database in another terminal. For deterministic local checks explicitly
+set `NEBIUS_API_KEY=''`; this overrides any private dotenv key for that process.
+
+```sh
+PYTHONPATH=apps/api:packages:. APP_ENV=development NEBIUS_API_KEY='' \
+  .venv/bin/uvicorn brandguard.main:create_app --factory --host 127.0.0.1 --port 8011
+# Another terminal, with the same DATABASE_URL:
+PYTHONPATH=apps/api:packages:. NEBIUS_API_KEY='' .venv/bin/python -m apps.worker
+# Another terminal (Node 24 on PATH):
+npm --prefix apps/web run build
+BRANDGUARD_API_TARGET=http://127.0.0.1:8011 \
+  npm --prefix apps/web run preview -- --host 127.0.0.1 --port 5181 --strictPort
+```
+
+The optional `BRANDGUARD_API_TARGET` changes only the Vite development/preview
+proxy. It defaults to port 8000 and does not change the production Caddy routing.
+Keep `PUBLIC_ORIGIN` equal to the exact browser origin for CSRF validation.
+
+Run the real network/browser journeys with matching settings:
+
+```sh
+BROWSER_BASE_URL=http://localhost:5181 \
+BROWSER_FIXTURE_PATH=/tmp/brandguard-experiments-fixture.json \
+  npm --prefix apps/web exec -- playwright test batch-review.spec.ts workflow.spec.ts import-assignment-journey.spec.ts --config apps/web/playwright.config.ts --reporter=list
+```
+
+These checks use real PostgreSQL/API/worker modules and fictional data. The
+import/assignment journey checks local import, manager assignment after creation,
+manual evidence, creator submission, separate approval and exact `.txt`/JSON
+downloads. They establish local integration, not public deployment or semantic
+model accuracy. Never run two resetting Python test suites against one database;
+use separate migrated `brandguard_s1_test_*` databases for those suites as well.

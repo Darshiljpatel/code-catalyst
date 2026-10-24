@@ -87,71 +87,67 @@ def _make_boundary_regex(pattern: str, ignore_case: bool = False) -> re.Pattern:
 
 
 
+def _one_typo_apart(candidate: str, canonical: str) -> bool:
+    """One insertion, deletion, substitution, or adjacent transposition; bounded and linear."""
+    if candidate == canonical or abs(len(candidate) - len(canonical)) > 1:
+        return False
+    if len(candidate) == len(canonical):
+        different = [i for i, (a, b) in enumerate(zip(candidate, canonical)) if a != b]
+        return len(different) == 1 or (len(different) == 2 and different[1] == different[0] + 1
+            and candidate[different[0]] == canonical[different[1]]
+            and candidate[different[1]] == canonical[different[0]])
+    shorter, longer = sorted((candidate, canonical), key=len)
+    for i, character in enumerate(shorter):
+        if character != longer[i]:
+            return shorter[i:] == longer[i + 1:]
+    return True
+
+
 def _check_terminology(extraction: ExtractionResult, rules: List[Dict[str, Any]]) -> CheckResult:
     findings: List[Finding] = []
     term_rules = [r for r in rules if r.get("category") == "terminology" or r.get("kind") == "terminology"]
+    approved_terms = {(r.get("canonical_term") or r.get("value") or "").casefold() for r in term_rules}
 
     for block in extraction.blocks:
         for rule in term_rules:
             canonical = rule.get("canonical_term") or rule.get("value") or ""
-            forbidden = list(rule.get("forbidden_patterns", []))
+            seen = set()
 
-            # If forbidden patterns not explicitly listed, check case-insensitive match differing from canonical
-            if not forbidden and canonical:
-                regex = _make_boundary_regex(canonical, ignore_case=True)
-                for match in regex.finditer(block.text):
+            def add(match, *, probable=False):
+                start, end = block.start_char + match.start(), block.start_char + match.end()
+                if (start, end) in seen:
+                    return
+                seen.add((start, end))
+                findings.append(Finding(
+                    id=f"find-{uuid.uuid4().hex[:8]}", category="terminology",
+                    severity="advisory" if probable else "blocker", evidence_status="supported_violation",
+                    origin="deterministic", location={"block_id": block.id, "start_char": start, "end_char": end},
+                    rule_id=rule.get("id"), source_version_id=rule.get("source_version_id"),
+                    evidence_quote=match.group(0),
+                    rationale=(f"Possible misspelling of the approved brand name '{canonical}'. Verify before applying."
+                               if probable else rule.get("rationale", f"Use the approved brand term '{canonical}'.")),
+                    suggested_edit=canonical,
+                ))
+
+            if canonical:
+                for match in _make_boundary_regex(canonical, ignore_case=True).finditer(block.text):
                     if match.group(0) != canonical:
-                        start = block.start_char + match.start()
-                        end = block.start_char + match.end()
-                        findings.append(Finding(
-                            id=f"find-{uuid.uuid4().hex[:8]}",
-                            category="terminology",
-                            severity="blocker",
-                            evidence_status="supported_violation",
-                            origin="deterministic",
-                            location={
-                                "block_id": block.id,
-                                "start_char": start,
-                                "end_char": end
-                            },
-                            rule_id=rule.get("id"),
-                            source_version_id=rule.get("source_version_id"),
-                            evidence_quote=match.group(0),
-                            rationale=rule.get("rationale", f"Brand term must be capitalized as '{canonical}'."),
-                            suggested_edit=canonical
-                        ))
+                        add(match)
+            for pattern in rule.get("forbidden_patterns", []):
+                for match in _make_boundary_regex(pattern, ignore_case=True).finditer(block.text):
+                    if match.group(0) != canonical:
+                        add(match)
 
-            # Check explicit forbidden patterns with word boundaries
-            for pattern in forbidden:
-                regex = _make_boundary_regex(pattern)
-                for match in regex.finditer(block.text):
+            # Only an approved, single-word brand name can anchor a likely typo.
+            # General prose and short terms must not turn into speculative spelling errors.
+            is_brand = rule.get("key") in ("brand_name", "product_name") or ("canonical_term" in rule and not rule.get("key"))
+            if is_brand and canonical.isalpha() and 5 <= len(canonical) <= 64:
+                for match in re.finditer(r"(?<!\w)[^\W\d_]+(?!\w)", block.text):
+                    token = match.group(0).casefold()
+                    if token not in approved_terms and len(token) >= 5 and _one_typo_apart(token, canonical.casefold()):
+                        add(match, probable=True)
 
-                    start = block.start_char + match.start()
-                    end = block.start_char + match.end()
-                    findings.append(Finding(
-                        id=f"find-{uuid.uuid4().hex[:8]}",
-                        category="terminology",
-                        severity="blocker",
-                        evidence_status="supported_violation",
-                        origin="deterministic",
-                        location={
-                            "block_id": block.id,
-                            "start_char": start,
-                            "end_char": end
-                        },
-                        rule_id=rule.get("id"),
-                        source_version_id=rule.get("source_version_id"),
-                        evidence_quote=match.group(0),
-                        rationale=rule.get("rationale", f"Must use canonical brand term '{canonical}'."),
-                        suggested_edit=canonical
-                    ))
-
-    return CheckResult(
-        check_name="terminology_check",
-        category="terminology",
-        status="complete",
-        findings=findings
-    )
+    return CheckResult(check_name="terminology_check", category="terminology", status="complete", findings=findings)
 
 
 # ---------------------------------------------------------------------------
@@ -204,7 +200,9 @@ def _check_facts(extraction: ExtractionResult, rules: List[Dict[str, Any]]) -> C
                         # and "trial lasts 30 days"; a refund/onboarding duration is unrelated.
                         before, after = block.text[:match.start()], block.text[match.end():]
                         trial_after = re.match(r'(?:\s+(?:free|paid|product|software|evaluation))*\s+trial\b', after, re.IGNORECASE)
-                        trial_before = re.search(r'\btrial(?:\s+(?:lasts?|for|of|is|a|period))*\s*[:=]?\s*$', before, re.IGNORECASE)
+                        trial_before = re.search(
+                            r'\btrial(?:\s+(?:lasts?|for|of|is|a|period|users|customers|members|teams|everyone|all|new))*\s*[:=]?\s*$',
+                            before, re.IGNORECASE)
                         if not (trial_after or trial_before):
                             continue
                         found_num = match.group(1)

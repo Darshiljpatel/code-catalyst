@@ -24,8 +24,6 @@ def login(body: Login, request: Request, response: Response, session: Session = 
     if attempt.count >= 20:
         session.commit()
         raise Problem(429, 'rate_limited', 'Too many sign-in attempts. Try again later.')
-    attempt.count += 1
-    session.commit()
     user = session.scalar(select(User).where(User.email == body.email.strip().lower()))
     try:
         valid = passwords.verify(body.password, user.password_hash if user else DUMMY_HASH)
@@ -33,6 +31,11 @@ def login(body: Login, request: Request, response: Response, session: Session = 
         valid = False
     member = session.scalar(select(Membership).where(Membership.user_id == user.id, Membership.org_id == body.org_id)) if user and valid else None
     if member is None:
+        # A throttle is protection against repeated failed authentication, not
+        # against people successfully moving between test roles. Counting every
+        # request made a shared localhost counter lock out valid users.
+        attempt.count += 1
+        session.commit()
         raise Problem(401, 'invalid_credentials', 'Invalid credentials or workspace.')
     token = secrets.token_urlsafe(32)
     csrf = digest('csrf:' + token)

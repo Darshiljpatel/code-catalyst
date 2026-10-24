@@ -4,16 +4,24 @@ import { BrandMark } from './BrandMark';
 import { useAuth } from '../context/AuthContext';
 import { Spinner } from './Primitives';
 import { PolicySettingsModal } from './PolicySettingsModal';
+import { useLeaveConfirmation } from '../context/UnsavedChangesContext';
 
 export function TopNav() {
   const { user, status, signOut } = useAuth();
+  const { requestLeave } = useLeaveConfirmation();
   const [signingOut, setSigningOut] = React.useState(false);
+  const [signOutError, setSignOutError] = React.useState('');
   const [showPolicyModal, setShowPolicyModal] = React.useState(false);
 
   const handleSignOut = async () => {
     setSigningOut(true);
+    setSignOutError('');
     try {
       await signOut();
+      return true;
+    } catch {
+      setSignOutError('Sign-out failed. Your session may still be active. Your edits are preserved; try signing out again.');
+      return false;
     } finally {
       setSigningOut(false);
     }
@@ -52,7 +60,7 @@ export function TopNav() {
               <button
                 id="btn-sign-out"
                 className="btn btn--ghost btn--sm"
-                onClick={handleSignOut}
+                onClick={() => requestLeave(handleSignOut, 'sign out', '/login')}
                 disabled={signingOut}
                 aria-busy={signingOut}
               >
@@ -62,6 +70,7 @@ export function TopNav() {
           )}
         </div>
       </nav>
+      {signOutError && <p role="alert" className="alert alert--error">{signOutError}</p>}
 
       <PolicySettingsModal
         isOpen={showPolicyModal}
