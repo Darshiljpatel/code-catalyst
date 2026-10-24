@@ -266,5 +266,17 @@
 }
 .finding-passage { padding: 10px 12px; border-left: 2px solid var(--border-strong); margin: 0 0 12px; background: var(--bg-base); }
 .finding-passage span { display: block; color: var(--text-muted); font: 9px var(--font-mono); margin-bottom: 4px; text-transform: uppercase; letter-spacing: .05em; }
+
+.context-comparison { width: 100%; table-layout: fixed; border-collapse: collapse; font-size: .8125rem; margin: 20px 0; }
+.context-comparison caption { text-align: left; font-weight: 600; margin-bottom: 10px; }
+.context-comparison th, .context-comparison td { text-align: left; vertical-align: top; padding: 10px 8px; border-bottom: 1px solid var(--border-default); overflow-wrap: anywhere; white-space: pre-wrap; }
+.context-comparison thead th { color: var(--text-secondary); font-size: .75rem; }
+.context-comparison thead th:first-child { width: 22%; }
+.context-comparison th small { display: block; font-weight: 400; font-size: .6875rem; color: var(--text-secondary); margin-top: 4px; }
+.context-comparison tr[data-different="true"] td { background: var(--accent-muted); }
+@media (max-width: 540px) {
+  .context-comparison thead th:first-child { width: 30%; }
+  .context-comparison th, .context-comparison td { padding: 10px 6px; }
+}
 .finding-passage q { display: block; font-size: 13px; line-height: 1.5; }
 .document-editor__fields { border: 0; padding: 0; min-width: 0; }

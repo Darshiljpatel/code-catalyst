@@ -7,6 +7,7 @@ import { Alert } from './Primitives';
 interface ConflictResolutionModalProps {
   serverRevision: RevisionOut;
   localDraftText: string;
+  localContext: Pick<RevisionOut, 'channel' | 'audience' | 'purpose'>;
   onOverwrite: () => void;
   onDiscard: () => void;
   onClose: () => void;
@@ -17,6 +18,7 @@ interface ConflictResolutionModalProps {
 export function ConflictResolutionModal({
   serverRevision,
   localDraftText,
+  localContext,
   onOverwrite,
   onDiscard,
   onClose,
@@ -51,7 +53,20 @@ export function ConflictResolutionModal({
           <p style={{ color: 'var(--text-secondary)', fontSize: '0.875rem', margin: '0 0 var(--space-4)' }}>
             Another revision (<strong>Rev #{serverRevision.number}</strong> by <code>{serverRevision.author_id}</code>) was saved on the server while you were editing. Your current edits have been preserved below.
           </p>
-          <p>Compare the versions before saving. Your full working draft will become the next revision; existing versions stay in history.</p>
+          <p>Compare the versions before saving. Your working copy and the context below will become the next revision; existing versions stay in history.</p>
+
+          <table className="context-comparison">
+            <caption>Campaign context comparison</caption>
+            <thead><tr><th scope="col">Field</th><th scope="col">Server latest (Rev #{serverRevision.number})</th><th scope="col">Your working draft</th></tr></thead>
+            <tbody>
+              {([['channel', 'Channel'], ['audience', 'Audience'], ['purpose', 'Purpose']] as const).map(([key, label]) => (
+                <tr key={key} data-different={serverRevision[key] !== localContext[key]}>
+                  <th scope="row">{label}<small>{serverRevision[key] === localContext[key] ? 'Same' : 'Different'}</small></th>
+                  <td>{serverRevision[key]}</td><td>{localContext[key]}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
 
           <DiffViewer
             originalText={serverRevision.text}

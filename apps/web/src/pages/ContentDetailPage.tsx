@@ -891,6 +891,7 @@ export function ContentDetailPage() {
         <ConflictResolutionModal
           serverRevision={conflictServerRevision}
           localDraftText={draftText}
+          localContext={{ channel: draftChannel.trim(), audience: draftAudience.trim(), purpose: draftPurpose.trim() }}
           saving={savingRevision}
           error={error}
           onOverwrite={() => handleSaveRevision(undefined, conflictServerRevision.id)}
