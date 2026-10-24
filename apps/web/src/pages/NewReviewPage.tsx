@@ -13,6 +13,8 @@ import { FIXTURE_LUMADESK_DRAFT_TEXT } from '../api/fixtures';
 import { Alert, Spinner, ProcessingMode } from '../components/Primitives';
 import { ImportDraft } from '../components/ImportDraft';
 import { ExternalInputBudget } from '../components/ExternalInputBudget';
+import { DraftFieldCount } from '../components/DraftFieldCount';
+import { draftFieldIssue, validateDraft } from '../api/draftValidation';
 import { useLeaveConfirmation, useUnsavedChanges } from '../context/UnsavedChangesContext';
 
 export function NewReviewPage() {
@@ -85,8 +87,9 @@ export function NewReviewPage() {
       setError('Please select a brand.');
       return;
     }
-    if (!title.trim() || !text.trim() || !channel.trim() || !audience.trim() || !purpose.trim()) {
-      setError('All fields except reviewer ID are required.');
+    const issues = validateDraft({ title, text, channel, audience, purpose });
+    if (issues.length) {
+      setError(issues.join(' '));
       return;
     }
 
@@ -226,6 +229,8 @@ export function NewReviewPage() {
             </label>
             <input
               id="txt-title"
+              aria-describedby="new-title-count"
+              aria-invalid={Boolean(draftFieldIssue('title', title))}
               type="text"
               className="input"
               value={title}
@@ -233,6 +238,7 @@ export function NewReviewPage() {
               placeholder="e.g. Q4 Growth Campaign - Free Trial Email"
               required
             />
+            <DraftFieldCount field="title" value={title} id="new-title-count" />
           </div>
 
           <div className="form-row" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: 'var(--space-4)', marginBottom: 'var(--space-5)' }}>
@@ -261,6 +267,8 @@ export function NewReviewPage() {
               </label>
               <input
                 id="txt-audience"
+                aria-describedby="new-audience-count"
+                aria-invalid={Boolean(draftFieldIssue('audience', audience))}
                 type="text"
                 className="input"
                 value={audience}
@@ -268,6 +276,7 @@ export function NewReviewPage() {
                 placeholder="e.g. SMB decision makers"
                 required
               />
+              <DraftFieldCount field="audience" value={audience} id="new-audience-count" />
             </div>
 
             <div className="form-group">
@@ -276,6 +285,8 @@ export function NewReviewPage() {
               </label>
               <input
                 id="txt-purpose"
+                aria-describedby="new-purpose-count"
+                aria-invalid={Boolean(draftFieldIssue('purpose', purpose))}
                 type="text"
                 className="input"
                 value={purpose}
@@ -283,6 +294,7 @@ export function NewReviewPage() {
                 placeholder="e.g. Trial conversion"
                 required
               />
+              <DraftFieldCount field="purpose" value={purpose} id="new-purpose-count" />
             </div>
           </div>
 
@@ -309,11 +321,13 @@ export function NewReviewPage() {
                 Draft Campaign Copy <span style={{ color: 'var(--color-blocker)' }}>*</span>
               </label>
               <span style={{ fontSize: '0.8125rem', color: 'var(--text-muted)' }}>
-                {wordCount} words • {text.length} characters
+                {wordCount} words • <DraftFieldCount field="text" value={text} id="new-copy-count" inline />
               </span>
             </div>
             <textarea
               id="txt-content-text"
+              aria-describedby="new-copy-count"
+              aria-invalid={Boolean(draftFieldIssue('text', text))}
               className="input"
               rows={6}
               value={text}

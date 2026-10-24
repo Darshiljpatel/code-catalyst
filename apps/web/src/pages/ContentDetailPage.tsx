@@ -1,4 +1,6 @@
 import { categoryLabel } from '../components/categoryLabel';
+import { DraftFieldCount } from '../components/DraftFieldCount';
+import { draftFieldIssue, validateDraft } from '../api/draftValidation';
 import { ExternalInputBudget } from '../components/ExternalInputBudget';
 import { ALL_FINDINGS, filterFindings, type FindingFilters as FilterValues } from '../api/findingFilters';
 import { FindingFilters } from '../components/FindingFilters';
@@ -188,8 +190,9 @@ export function ContentDetailPage() {
   const handleSaveRevision = async (e?: React.FormEvent, customParentId?: string, thenSubmit = false) => {
     if (e) e.preventDefault();
     if (!content || !currentRevision || savingRevision || (!hasDraftChanges && !customParentId)) return;
-    if (![draftText, draftChannel, draftAudience, draftPurpose].every(value => value.trim())) {
-      setError('Add campaign text, channel, audience, and purpose before saving your working draft.');
+    const inputIssues = validateDraft({ text: draftText, channel: draftChannel, audience: draftAudience, purpose: draftPurpose });
+    if (inputIssues.length) {
+      setError(inputIssues.join(' '));
       setIsEditing(true);
       return;
     }
@@ -214,6 +217,9 @@ export function ContentDetailPage() {
       const saved = updated.revisions[newLatestIdx];
       setSelectedRevIndex(newLatestIdx);
       resetDraft(saved.text);
+      setDraftChannel(saved.channel);
+      setDraftAudience(saved.audience);
+      setDraftPurpose(saved.purpose);
       setRun(null);
       setActiveFinding(null);
       setIsEditing(false);
@@ -583,12 +589,15 @@ export function ContentDetailPage() {
                 <label htmlFor="edit-copy" className="form-label">Copy Text</label>
                 <textarea
                   id="edit-copy"
+                  aria-describedby="edit-copy-count"
+                  aria-invalid={Boolean(draftFieldIssue('text', draftText))}
                   className="input"
                   rows={8}
                   value={draftText}
                   onChange={e => setDraft(current => changeDraftText(current, e.target.value))}
                   required
                 />
+                <DraftFieldCount field="text" value={draftText} id="edit-copy-count" />
               </div>
 
               <div className="document-editor__metadata">
@@ -596,34 +605,43 @@ export function ContentDetailPage() {
                   <label htmlFor="edit-channel" className="form-label" style={{ fontSize: '0.75rem' }}>Channel</label>
                   <input
                     id="edit-channel"
+                    aria-describedby="edit-channel-count"
+                    aria-invalid={Boolean(draftFieldIssue('channel', draftChannel))}
                     type="text"
                     className="input input--sm"
                     value={draftChannel}
                     onChange={e => setDraftChannel(e.target.value)}
                     required
                   />
+                  <DraftFieldCount field="channel" value={draftChannel} id="edit-channel-count" />
                 </div>
                 <div>
                   <label htmlFor="edit-audience" className="form-label" style={{ fontSize: '0.75rem' }}>Audience</label>
                   <input
                     id="edit-audience"
+                    aria-describedby="edit-audience-count"
+                    aria-invalid={Boolean(draftFieldIssue('audience', draftAudience))}
                     type="text"
                     className="input input--sm"
                     value={draftAudience}
                     onChange={e => setDraftAudience(e.target.value)}
                     required
                   />
+                  <DraftFieldCount field="audience" value={draftAudience} id="edit-audience-count" />
                 </div>
                 <div>
                   <label htmlFor="edit-purpose" className="form-label" style={{ fontSize: '0.75rem' }}>Purpose</label>
                   <input
                     id="edit-purpose"
+                    aria-describedby="edit-purpose-count"
+                    aria-invalid={Boolean(draftFieldIssue('purpose', draftPurpose))}
                     type="text"
                     className="input input--sm"
                     value={draftPurpose}
                     onChange={e => setDraftPurpose(e.target.value)}
                     required
                   />
+                  <DraftFieldCount field="purpose" value={draftPurpose} id="edit-purpose-count" />
                 </div>
               </div>
 
