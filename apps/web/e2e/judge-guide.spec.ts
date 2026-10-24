@@ -68,12 +68,12 @@ test('the same guide remains available through sign-in, route changes and sign-o
   const guide = page.getByRole('complementary', { name: 'Your judging companion.' });
   await expect(guide).toContainText('Signed in as creator');
   await guide.getByRole('button', { name: 'Walkthrough', exact: false }).click();
-  await expect(guide).toContainText('Approve and take the evidence');
+  await expect(guide).toContainText('Sign in and start a campaign');
   await guide.getByRole('button', { name: 'Close judge guide' }).click();
   await page.getByRole('button', { name: 'Start a new brand review' }).click();
   await expect(page).toHaveURL(/\/review\/new$/);
   await trigger.click();
-  await expect(guide).toContainText('Draft → evidence → approval');
+  await expect(guide).toContainText('Try the four roles');
   await guide.getByRole('button', { name: 'Close judge guide' }).click();
   await page.locator('#btn-sign-out').click();
   await expect(page).toHaveURL(/\/login$/);
@@ -106,4 +106,39 @@ test('touch and keyboard users get a scrollable, accessible guide at narrow widt
   await guide.getByRole('button', { name: 'Close judge guide' }).tap();
   await expect(guide).toHaveCount(0);
   await context.close();
+});
+
+test('walkthrough leads creator → manager → reviewer → admin with matching credentials and actionable explanations', async ({ page }) => {
+  await page.goto('/login');
+  await page.getByRole('button', { name: 'Judge guide', exact: true }).click();
+  const guide = page.getByRole('complementary', { name: 'Your judging companion.' });
+  await guide.getByRole('button', { name: 'Open creator steps', exact: false }).click();
+  await expect(guide.getByRole('button', { name: 'Step 1: Creator' })).toHaveAttribute('aria-pressed', 'true');
+  await expect(guide).toContainText('Submit for Compliance Review →');
+  await expect(guide).toContainText('Save all & recheck');
+  await guide.getByRole('button', { name: 'Next: Manager', exact: false }).click();
+  await expect(guide.getByRole('button', { name: 'Step 2: Manager' })).toHaveAttribute('aria-pressed', 'true');
+  await expect(guide).toContainText('Why were those phrases detected?');
+  await expect(guide).toContainText('The approved fact says the free trial lasts 14 days');
+  await expect(guide).toContainText('Evidence Quote');
+  await guide.getByRole('button', { name: 'View manager credentials' }).click();
+  await expect(guide).toContainText('manager@lumadesk.test');
+  await guide.getByRole('button', { name: 'Open manager steps', exact: false }).click();
+  await expect(guide.getByRole('button', { name: 'Step 2: Manager' })).toHaveAttribute('aria-pressed', 'true');
+  await page.screenshot({ path: '/tmp/brandguard-judge-manager-chapter.png', fullPage: true });
+  await guide.getByRole('button', { name: 'Next: Reviewer', exact: false }).click();
+  await expect(guide).toContainText('Record manual check');
+  await expect(guide).toContainText('Confirm Submission →');
+  await expect(guide).toContainText('✓ Confirm Approval');
+  await expect(guide).toContainText('Download Audit Record (.json)');
+  await guide.getByRole('button', { name: 'Next: Admin', exact: false }).click();
+  await expect(guide.getByRole('button', { name: 'Step 4: Admin' })).toHaveAttribute('aria-pressed', 'true');
+  await expect(guide).toContainText('Save Policy Changes');
+  await expect(guide).toContainText('does not rerun earlier reviews');
+  await expect(guide).toContainText('Finish with external processing enabled');
+  const audit = await new AxeBuilder({ page }).include('.judge-guide').withTags(['wcag2a', 'wcag2aa', 'wcag21aa']).analyze();
+  expect(audit.violations).toEqual([]);
+  await guide.getByRole('button', { name: 'Previous role', exact: false }).click();
+  await expect(guide.getByRole('button', { name: 'Step 3: Reviewer' })).toHaveAttribute('aria-pressed', 'true');
+  await expect(page).toHaveURL(/\/login$/); // Reading the guide never changes the account or page.
 });

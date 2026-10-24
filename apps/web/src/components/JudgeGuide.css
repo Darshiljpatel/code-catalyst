@@ -49,6 +49,18 @@
 .judge-guide__recovery { border: 1px solid var(--border-default); border-radius: 6px; padding: 12px; margin: 0 0 16px; }
 .judge-guide__recovery summary { cursor: pointer; font-size: 12px; color: var(--accent); }
 .judge-guide__recovery p { margin-top: 12px; }
+.judge-guide__chapter-index { display: block; color: var(--text-muted); font: 10px var(--font-mono); margin-bottom: 4px; }
+.judge-guide__chapter-account { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 8px; margin: 12px 0; }
+.judge-guide__chapter-account code { font: 11px var(--font-mono); padding: 0; background: transparent; overflow-wrap: anywhere; }
+.judge-guide__chapter-account button { background: transparent; border: 0; color: var(--accent); text-decoration: underline; text-underline-offset: 3px; font-size: 11px; padding: 6px 0; }
+.judge-guide__lesson { padding: 12px; background: var(--accent-muted); border-left: 2px solid var(--accent); color: var(--text-secondary); font-size: 12px; line-height: 1.8; margin: 16px 0; }
+.judge-guide__lesson strong { color: var(--text-primary); }
+.judge-guide__steps p + p { margin-top: 10px; }
+.judge-guide__rule-explanations { font-size: 12px; margin: 12px 0; }
+.judge-guide__rule-explanations dt { color: var(--accent); font-weight: 550; margin-top: 12px; }
+.judge-guide__rule-explanations dd { color: var(--text-secondary); line-height: 1.8; margin-top: 4px; }
+.judge-guide__chapter-actions { display: flex; gap: 10px; align-items: center; }
+.judge-guide__chapter-actions > button:first-child:not(.judge-guide__next) { background: transparent; border: 0; color: var(--text-secondary); font-size: 11px; padding: 10px 0; flex-shrink: 0; }
 .judge-guide__footer { padding: 12px 24px; border-top: 1px solid var(--border-default); color: var(--text-muted); font-size: 10px; background: var(--bg-base); }
 body:has(.draft-action-bar) .judge-guide { top: 100px; bottom: auto; }
 body:has(.draft-action-bar) .judge-guide__panel { top: calc(100% + 12px); bottom: auto; max-height: calc(100dvh - 180px); }
