@@ -35,6 +35,8 @@ test('manager assigns a real reviewer and recovers from concurrent workflow chan
   await dialog.getByLabel('Authorized reviewer', { exact: true }).selectOption('reviewer-one');
   await expect(dialog.getByRole('button', { name: 'Save reviewer assignment' })).toBeDisabled();
   await dialog.getByLabel('Assignment rationale', { exact: false }).fill('Assigning the campaign to a separate authorized reviewer.');
+  // Do not mask activation contrast defects by waiting for a color/opacity animation.
+  await expect(dialog.getByRole('button', { name: 'Save reviewer assignment' })).toHaveCSS('transition-property', 'transform, box-shadow');
   const audit = await new AxeBuilder({ page }).include('[aria-labelledby="assignment-title"]').withTags(['wcag2a', 'wcag2aa', 'wcag21aa']).analyze();
   expect(audit.violations).toEqual([]);
   await dialog.getByRole('button', { name: 'Save reviewer assignment' }).click();
