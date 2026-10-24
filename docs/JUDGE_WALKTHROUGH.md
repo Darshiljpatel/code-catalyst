@@ -1,86 +1,76 @@
 # BrandGuard judge walkthrough
 
-Use [INTEGRATION_REPORT.md](INTEGRATION_REPORT.md) for the current verified scope
-and outstanding release requirements. Earlier D5 passing artifacts were generated
-without executing tests and have been invalidated. The existing submission PDF
-must be revised to match the integration report before submission.
+## Hosted demo: start here
 
-## Local deployment
+Open **[https://code-catalyst-tau.vercel.app/](https://code-catalyst-tau.vercel.app/)**. The [README’s judge walkthrough](../README.md#judge-walkthrough) is the complete, current set of button-by-button instructions. The floating **Judge guide** is available on the website before and after sign-in, including on mobile.
 
-For local testing without Docker, use the [persistent local launcher](LOCAL_DEVELOPMENT.md).
-It starts the real API, worker and frontend with separate fictional accounts.
-The container instructions below are a separate deployment path.
+### Hosted sign-in details
 
-Create a private `.env` from `.env.example`. Set a strong URL-safe
-`POSTGRES_PASSWORD`, `PUBLIC_ORIGIN=http://localhost:3000`, and
-`APP_ENV=development`. Then run from the repository root:
+| Field | What to enter |
+|---|---|
+| Email — start as creator | `creator@lumadesk.test` |
+| Password — all roles | `BrandGuardAdmin2026!` |
+| Workspace ID — all roles | `539ad43a-e582-46f0-8d0d-7e483782d5c6` |
 
-```sh
+Use the same password and workspace ID for the other pre-seeded roles:
+
+| Order | Role | Email |
+|---|---|---|
+| 1 | Creator | `creator@lumadesk.test` |
+| 2 | Manager | `manager@lumadesk.test` |
+| 3 | Reviewer | `reviewer@lumadesk.test` |
+| 4 | Admin | `admin@lumadesk.test` |
+
+### What to try
+
+1. **Creator:** create a campaign, run the sample copy, inspect evidence, correct the copy, and save/recheck. Submit when coverage and blockers allow it.
+2. **Manager:** open LumaDesk’s active guidelines and match the findings to the approved product name, 14-day trial, claim-evidence policy, and calm-tone guidance. Explore source authoring without changing the active source during the main walkthrough.
+3. **Reviewer:** open the same campaign, complete any outstanding manual checks, have the creator submit if needed, approve the exact revision, and download the text/JSON exports.
+4. **Admin:** inspect Processing policy, try the Nebius switch with a notice and rationale, and compare results using a fresh creator campaign. Leave external processing enabled for the next judge.
+
+Give campaigns unique titles. Save the campaign URL before switching accounts, or use separate browser profiles for creator and reviewer. If coverage is incomplete, follow the notice and reviewer steps; zero findings alone does not establish complete coverage.
+
+The exact sample, correction, and source rules are in [verification/fixtures/lumadesk.json](../verification/fixtures/lumadesk.json). The `/demo` page is an illustrative fictional example; use an actual campaign for the API/worker/approval journey.
+
+## Local testing without Docker
+
+Follow [persistent local development](LOCAL_DEVELOPMENT.md). After installing dependencies, run:
+
+```bash
+python3 scripts/dev_local.py
+```
+
+Open **http://localhost:5183**. Retrieve its generated local accounts in another terminal:
+
+```bash
+python3 scripts/dev_local.py accounts
+```
+
+The hosted workspace ID and password above are for the hosted demo. The launcher creates and retains a separate local workspace, accounts, and source pack. Nebius is selected by default; `--local-only` disables it for the local workspace. The local development document explains ports, logs, restarts, and provider configuration.
+
+## Alternative: Docker-based local setup
+
+Create a private `.env` from `.env.example`. Set `POSTGRES_PASSWORD` to a strong URL-safe value, `PUBLIC_ORIGIN=http://localhost:3000`, and `APP_ENV=development`. From the repository root:
+
+```bash
 docker compose --env-file .env -f infra/compose.yaml up --build -d
 ```
 
-The migration service must finish successfully before the API and worker start.
-Only the web port is exposed on localhost. This container path needs an actual
-Docker build/start check on a host with Docker; local process verification is
-recorded separately.
+Provision fictional accounts with a password you choose, at least 16 characters long:
 
-Provision local identities using a password you choose (at least 16 characters):
-
-```sh
+```bash
 read -rs -p 'Synthetic demo password: ' SEED_PASSWORD
 export SEED_PASSWORD
 docker compose --env-file .env -f infra/compose.yaml exec -e SEED_PASSWORD api python -m brandguard.seed
 unset SEED_PASSWORD
 ```
 
-Save the workspace ID printed by the seed command. Sign in at
-`http://localhost:3000/login` with that ID, your password, and one of
-`manager@lumadesk.test`, `creator@lumadesk.test`, `reviewer@lumadesk.test`, or
-`admin@lumadesk.test`. Seeding creates identities and a brand, not preapproved
-campaigns or activated guidelines. There are no one-click production logins.
+Use the workspace ID printed by seeding, your chosen password, and the role email addresses at **http://localhost:3000/login**. The current seed provisions missing fictional identities and an active LumaDesk guideline source; it does not create preapproved campaigns. These Docker-local accounts and workspace are separate from the hosted demo. The seed command is disabled when `APP_ENV=production`.
 
-## Review journey
+Docker configuration is an alternative deployment path; verify the containers and full workflow on the target host. The supplied launcher and container setup are different ways to run the application.
 
-On the `experiments` branch, campaign intake also supports local UTF-8 `.txt` and
-`.md` import. Choose a file (up to 256 KiB / 100,000 characters), inspect its plain
-text preview, then choose **Replace draft with imported text**. **Cancel import**
-keeps the current draft. Import makes no analysis request; use the normal submit
-and external-processing consent controls after reviewing the imported copy.
-PDF/image file intake is not provided by this text importer.
+## Verification and project records
 
-1. As manager, open the brand, create a source with rules and literal source
-   quotes, and explicitly verify and activate it. The fictional source in
-   `verification/fixtures/lumadesk.json` is a reproducible example.
-2. As creator, start a campaign review. Select a reviewer and supply channel,
-   audience, purpose and text. For the example, `Lumadesk offers a 30-day free
-   trial.` conflicts with the canonical name and approved 14-day trial.
-3. Wait for the worker. Inspect located text and the evidence drawer. Source
-   fetch failures are shown as errors; they never substitute fictional evidence.
-4. Edit the copy and save a new revision, then run analysis again. Corrected
-   example: `LumaDesk offers a 14-day free trial.` A zero-finding result alone
-   does not establish that all categories were checked.
-5. In local mode, the assigned reviewer must inspect incomplete categories.
-   Record each manual check, its source references and a rationale of at least
-   20 characters. Use “not applicable” only where no applicable rule exists.
-   If the campaign was created with **Assign later**, a manager first opens it
-   and uses **Assign reviewer**, selects an authorized reviewer, and records an
-   assignment rationale. Managers can change the reviewer before approval; the
-   new reviewer must record their own manual category checks.
-6. Creator submits the exact revision. The assigned separate reviewer approves
-   or requests changes with a rationale. Conflicts require fresh state.
-7. Export the approved revision. The JSON contains the exact text checksum,
-   human decision and frozen evidence record. It is an audit record, not a
-   digitally signed certificate or a guarantee that claims are true.
-8. Manager opens governance insights. Counts describe recorded human
-   dispositions and explicitly disclose their denominator.
+See [executable browser verification](../tests/e2e/README.md) for isolated test databases, real API/worker browser journeys, and the opt-in paid Nebius test. [GitHub Actions](https://github.com/Sanath-Reddy/code-catalyst/actions) shows results for specific commits.
 
-The `/demo` page is a static fictional explanation. Development mock transport
-requires both development mode and `VITE_USE_MOCK_API=true`; it is not a live
-backend demonstration or verification result.
-
-## Verification
-
-See [executable browser setup](../tests/e2e/README.md). The Python suite uses a
-separate PostgreSQL test database. `python scripts/verify_plan.py` checks
-requirement mapping only. The release evidence gate remains incomplete until
-real deployment, retention, independent evaluation and submission checks exist.
+The [integration report](INTEGRATION_REPORT.md), [architecture record](ARCHITECTURE.md), and earlier handoffs describe dated baselines. Historical PDFs and passing artifacts should be read with their documented scope and corrections. Use the current source, executable tests, and the [README’s scope and limitations](../README.md#scope-and-limitations) when assessing the current project.
