@@ -63,16 +63,32 @@ export interface NewBrandRequest {
 }
 
 // ---------------------------------------------------------------------------
-// Health GET /api/v1/health/live, GET /api/v1/health/ready
+// Health GET /api/v1/health/{live,ready,worker,version}
 // ---------------------------------------------------------------------------
 export interface LiveResponse {
   status: 'live';
-  phase: string;
 }
+
+export type WorkerState = 'online' | 'offline' | 'unknown';
 
 export interface ReadyResponse {
   status: 'ready';
-  scope: string;
+  schema_revision: string;
+  worker: WorkerState;
+}
+
+export interface WorkerHealthResponse {
+  status: WorkerState;
+  last_seen_at: string | null;
+  age_seconds: number | null;
+  worker_count: number;
+  offline_after_seconds: number;
+}
+
+export interface VersionResponse {
+  commit_sha: string;
+  api_version: string;
+  environment: string;
 }
 
 // ---------------------------------------------------------------------------

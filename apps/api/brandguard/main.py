@@ -4,7 +4,7 @@ from contextlib import asynccontextmanager
 from fastapi import FastAPI, Depends
 from fastapi.exceptions import RequestValidationError
 from fastapi.responses import JSONResponse
-from sqlalchemy import create_engine, select, text
+from sqlalchemy import create_engine, select
 from sqlalchemy.orm import Session
 from .core import Settings, Problem, NewBrand, db, identity, manager, passwords, digest
 from .models import Brand
@@ -65,24 +65,12 @@ def create_app(settings=None, provider_config=None):
         session.commit()
         return dict(id=b.id, name=b.name, source_epoch=b.source_epoch)
 
-    @app.get('/api/v1/health/live')
-    def live():
-        return {'status': 'live', 'phase': 'S5'}
-
-    @app.get('/api/v1/health/ready')
-    def ready(session: Session = Depends(db)):
-        try:
-            revision = session.execute(text('select version_num from alembic_version')).scalar_one()
-            if revision != '0004_workflow':
-                raise ValueError('Unexpected schema')
-        except Exception:
-            raise Problem(503, 'not_ready', 'Database schema is not ready.')
-        return {'status': 'ready', 'scope': 'S5 API/schema only; check worker process separately'}
-
     from .review import router as review_router
     from .policy import router as policy_router
     from .workflow import router as workflow_router
     from .governance import router as governance_router
+    from .health import router as health_router
+    app.include_router(health_router)
     app.include_router(governance_router)
     app.include_router(workflow_router)
     app.include_router(policy_router)

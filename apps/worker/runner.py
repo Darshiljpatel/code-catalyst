@@ -60,11 +60,22 @@ def run_worker_loop(engine, reviewer, checker, poll_interval: float = 1.0, once:
 
     try:
         from brandguard.orchestration import process_one
+        from brandguard.health import beat, worker_identity, utcnow, HEARTBEAT_SECONDS
     except ImportError:
         logger.error("Failed to import brandguard.orchestration. Ensure PYTHONPATH includes apps/api.")
         return
 
+    worker_id, started_at, last_beat = worker_identity(), utcnow(), 0.0
+
     while running:
+        if time.monotonic() - last_beat >= HEARTBEAT_SECONDS:
+            try:
+                beat(engine, worker_id, started_at)
+                last_beat = time.monotonic()
+            except Exception as e:
+                # A missed heartbeat makes the app show "Review engine offline"; keep processing.
+                logger.warning("Heartbeat write failed: %s", type(e).__name__)
+                last_beat = time.monotonic()
         try:
             processed = process_one(engine, reviewer, checker=checker)
             if once:

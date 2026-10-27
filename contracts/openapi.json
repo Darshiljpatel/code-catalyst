@@ -124,6 +124,38 @@
         }
       }
     },
+    "/api/v1/health/worker": {
+      "get": {
+        "summary": "Worker",
+        "operationId": "worker_api_v1_health_worker_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/health/version": {
+      "get": {
+        "summary": "Version",
+        "operationId": "version_api_v1_health_version_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/v1/content": {
       "get": {
         "summary": "Content Queue",

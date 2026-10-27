@@ -8,6 +8,7 @@ from sqlalchemy import create_engine
 from .semantic import NebiusReviewer, ProviderConfig
 from .orchestration import process_one
 from .engine_bridge import check_text
+from .health import beat, worker_identity, utcnow, HEARTBEAT_SECONDS
 
 
 def main():
@@ -17,8 +18,12 @@ def main():
     load_dotenv(Path(__file__).resolve().parents[3]/'.env')
     engine=create_engine(os.environ['DATABASE_URL'],pool_pre_ping=True)
     reviewer=NebiusReviewer(ProviderConfig.from_env())
+    worker_id,started_at,last_beat=worker_identity(),utcnow(),0.0
     try:
         while True:
+            if time.monotonic()-last_beat>=HEARTBEAT_SECONDS:
+                beat(engine,worker_id,started_at)
+                last_beat=time.monotonic()
             processed=process_one(engine,reviewer,check_text)
             if args.once:
                 break

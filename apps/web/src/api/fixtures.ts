@@ -119,12 +119,12 @@ export const FIXTURE_BRAND_LIST: BrandListResponse = [FIXTURE_BRAND];
 
 export const FIXTURE_LIVE: LiveResponse = {
   status: 'live',
-  phase: 'S1',
 };
 
 export const FIXTURE_READY: ReadyResponse = {
   status: 'ready',
-  scope: 'S1 identity only; worker not implemented',
+  schema_revision: '0005_worker_heartbeat',
+  worker: 'online',
 };
 
 // ---------------------------------------------------------------------------

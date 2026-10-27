@@ -294,3 +294,11 @@ class Decision(Base):
     text_hash: Mapped[str] = mapped_column(String(64))
     evidence_record: Mapped[dict] = mapped_column(JSON)
     decided_at: Mapped[datetime] = mapped_column(DateTime(timezone=True))
+
+class WorkerHeartbeat(Base):
+    """One row per worker process; readiness and the offline banner read the freshest row."""
+    __tablename__ = 'worker_heartbeats'
+    worker_id: Mapped[str] = mapped_column(String(64), primary_key=True)
+    version: Mapped[str] = mapped_column(String(64))
+    started_at: Mapped[datetime] = mapped_column(DateTime(timezone=True))
+    seen_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), index=True)
