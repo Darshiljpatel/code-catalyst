@@ -10,6 +10,7 @@ CATEGORIES = ('terminology', 'facts_claims', 'visual', 'accessibility')
 ENGINE_VERSION = 'review-engine.p2.s5-bridge.v2'
 MAX_PAYLOAD = 2_000_000
 MAX_RESPONSE = 524_288
+MAX_BATCH_PAYLOAD = 16_000_000
 
 
 def failed(code):
@@ -125,19 +126,37 @@ async def check_text(review_input, *, timeout=10):
             await process.wait()
 
 
-def child_main():
+def _check_batch(payload):
+    """Evaluate many texts against one rule set; one bounded child serves the whole batch."""
+    results = []
+    for case in payload['cases']:
+        try:
+            results.append(_check_text(dict(text=case['text'], context=case.get('context', {}), sources=payload['sources'])))
+        except Exception:
+            results.append(failed('engine_process_failed'))
+    return dict(results=results)
+
+
+def child_main(batch=False, cpu_seconds=5):
     import resource
     # Bounds are independent of the parent process; untrusted parser failures cannot hang it.
     resource.setrlimit(resource.RLIMIT_AS, (384 * 1024 * 1024, 384 * 1024 * 1024))
-    resource.setrlimit(resource.RLIMIT_CPU, (5, 5))
+    resource.setrlimit(resource.RLIMIT_CPU, (cpu_seconds, cpu_seconds))
     resource.setrlimit(resource.RLIMIT_CORE, (0, 0))
+    limit = MAX_BATCH_PAYLOAD if batch else MAX_PAYLOAD
     try:
-        raw = sys.stdin.buffer.read(MAX_PAYLOAD + 1)
-        result = failed('engine_input_limit') if len(raw) > MAX_PAYLOAD else _check_text(json.loads(raw))
+        raw = sys.stdin.buffer.read(limit + 1)
+        if len(raw) > limit:
+            result = failed('engine_input_limit')
+        else:
+            result = _check_batch(json.loads(raw)) if batch else _check_text(json.loads(raw))
     except Exception:
         result = failed('engine_process_failed')
     sys.stdout.write(json.dumps(result, ensure_ascii=False))
 
 
 if __name__ == '__main__':
-    child_main()
+    if '--batch' in sys.argv:
+        child_main(batch=True, cpu_seconds=int(sys.argv[sys.argv.index('--batch') + 1]))
+    else:
+        child_main()
