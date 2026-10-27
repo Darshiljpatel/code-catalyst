@@ -301,3 +301,43 @@
   padding: var(--space-4); text-align: center;
   font-size: 0.75rem; color: var(--text-muted, #5f6470);
 }
+
+/* Re-review inbox (Improvement 1) */
+.rechecks-page h1 { margin: var(--space-2) 0; }
+.rechecks-page__lede { color: var(--text-secondary); max-width: 70ch; margin-bottom: var(--space-4); }
+.rechecks-page .card { margin-top: var(--space-5); padding: var(--space-5); }
+.recheck-change-list { list-style: none; padding: 0; margin: 0; display: grid; gap: var(--space-4); }
+.recheck-change-card__head { display: flex; justify-content: space-between; gap: var(--space-4); align-items: flex-start; }
+.recheck-change-card__title { font-weight: 700; font-size: 1.05rem; color: var(--text-primary); }
+.recheck-change-card__meta, .recheck-table__sub { font-size: 0.8125rem; color: var(--text-secondary); }
+.recheck-change-card__counts { display: flex; flex-wrap: wrap; gap: var(--space-2); align-items: center; margin: var(--space-3) 0; }
+.recheck-change-card__avoided { color: var(--text-secondary); font-size: 0.8125rem; margin-left: var(--space-2); }
+.recheck-progress { display: flex; align-items: center; gap: var(--space-3); margin: var(--space-2) 0; }
+.recheck-progress__bar { flex: 1; max-width: 420px; height: 10px; border-radius: 999px; background: var(--bg-raised); border: 1px solid var(--border-default); overflow: hidden; }
+.recheck-progress__bar span { display: block; height: 100%; background: var(--color-success); transition: width 300ms; }
+.recheck-progress__label { font-size: 0.8125rem; color: var(--text-secondary); font-variant-numeric: tabular-nums; }
+.impact-badge { display: inline-flex; gap: 4px; align-items: center; padding: 2px 8px; border-radius: 999px; font-size: 0.75rem; font-weight: 700; white-space: nowrap; }
+.impact-badge--confirmed { background: var(--color-blocker-muted); color: var(--color-blocker); }
+.impact-badge--likely { background: var(--color-warning-muted); color: var(--color-warning); }
+.impact-badge--possible { background: var(--bg-raised); color: var(--text-secondary); border: 1px solid var(--border-default); }
+.rule-diff__summary { color: var(--text-secondary); font-size: 0.875rem; }
+.rule-diff__table, .recheck-table { width: 100%; border-collapse: collapse; font-size: 0.875rem; }
+.rule-diff__table th, .rule-diff__table td, .recheck-table th, .recheck-table td { text-align: left; vertical-align: top; padding: var(--space-2) var(--space-3); border-bottom: 1px solid var(--border-default); }
+.rule-diff__kind { font-size: 0.75rem; color: var(--text-secondary); font-weight: 400; }
+.rule-diff__field { margin-bottom: 4px; }
+.rule-diff__field--changed { background: var(--color-warning-muted); border-left: 3px solid var(--color-warning); padding-left: 6px; }
+.rule-diff__label { font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.04em; color: var(--text-secondary); }
+.rule-diff__empty { color: var(--text-muted); }
+.rule-diff__text { margin-top: var(--space-4); }
+.recheck-table-card__head { display: flex; flex-wrap: wrap; justify-content: space-between; gap: var(--space-3); align-items: center; }
+.recheck-bulk { display: flex; flex-wrap: wrap; gap: var(--space-2); align-items: center; margin: var(--space-3) 0; }
+.recheck-reasons { margin: 0; padding-left: 1.1em; }
+.recheck-table__done { opacity: 0.7; }
+.table-scroll { overflow-x: auto; }
+.nav-count { display: inline-block; min-width: 1.25rem; padding: 0 6px; margin-left: 4px; border-radius: 999px; background: var(--accent); color: #1a1a1a; font-size: 0.75rem; font-weight: 700; text-align: center; }
+.recheck-banner { margin: var(--space-4) 0; padding: var(--space-4); border-radius: var(--radius-md); border: 1px solid var(--color-warning); background: var(--color-warning-muted); }
+.recheck-banner h2 { margin: 0 0 var(--space-2); font-size: 1rem; }
+.recheck-banner p { margin: 0 0 var(--space-2); }
+.impact-preview { margin-bottom: var(--space-4); }
+.impact-preview__headline { font-weight: 700; color: var(--text-primary); }
+.impact-preview__list { margin: var(--space-2) 0 0; padding-left: 1.1em; max-height: 140px; overflow-y: auto; font-size: 0.8125rem; }

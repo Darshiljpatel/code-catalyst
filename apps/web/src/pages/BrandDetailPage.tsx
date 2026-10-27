@@ -7,6 +7,7 @@ import {
   getSources,
   createSource,
   activateSource,
+  getImpactPreview,
   ApiResponseError,
 } from '../api/client';
 import type {
@@ -15,7 +16,9 @@ import type {
   RuleInput,
   RuleCategory,
   RuleKind,
+  ImpactPreview,
 } from '../api/types';
+import { ImpactBadge } from '../components/ImpactBadge';
 import { useAuth } from '../context/AuthContext';
 import { Alert, Spinner, EmptyState } from '../components/Primitives';
 import { BrandInsightsModal } from '../components/BrandInsightsModal';
@@ -88,7 +91,7 @@ export function BrandDetailPage() {
                 <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-3)' }}>
                   <h1 style={{ margin: 0 }}>{brand.name}</h1>
                   <span className="badge badge--neutral">
-                    Epoch {brand.source_epoch}
+                    Guideline set v{brand.source_epoch}
                   </span>
                 </div>
                 <p style={{ color: 'var(--text-secondary)', margin: 'var(--space-2) 0 0' }}>
@@ -683,6 +686,23 @@ function ActivateSourceModal({
   const [retireIds, setRetireIds] = React.useState<string[]>([]);
   const [submitting, setSubmitting] = React.useState(false);
   const [error, setError] = React.useState<string | null>(null);
+  const [preview, setPreview] = React.useState<ImpactPreview | null>(null);
+  const [previewState, setPreviewState] = React.useState<'loading' | 'ready' | 'unavailable'>('loading');
+  const navigate = useNavigate();
+
+  // Dry-run impact before anything changes; the inbox shows exactly these campaigns afterwards.
+  React.useEffect(() => {
+    let cancelled = false;
+    setPreviewState('loading');
+    getImpactPreview(source.id, retireIds)
+      .then(result => {
+        if (cancelled) return;
+        if (result && result.counts && Array.isArray(result.entries)) { setPreview(result); setPreviewState('ready'); }
+        else setPreviewState('unavailable');
+      })
+      .catch(() => { if (!cancelled) setPreviewState('unavailable'); });
+    return () => { cancelled = true; };
+  }, [source.id, retireIds]);
 
   // Other active sources that could be retired
   const activeSources = allSources.filter(s => s.state === 'active' && s.id !== source.id);
@@ -706,17 +726,18 @@ function ActivateSourceModal({
     setSubmitting(true);
     setError(null);
     try {
-      await activateSource(source.id, {
+      const result = await activateSource(source.id, {
         expected_epoch: brand.source_epoch,
         verified: true,
         retire_source_ids: retireIds,
         rationale: rationale.trim(),
       });
       onSuccess();
+      if (result?.change_id && (result.impact_counts?.total || 0) > 0) navigate(`/rechecks/${result.change_id}`);
     } catch (err) {
       if (err instanceof ApiResponseError) {
         if (err.status === 409) {
-          setError(`Activation conflict: ${err.body.message}. The brand source epoch has changed.`);
+          setError(`${err.body.message} Another manager may have just published an update; reload to see it.`);
         } else {
           setError(err.body.message || 'Activation failed');
         }
@@ -734,7 +755,7 @@ function ActivateSourceModal({
       <div className="modal-card animate-scale-in">
         <div className="modal-header">
           <h2 id="activate-source-title" style={{ margin: 0, fontSize: '1.25rem' }}>
-            Activate Guideline Source: {source.title}
+            Publish guideline update: {source.title}
           </h2>
           <button className="btn btn--ghost btn--sm" onClick={onClose} aria-label="Close dialog" disabled={submitting}>
             ✕
@@ -745,13 +766,34 @@ function ActivateSourceModal({
           {error && <Alert kind="error">{error}</Alert>}
           <fieldset disabled={submitting} className="source-dialog-fields">
 
-          <div className="info-box" style={{ marginBottom: 'var(--space-4)' }}>
-            <div style={{ fontWeight: 600, color: 'var(--text-primary)', marginBottom: '4px' }}>
-              Source Epoch Transition: {brand.source_epoch} → {brand.source_epoch + 1}
-            </div>
-            <div style={{ fontSize: '0.8125rem', color: 'var(--text-secondary)' }}>
-              Activating an approved source changes the brand's active evidence. Past review runs will be marked stale.
-            </div>
+          <div className="info-box impact-preview" role="status" aria-live="polite">
+            {previewState === 'loading' && <Spinner size="sm" label="Checking which campaigns used this guideline…" />}
+            {previewState === 'unavailable' && (
+              <div style={{ fontSize: '0.8125rem', color: 'var(--text-secondary)' }}>
+                Impact preview unavailable. Campaigns that relied on the replaced version will still be listed in the re-review inbox after publishing.
+              </div>
+            )}
+            {previewState === 'ready' && preview && (
+              <>
+                <div className="impact-preview__headline">
+                  {preview.counts.total === 0
+                    ? 'No reviewed campaign used the version this replaces.'
+                    : `${preview.counts.total} campaign${preview.counts.total === 1 ? '' : 's'} used this guideline; ${preview.counts.on_hold} approved or in-review campaign${preview.counts.on_hold === 1 ? '' : 's'} will go on hold.`}
+                </div>
+                <div style={{ fontSize: '0.8125rem', color: 'var(--text-secondary)', marginTop: '4px' }}>
+                  {preview.counts.confirmed} confirmed · {preview.counts.likely} likely · {preview.counts.possible} possible · {preview.counts.not_affected} not affected.
+                  {' '}Each affected campaign is rechecked automatically against the new rules.
+                </div>
+                {preview.entries.length > 0 && (
+                  <ul className="impact-preview__list">
+                    {preview.entries.slice(0, 8).map(entry => (
+                      <li key={entry.item_id}><ImpactBadge level={entry.impact_level} /> {entry.title} <span style={{ color: 'var(--text-secondary)' }}>({entry.state.replace(/_/g, ' ')})</span></li>
+                    ))}
+                    {preview.entries.length > 8 && <li>…and {preview.entries.length - 8} more</li>}
+                  </ul>
+                )}
+              </>
+            )}
           </div>
 
           {activeSources.length > 0 && (
@@ -776,7 +818,7 @@ function ActivateSourceModal({
 
           <div className="form-group" style={{ marginBottom: 'var(--space-4)' }}>
             <label htmlFor="txt-activate-rationale" className="form-label">
-              Activation Audit Rationale <span style={{ color: 'var(--color-blocker)' }}>*</span>
+              Reason for this update <span style={{ color: 'var(--color-blocker)' }}>*</span>
             </label>
             <textarea
               id="txt-activate-rationale"
@@ -810,7 +852,7 @@ function ActivateSourceModal({
               Cancel
             </button>
             <button type="submit" className="btn btn--primary" disabled={submitting || !verified || rationale.trim().length < 10}>
-              {submitting ? 'Activating…' : 'Activate & Advance Epoch'}
+              {submitting ? 'Publishing…' : 'Publish guideline update'}
             </button>
           </div>
           </fieldset>

@@ -5,6 +5,7 @@ import { useAuth } from '../context/AuthContext';
 import { Spinner } from './Primitives';
 import { PolicySettingsModal } from './PolicySettingsModal';
 import { useLeaveConfirmation } from '../context/UnsavedChangesContext';
+import { getGuidelineChanges } from '../api/client';
 
 export function TopNav() {
   const { user, status, signOut } = useAuth();
@@ -12,6 +13,22 @@ export function TopNav() {
   const [signingOut, setSigningOut] = React.useState(false);
   const [signOutError, setSignOutError] = React.useState('');
   const [showPolicyModal, setShowPolicyModal] = React.useState(false);
+  const [openRechecks, setOpenRechecks] = React.useState(0);
+  const isManager = status === 'authenticated' && user?.role === 'manager';
+
+  React.useEffect(() => {
+    if (!isManager) return;
+    let cancelled = false;
+    const load = () => getGuidelineChanges({ status: 'open' })
+      .then(list => {
+        if (cancelled || !Array.isArray(list)) return;
+        setOpenRechecks(list.reduce((sum, change) => sum + Math.max(0, (change.total || 0) - (change.resolved || 0)), 0));
+      })
+      .catch(() => undefined);
+    load();
+    const timer = window.setInterval(load, 30_000);
+    return () => { cancelled = true; window.clearInterval(timer); };
+  }, [isManager]);
 
   const handleSignOut = async () => {
     setSigningOut(true);
@@ -37,6 +54,12 @@ export function TopNav() {
 
         <div className="topnav__links">
           <NavLink to="/" end>Campaigns</NavLink>
+          {isManager && (
+            <NavLink to="/rechecks">
+              Re-review inbox
+              {openRechecks > 0 && <span className="nav-count" aria-label={`${openRechecks} open`}>{openRechecks}</span>}
+            </NavLink>
+          )}
           <NavLink to="/demo">Guided example <span aria-hidden="true">↗</span></NavLink>
         </div>
 

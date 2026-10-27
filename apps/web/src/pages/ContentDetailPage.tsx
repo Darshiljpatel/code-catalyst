@@ -6,6 +6,7 @@ import { ALL_FINDINGS, filterFindings, type FindingFilters as FilterValues } fro
 import { FindingFilters } from '../components/FindingFilters';
 import { AssignReviewerModal } from '../components/AssignReviewerModal';
 import { resolutionActions } from '../api/resolutionActions';
+import { RecheckBanner } from '../components/RecheckBanner';
 import React from 'react';
 import { workingDraft, changeDraftText, stageDraftEdit, projectDraftRange, undoDraftChange } from '../api/draftEdits';
 import { incompleteCategories, submissionIssues } from '../api/reviewReadiness';
@@ -527,6 +528,11 @@ function CampaignWorkspace() {
           )}
         </div>
       </div>
+
+      {content.recheck && (
+        <RecheckBanner notice={content.recheck}
+          viewer={user?.membership_id === content.creator_id ? 'creator' : user?.membership_id === content.reviewer_id ? 'reviewer' : 'manager'} />
+      )}
 
       {/* Revision Switcher Tabs */}
       <div className="filter-bar" style={{ marginBottom: 'var(--space-6)' }}>

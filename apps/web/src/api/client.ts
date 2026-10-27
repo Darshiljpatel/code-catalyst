@@ -46,6 +46,11 @@ import type {
   AmbiguityOut,
   ApiError,
   WorkerHealthResponse,
+  ActivationOut,
+  ImpactPreview,
+  GuidelineChangeSummary,
+  GuidelineChange,
+  RecheckAssignment,
   VersionResponse,
 } from './types';
 import { retryStarted, retryFinished } from './serverStatus';
@@ -238,8 +243,46 @@ export async function createSource(
 export async function activateSource(
   sourceId: string,
   payload: ActivationInput
-): Promise<SourceOut> {
-  return request<SourceOut>('POST', `/sources/${sourceId}/activate`, payload);
+): Promise<ActivationOut> {
+  return request<ActivationOut>('POST', `/sources/${sourceId}/activate`, payload);
+}
+
+// ---------------------------------------------------------------------------
+// Guideline change impact and re-review inbox (Improvement 1)
+// ---------------------------------------------------------------------------
+
+export async function getImpactPreview(sourceId: string, retireSourceIds: string[] = []): Promise<ImpactPreview> {
+  const query = new URLSearchParams();
+  retireSourceIds.forEach(id => query.append('retire_source_ids', id));
+  const qs = query.toString();
+  return request<ImpactPreview>('GET', `/sources/${sourceId}/impact-preview${qs ? `?${qs}` : ''}`);
+}
+
+export async function getGuidelineChanges(params?: { brand_id?: string; status?: 'open' | 'closed' }): Promise<GuidelineChangeSummary[]> {
+  const query = new URLSearchParams();
+  if (params?.brand_id) query.set('brand_id', params.brand_id);
+  if (params?.status) query.set('status', params.status);
+  const qs = query.toString();
+  return request<GuidelineChangeSummary[]>('GET', `/guideline-changes${qs ? `?${qs}` : ''}`);
+}
+
+export async function getGuidelineChange(changeId: string): Promise<GuidelineChange> {
+  return request<GuidelineChange>('GET', `/guideline-changes/${changeId}`);
+}
+
+export async function assignRecheckReviewer(
+  assignments: Pick<RecheckAssignment, 'id' | 'version'>[],
+  reviewerId: string
+): Promise<RecheckAssignment[]> {
+  return request<RecheckAssignment[]>('PUT', '/recheck-assignments/reviewer', {
+    assignment_ids: assignments.map(a => a.id),
+    reviewer_id: reviewerId,
+    expected_versions: Object.fromEntries(assignments.map(a => [a.id, a.version])),
+  });
+}
+
+export async function requeueRechecks(changeId: string): Promise<{ change_id: string; queued: string[] }> {
+  return request<{ change_id: string; queued: string[] }>('POST', `/guideline-changes/${changeId}/rechecks`);
 }
 
 // ---------------------------------------------------------------------------
@@ -346,10 +389,12 @@ export async function assignReviewer(
 export async function getContentPage(params?: {
   q?: string;
   state?: string;
+  recheck?: 'mine' | 'any';
   limit?: number;
   offset?: number;
 }): Promise<ContentPageOut> {
   const query = new URLSearchParams();
+  if (params?.recheck) query.set('recheck', params.recheck);
   if (params?.q) query.set('q', params.q);
   if (params?.state) query.set('state', params.state);
   if (params?.limit !== undefined) query.set('limit', String(params.limit));

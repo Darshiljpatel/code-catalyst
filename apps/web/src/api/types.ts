@@ -205,6 +205,156 @@ export interface ContentOut {
   approval_stale: boolean;
   state: string;
   revisions: RevisionOut[];
+  recheck?: RecheckNotice | null;
+}
+
+// ---------------------------------------------------------------------------
+// Guideline change impact and re-review inbox (Improvement 1)
+// ---------------------------------------------------------------------------
+export type ImpactLevel = 'confirmed' | 'likely' | 'possible';
+export type RecheckStatus = 'open' | 'recheck_queued' | 'awaiting_creator' | 'awaiting_reviewer' | 'resolved' | 'superseded';
+
+export interface ImpactReason {
+  code: string;
+  detail: string;
+}
+
+export interface FindingDeltaEntry {
+  rule_id: string;
+  category: string;
+  severity: string;
+  start: number;
+  end: number;
+  quote?: string;
+}
+
+export interface FindingsDelta {
+  added: FindingDeltaEntry[];
+  removed: FindingDeltaEntry[];
+  unchanged: number;
+  new_blockers?: number;
+  complete?: boolean;
+  changed?: boolean;
+}
+
+export interface RecheckNotice {
+  assignment_id: string;
+  change_id: string;
+  status: RecheckStatus;
+  impact_level: ImpactLevel;
+  reasons: ImpactReason[];
+  state_before: string;
+  findings_delta: FindingsDelta | null;
+  guideline_title: string;
+  from_version: number | null;
+  to_version: number;
+  changed_rules: number;
+  changed_at: string;
+}
+
+export interface RuleDiffEntry {
+  rule_id: string;
+  before?: RuleInput;
+  after?: RuleInput;
+  fields?: string[];
+  source_id?: string;
+}
+
+export interface RuleDiff {
+  added: RuleDiffEntry[];
+  removed: RuleDiffEntry[];
+  modified: RuleDiffEntry[];
+  unchanged: number;
+  from_source: { id: string; version: number; title: string; text: string } | null;
+  to_source: { id: string; version: number; title: string; text: string };
+  retired_sources: { id: string; source_key: string; version: number; title: string }[];
+}
+
+export interface ImpactCounts {
+  confirmed: number;
+  likely: number;
+  possible: number;
+  total: number;
+  not_affected: number;
+  on_hold: number;
+  brand_campaigns: number;
+}
+
+export interface ImpactEntry {
+  item_id: string;
+  title: string;
+  state: string;
+  creator_id: string;
+  reviewer_id: string | null;
+  revision_id: string;
+  prior_run_id: string;
+  impact_level: ImpactLevel;
+  reasons: ImpactReason[];
+  local_delta: FindingsDelta | null;
+}
+
+export interface ImpactPreview {
+  source_id: string;
+  brand_id: string;
+  expected_epoch: number;
+  retired_source_ids: string[];
+  diff: RuleDiff;
+  counts: ImpactCounts;
+  entries: ImpactEntry[];
+}
+
+export interface GuidelineChangeSummary {
+  id: string;
+  brand_id: string;
+  source_key: string;
+  from_source_id: string | null;
+  to_source_id: string;
+  title: string;
+  from_version: number | null;
+  to_version: number;
+  status: 'open' | 'closed';
+  impact_counts: ImpactCounts;
+  resolved: number;
+  total: number;
+  created_by: string;
+  created_at: string;
+  closed_at: string | null;
+}
+
+export interface RecheckAssignment {
+  id: string;
+  change_id: string;
+  item_id: string;
+  title: string;
+  item_state: string;
+  creator_id: string;
+  revision_id: string;
+  prior_run_id: string;
+  prior_decision_id: string | null;
+  state_before: string;
+  impact_level: ImpactLevel;
+  reasons: ImpactReason[];
+  recheck_run_id: string | null;
+  recheck_status: string | null;
+  findings_delta: FindingsDelta | null;
+  reviewer_id: string | null;
+  status: RecheckStatus;
+  resolved_decision_id: string | null;
+  superseded_by: string | null;
+  version: number;
+  created_at: string;
+  updated_at: string;
+  resolved_at: string | null;
+}
+
+export interface GuidelineChange extends GuidelineChangeSummary {
+  diff: RuleDiff;
+  assignments: RecheckAssignment[];
+}
+
+export interface ActivationOut extends SourceOut {
+  change_id: string;
+  impact_counts: ImpactCounts;
 }
 
 // Compatibility aliases
@@ -424,6 +574,7 @@ export interface ContentSummaryOut {
   approval_stale: boolean;
   state: string;
   created_at: string;
+  recheck_status?: RecheckStatus | null;
 }
 
 export interface ContentPageOut {
