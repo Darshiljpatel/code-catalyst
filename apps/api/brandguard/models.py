@@ -14,6 +14,12 @@ class Organisation(Base):
     __tablename__ = 'organisations'
     id: Mapped[str] = mapped_column(String(36), primary_key=True, default=uid)
     name: Mapped[str] = mapped_column(String(200))
+    # Private demo sandboxes: flagged, expiring and with their own small AI budget.
+    is_demo: Mapped[bool] = mapped_column(default=False, server_default='false')
+    expires_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), index=True)
+    created_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+    created_ip_hash: Mapped[str | None] = mapped_column(String(64), index=True)
+    daily_run_limit: Mapped[int | None] = mapped_column(Integer)
 
 class User(Base):
     __tablename__ = 'users'
@@ -28,6 +34,8 @@ class Membership(Base):
     user_id: Mapped[str] = mapped_column(ForeignKey('users.id', ondelete='CASCADE'))
     org_id: Mapped[str] = mapped_column(ForeignKey('organisations.id', ondelete='CASCADE'), index=True)
     role: Mapped[str] = mapped_column(String(20))
+    # Display name in demo workspaces, e.g. "Brand lead" for the second manager.
+    label: Mapped[str | None] = mapped_column(String(60))
 
 class Brand(Base):
     __tablename__ = 'brands'

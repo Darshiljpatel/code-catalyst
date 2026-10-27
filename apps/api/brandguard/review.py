@@ -45,6 +45,10 @@ def revision_for(session, member, revision_id, lock=False, edit=False):
         raise Problem(404, 'not_found', 'Revision not found.')
     return revision, item_for(session, member, revision.item_id, lock=lock, edit=edit)
 
+def run_budget(org, workspace_limit):
+    """Daily external-review limit: the deployment's, or a demo sandbox's smaller own budget."""
+    return min(workspace_limit, org.daily_run_limit) if org is not None and org.daily_run_limit else workspace_limit
+
 def eligible_sources(session, member, brand_id, at):
     return list(session.scalars(select(SourceVersion).where(
         SourceVersion.org_id == member.org_id, SourceVersion.brand_id == brand_id,
@@ -264,7 +268,7 @@ def queue_analysis(revision_id: str, request: Request, idempotency_key: Annotate
         raise Problem(409, 'analysis_pending', 'An analysis of this revision is already pending.')
     brand = brand_for(session, member, item.brand_id, lock=True)
     # Serialise consent with policy updates. Never enable external processing from a request alone.
-    session.scalar(select(Organisation).where(Organisation.id==member.org_id).with_for_update())
+    org = session.scalar(select(Organisation).where(Organisation.id==member.org_id).with_for_update())
     policy = session.get(ProcessingPolicy,member.org_id)
     processing = dict(enabled=False, provider='nebius', consent=False)
     if body.external_processing_consent:
@@ -274,7 +278,7 @@ def queue_analysis(revision_id: str, request: Request, idempotency_key: Annotate
         reserved=session.scalar(select(func.count()).select_from(ReviewRun).where(
             ReviewRun.org_id==member.org_id, ReviewRun.created_at>=start_of_day,
             ReviewRun.processing_snapshot['enabled'].as_boolean()==True))
-        if reserved>=request.app.state.settings.max_external_runs_per_day:
+        if reserved>=run_budget(org,request.app.state.settings.max_external_runs_per_day):
             raise Problem(429,'external_budget_exceeded','The workspace daily external-review limit has been reached.')
         processing = dict(enabled=True, provider='nebius', model=policy.model,
                           policy_version=policy.version, notice=policy.notice, consent=True)

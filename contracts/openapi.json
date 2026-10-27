@@ -92,6 +92,106 @@
         }
       }
     },
+    "/api/v1/demo/sandboxes": {
+      "post": {
+        "summary": "Create Sandbox",
+        "description": "Try a private demo: a fresh workspace, signed in as the chosen role.",
+        "operationId": "create_sandbox_api_v1_demo_sandboxes_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SandboxInput"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SandboxOut"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/demo/members": {
+      "get": {
+        "summary": "List Demo Members",
+        "operationId": "list_demo_members_api_v1_demo_members_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/DemoMemberOut"
+                  },
+                  "type": "array",
+                  "title": "Response List Demo Members Api V1 Demo Members Get"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/demo/switch": {
+      "post": {
+        "summary": "Switch Role",
+        "description": "Move this browser to another identity of the same demo workspace. Each role stays a separate\nmember, so separation of duties still holds: the creator cannot approve their own work.",
+        "operationId": "switch_role_api_v1_demo_switch_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SwitchInput"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SandboxOut"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/v1/content/image": {
       "post": {
         "summary": "Upload Image",
@@ -3318,6 +3418,34 @@
         ],
         "title": "DecisionOut"
       },
+      "DemoMemberOut": {
+        "properties": {
+          "membership_id": {
+            "type": "string",
+            "title": "Membership Id"
+          },
+          "role": {
+            "type": "string",
+            "title": "Role"
+          },
+          "label": {
+            "type": "string",
+            "title": "Label"
+          },
+          "email": {
+            "type": "string",
+            "title": "Email"
+          }
+        },
+        "type": "object",
+        "required": [
+          "membership_id",
+          "role",
+          "label",
+          "email"
+        ],
+        "title": "DemoMemberOut"
+      },
       "DraftInput": {
         "properties": {
           "expected_version": {
@@ -5932,6 +6060,61 @@
         ],
         "title": "RunOut"
       },
+      "SandboxInput": {
+        "properties": {
+          "role": {
+            "type": "string",
+            "pattern": "^(creator|reviewer|manager|brand_lead|admin)$",
+            "title": "Role",
+            "default": "creator"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "title": "SandboxInput"
+      },
+      "SandboxOut": {
+        "properties": {
+          "org_id": {
+            "type": "string",
+            "title": "Org Id"
+          },
+          "role": {
+            "type": "string",
+            "title": "Role"
+          },
+          "membership_id": {
+            "type": "string",
+            "title": "Membership Id"
+          },
+          "csrf_token": {
+            "type": "string",
+            "title": "Csrf Token"
+          },
+          "expires_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Expires At"
+          },
+          "members": {
+            "items": {
+              "$ref": "#/components/schemas/DemoMemberOut"
+            },
+            "type": "array",
+            "title": "Members"
+          }
+        },
+        "type": "object",
+        "required": [
+          "org_id",
+          "role",
+          "membership_id",
+          "csrf_token",
+          "expires_at",
+          "members"
+        ],
+        "title": "SandboxOut"
+      },
       "SourceInput": {
         "properties": {
           "source_key": {
@@ -6134,6 +6317,22 @@
           "reviewer_id"
         ],
         "title": "SubmissionInput"
+      },
+      "SwitchInput": {
+        "properties": {
+          "membership_id": {
+            "type": "string",
+            "maxLength": 36,
+            "minLength": 1,
+            "title": "Membership Id"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "membership_id"
+        ],
+        "title": "SwitchInput"
       },
       "ValidationError": {
         "properties": {

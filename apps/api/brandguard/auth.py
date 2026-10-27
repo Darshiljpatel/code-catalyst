@@ -7,7 +7,7 @@ from sqlalchemy.dialects.postgresql import insert
 from sqlalchemy.orm import Session
 from .core import (db, identity, trusted_origin, client_ip, digest, passwords, DUMMY_HASH,
                    COOKIE, Problem, Login)
-from .models import User, Membership, SessionRecord, LoginAttempt
+from .models import User, Membership, SessionRecord, LoginAttempt, Organisation
 
 router = APIRouter()
 # Failed attempts per 15 minutes. The address+email key stops guessing one account; the
@@ -66,7 +66,9 @@ def me(request: Request, member=Depends(identity), session: Session=Depends(db))
     if record.csrf_hash != digest(csrf):
         record.csrf_hash = digest(csrf)
         session.commit()
-    return dict(user_id=member.user_id, membership_id=member.id, org_id=member.org_id, role=member.role, csrf_token=csrf)
+    org = session.get(Organisation, member.org_id)
+    return dict(user_id=member.user_id, membership_id=member.id, org_id=member.org_id, role=member.role, csrf_token=csrf,
+                label=member.label, is_demo=bool(org.is_demo), demo_expires_at=org.expires_at.isoformat() if org.is_demo and org.expires_at else None)
 
 @router.delete('/api/v1/sessions/current', status_code=204)
 def logout(request: Request, response: Response, member=Depends(identity), session: Session = Depends(db)):

@@ -68,6 +68,8 @@ def run_worker_loop(engine, reviewer, checker, poll_interval: float = 1.0, once:
         return
 
     worker_id, started_at, last_beat = worker_identity(), utcnow(), 0.0
+    from brandguard.demo import purge_expired
+    last_purge = 0.0
     ocr_engine = TesseractEngine() if os.environ.get('OCR_ENABLED', '1') != '0' else None
 
     while running:
@@ -79,6 +81,14 @@ def run_worker_loop(engine, reviewer, checker, poll_interval: float = 1.0, once:
                 # A missed heartbeat makes the app show "Review engine offline"; keep processing.
                 logger.warning("Heartbeat write failed: %s", type(e).__name__)
                 last_beat = time.monotonic()
+        if time.monotonic() - last_purge >= 3600:
+            last_purge = time.monotonic()
+            try:
+                purged = purge_expired(engine)
+                if purged:
+                    logger.info("Purged %d expired demo workspace(s).", purged)
+            except Exception as e:
+                logger.warning("Demo purge failed: %s", type(e).__name__)
         try:
             processed = process_one(engine, reviewer, checker=checker)
             if ocr_engine is not None:

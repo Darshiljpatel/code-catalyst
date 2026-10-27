@@ -209,7 +209,9 @@ def recheck_processing(session, org_id, prior_run, budget, at):
     reserved = session.scalar(select(func.count()).select_from(ReviewRun).where(
         ReviewRun.org_id == org_id, ReviewRun.created_at >= start_of_day,
         ReviewRun.processing_snapshot['enabled'].as_boolean() == True))
-    if reserved >= budget:
+    from .models import Organisation
+    from .review import run_budget
+    if reserved >= run_budget(session.get(Organisation, org_id), budget):
         return dict(enabled=False, provider='nebius', consent=False, reason='external_budget_exceeded')
     return dict(enabled=True, provider='nebius', model=policy.model, policy_version=policy.version,
                 notice=policy.notice, consent=True, carried_from_run_id=prior_run.id)
