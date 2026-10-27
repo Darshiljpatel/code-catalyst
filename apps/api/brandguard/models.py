@@ -143,6 +143,9 @@ class ReviewRun(Base):
     processing_snapshot: Mapped[dict] = mapped_column(JSON, default=dict, server_default='{}')
     engine_metadata: Mapped[dict] = mapped_column(JSON, default=dict, server_default='{}')
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True))
+    # creator, guideline_change (Improvement 1 recheck) or regression.
+    trigger: Mapped[str] = mapped_column(String(30), default='creator', server_default='creator')
+    initiated_by: Mapped[str | None] = mapped_column(String(36))
 
 class RunSource(Base):
     __tablename__ = 'run_sources'
@@ -302,3 +305,59 @@ class WorkerHeartbeat(Base):
     version: Mapped[str] = mapped_column(String(64))
     started_at: Mapped[datetime] = mapped_column(DateTime(timezone=True))
     seen_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), index=True)
+
+class GuidelineChange(Base):
+    """One activation of a guideline version, with its rule diff and impact counts."""
+    __tablename__ = 'guideline_changes'
+    __table_args__ = (
+        UniqueConstraint('org_id', 'id'),
+        ForeignKeyConstraint(['org_id', 'brand_id'], ['brands.org_id', 'brands.id']),
+        ForeignKeyConstraint(['org_id', 'to_source_id'], ['source_versions.org_id', 'source_versions.id']),
+        ForeignKeyConstraint(['org_id', 'created_by'], ['memberships.org_id', 'memberships.id']),
+        CheckConstraint("status IN ('open','closed')"),
+    )
+    id: Mapped[str] = mapped_column(String(36), primary_key=True, default=uid)
+    org_id: Mapped[str] = mapped_column(String(36), index=True)
+    brand_id: Mapped[str] = mapped_column(String(36), index=True)
+    source_key: Mapped[str] = mapped_column(String(100))
+    from_source_id: Mapped[str | None] = mapped_column(String(36))
+    to_source_id: Mapped[str] = mapped_column(String(36))
+    retired_source_ids: Mapped[list] = mapped_column(JSON)
+    diff: Mapped[dict] = mapped_column(JSON)
+    impact_counts: Mapped[dict] = mapped_column(JSON)
+    status: Mapped[str] = mapped_column(String(20), default='open')
+    created_by: Mapped[str] = mapped_column(String(36))
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True))
+    closed_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+
+class RecheckAssignment(Base):
+    """A campaign that relied on a changed guideline; open until re-approved or superseded."""
+    __tablename__ = 'recheck_assignments'
+    __table_args__ = (
+        UniqueConstraint('change_id', 'item_id'),
+        ForeignKeyConstraint(['org_id', 'change_id'], ['guideline_changes.org_id', 'guideline_changes.id']),
+        ForeignKeyConstraint(['org_id', 'item_id'], ['content_items.org_id', 'content_items.id']),
+        ForeignKeyConstraint(['org_id', 'reviewer_id'], ['memberships.org_id', 'memberships.id']),
+        CheckConstraint("impact_level IN ('confirmed','likely','possible')"),
+        CheckConstraint("status IN ('open','recheck_queued','awaiting_creator','awaiting_reviewer','resolved','superseded')"),
+    )
+    id: Mapped[str] = mapped_column(String(36), primary_key=True, default=uid)
+    org_id: Mapped[str] = mapped_column(String(36), index=True)
+    change_id: Mapped[str] = mapped_column(String(36), index=True)
+    item_id: Mapped[str] = mapped_column(String(36), index=True)
+    revision_id: Mapped[str] = mapped_column(String(36))
+    prior_run_id: Mapped[str] = mapped_column(String(36))
+    prior_decision_id: Mapped[str | None] = mapped_column(String(36))
+    state_before: Mapped[str] = mapped_column(String(30))
+    impact_level: Mapped[str] = mapped_column(String(20))
+    reasons: Mapped[list] = mapped_column(JSON)
+    recheck_run_id: Mapped[str | None] = mapped_column(String(36), index=True)
+    findings_delta: Mapped[dict | None] = mapped_column(JSON)
+    reviewer_id: Mapped[str | None] = mapped_column(String(36))
+    status: Mapped[str] = mapped_column(String(30), default='open')
+    resolved_decision_id: Mapped[str | None] = mapped_column(String(36))
+    superseded_by: Mapped[str | None] = mapped_column(String(36))
+    version: Mapped[int] = mapped_column(Integer, default=1)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True))
+    updated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True))
+    resolved_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))

@@ -60,7 +60,11 @@ def test_t28_source_verification_conflicts_versions_and_epoch(setup):
     rows = c.get(f'/api/v1/brands/{bid}/sources').json()
     assert [s['state'] for s in rows if s['id'] == second['id']] == ['retired']
     assert c.get(f'/api/v1/brands/{bid}').json()['source_epoch'] == 3
-    assert count(engine, AuditEvent) == 6
+    with Session(engine) as db:
+        actions = sorted(db.scalars(select(AuditEvent.action)))
+    # Every activation also records a guideline change for the re-review inbox.
+    assert actions.count('source.created') == 3 and actions.count('source.activated') == 3
+    assert actions.count('guideline.changed') == 3 and len(actions) == 9
 
 @pytest.mark.parametrize('problem', ['quote','expired','future','unverified','timezone','internal_conflict'])
 def test_source_rejects_invalid_evidence_and_activation(setup, problem):

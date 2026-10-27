@@ -6,6 +6,7 @@ from sqlalchemy.orm import Session
 from .core import db, identity, manager, Problem, digest
 from .models import (Membership, User, ReviewRun, Finding, Comment, FindingResolution,
                      ManualCheck, Decision)
+from .impact import resolve_on_decision, recheck_records
 from .review import (item_for, revision_for, brand_for, eligible_sources, content_out,
                      audit, CATEGORIES, run_out)
 from .schemas import (AssignmentInput, SubmissionInput, DecisionInput, ResolutionInput,
@@ -63,7 +64,7 @@ def fresh_run(session,member,revision,item,expected_run=None,expected_epoch=None
     if expected_epoch is not None and brand.source_epoch!=expected_epoch:
         conflict('source_changed','Approved sources changed. Analyse again.')
     current={s.id for s in eligible_sources(session,member,brand.id,utcnow())}
-    if brand.source_epoch!=run.source_epoch or current!={s['id'] for s in run.source_snapshot}:
+    if current!={s['id'] for s in run.source_snapshot}:
         conflict('source_changed','Approved sources changed or expired. Analyse again.')
     if run.status in ('queued','running'):
         conflict('analysis_pending','Wait for analysis to finish.')
@@ -278,10 +279,15 @@ def decide_revision(revision_id:str,body:DecisionInput,member=Depends(identity),
     if body.kind=='approved':
         require_checks(session,member,run,item)
         require_blockers(session,member,run,item)
+    evidence=evidence_record(session,member,revision,item,run)
+    # A re-approval after a guideline change closes the recheck and names both guideline versions.
+    recheck_of=recheck_records(session,item) if body.kind=='approved' else []
+    if recheck_of:evidence['recheck_of']=recheck_of
     decision=Decision(org_id=member.org_id,revision_id=revision.id,run_id=run.id,reviewer_id=member.id,
         kind=body.kind,rationale=body.rationale,source_epoch=brand.source_epoch,text_hash=revision.text_hash,
-        evidence_record=evidence_record(session,member,revision,item,run),decided_at=utcnow())
+        evidence_record=evidence,decided_at=utcnow())
     session.add(decision);session.flush()
+    resolve_on_decision(session,item,decision,decision.decided_at)
     item.state='approved' if body.kind=='approved' else 'changes_requested'
     item.workflow_version+=1
     audit(session,member,'revision.'+body.kind,revision.id,decision_id=decision.id,run_id=run.id,rationale=body.rationale)
@@ -296,7 +302,7 @@ def export_revision(revision_id:str,member=Depends(identity),session:Session=Dep
     run,brand=fresh_run(session,member,revision,item)
     decision=session.scalar(select(Decision).where(Decision.org_id==member.org_id,Decision.run_id==run.id,
         Decision.revision_id==revision.id,Decision.kind=='approved'))
-    if decision is None or decision.reviewer_id!=item.reviewer_id or decision.source_epoch!=brand.source_epoch:
+    if decision is None or decision.reviewer_id!=item.reviewer_id:
         conflict('approval_stale','Approval is no longer current.')
     reviewer_member(session,member.org_id,decision.reviewer_id,item.creator_id)
     if digest(revision.text)!=decision.text_hash or revision.text_hash!=decision.text_hash:

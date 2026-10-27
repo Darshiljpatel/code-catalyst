@@ -101,6 +101,20 @@ class RevisionOut(BaseModel):
     purpose: str
     created_at: datetime
 
+class RecheckNoticeOut(BaseModel):
+    assignment_id: str
+    change_id: str
+    status: str
+    impact_level: str
+    reasons: list[dict]
+    state_before: str
+    findings_delta: dict | None
+    guideline_title: str
+    from_version: int | None
+    to_version: int
+    changed_rules: int
+    changed_at: datetime
+
 class ContentOut(BaseModel):
     id: str
     brand_id: str
@@ -113,6 +127,7 @@ class ContentOut(BaseModel):
     latest_run_id: str | None = None
     state: str
     revisions: list[RevisionOut]
+    recheck: RecheckNoticeOut | None = None
 
 class CheckOut(BaseModel):
     category: Literal['terminology','tone','messaging','facts_claims','visual','accessibility']
@@ -276,6 +291,7 @@ class ContentSummaryOut(BaseModel):
     approval_stale: bool
     state: str
     created_at: datetime
+    recheck_status: str | None = None
 
 class ContentPageOut(BaseModel):
     items: list[ContentSummaryOut]
@@ -315,3 +331,83 @@ class InsightsOut(BaseModel):
     ambiguous_total: int
     ambiguity_definition: str
     rules: list[RuleInsightOut]
+
+class ActivationOut(SourceOut):
+    change_id: str
+    impact_counts: dict
+
+class ImpactEntryOut(BaseModel):
+    item_id: str
+    title: str
+    state: str
+    creator_id: str
+    reviewer_id: str | None
+    revision_id: str
+    prior_run_id: str
+    impact_level: Literal['confirmed','likely','possible']
+    reasons: list[dict]
+    local_delta: dict | None
+
+class ImpactPreviewOut(BaseModel):
+    source_id: str
+    brand_id: str
+    expected_epoch: int
+    retired_source_ids: list[str]
+    diff: dict
+    counts: dict
+    entries: list[ImpactEntryOut]
+
+class GuidelineChangeSummaryOut(BaseModel):
+    id: str
+    brand_id: str
+    source_key: str
+    from_source_id: str | None
+    to_source_id: str
+    title: str
+    from_version: int | None
+    to_version: int
+    status: str
+    impact_counts: dict
+    resolved: int
+    total: int
+    created_by: str
+    created_at: datetime
+    closed_at: datetime | None
+
+class RecheckAssignmentOut(BaseModel):
+    id: str
+    change_id: str
+    item_id: str
+    title: str
+    item_state: str
+    creator_id: str
+    revision_id: str
+    prior_run_id: str
+    prior_decision_id: str | None
+    state_before: str
+    impact_level: str
+    reasons: list[dict]
+    recheck_run_id: str | None
+    recheck_status: str | None
+    findings_delta: dict | None
+    reviewer_id: str | None
+    status: str
+    resolved_decision_id: str | None
+    superseded_by: str | None
+    version: int
+    created_at: datetime
+    updated_at: datetime
+    resolved_at: datetime | None
+
+class GuidelineChangeOut(GuidelineChangeSummaryOut):
+    diff: dict
+    assignments: list[RecheckAssignmentOut]
+
+class RecheckAssignInput(StrictInput):
+    assignment_ids: list[str] = Field(min_length=1, max_length=200)
+    reviewer_id: str = Field(min_length=1, max_length=36)
+    expected_versions: dict[str, int]
+
+class RecheckQueueOut(BaseModel):
+    change_id: str
+    queued: list[str]

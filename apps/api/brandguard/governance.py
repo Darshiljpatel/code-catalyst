@@ -2,10 +2,11 @@
 from collections import defaultdict
 from typing import Literal
 from fastapi import APIRouter,Depends,Query
-from sqlalchemy import select,func,or_
+from sqlalchemy import select,func,or_,and_
 from sqlalchemy.orm import Session
 from .core import db,identity,manager,Problem
-from .models import (ContentItem,ContentRevision,ReviewRun,Finding,FindingResolution,SourceVersion,AuditEvent)
+from .models import (ContentItem,ContentRevision,ReviewRun,Finding,FindingResolution,SourceVersion,AuditEvent,RecheckAssignment)
+from .impact import OPEN_STATUSES
 from .review import brand_for,revision_for,audit,approval_is_stale
 from .schemas import (ContentPageOut,ContentSummaryOut,AmbiguityInput,AmbiguityOut,InsightsOut)
 
@@ -16,11 +17,21 @@ router=APIRouter(prefix='/api/v1')
 def content_queue(member=Depends(identity),session:Session=Depends(db),limit:int=Query(20,ge=1,le=50),
                   offset:int=Query(0,ge=0,le=10000),
                   q:str=Query('',max_length=200),
-                  state:Literal['draft','analysing','needs_changes','ready_for_review','incomplete','in_review','approved','changes_requested']|None=None):
+                  state:Literal['draft','analysing','needs_changes','ready_for_review','incomplete','in_review','approved','changes_requested','recheck_required']|None=None,
+                  recheck:Literal['mine','any']|None=None):
     conditions=[ContentItem.org_id==member.org_id]
     if member.role!='manager':
         conditions.append(or_(ContentItem.creator_id==member.id,ContentItem.reviewer_id==member.id))
     if state:conditions.append(ContentItem.state==state)
+    if recheck:
+        # Recheck state is read from assignments, not recomputed from source epochs per row.
+        waiting=select(RecheckAssignment.item_id).where(RecheckAssignment.org_id==member.org_id,
+            RecheckAssignment.status.in_(OPEN_STATUSES))
+        if recheck=='mine':
+            waiting=waiting.join(ContentItem,ContentItem.id==RecheckAssignment.item_id).where(or_(
+                and_(RecheckAssignment.status=='awaiting_reviewer',ContentItem.reviewer_id==member.id),
+                and_(RecheckAssignment.status=='awaiting_creator',ContentItem.creator_id==member.id)))
+        conditions.append(ContentItem.id.in_(waiting))
     search=q.strip()
     if search:
         # Treat user-entered SQL LIKE wildcards as literal characters.
@@ -29,9 +40,13 @@ def content_queue(member=Depends(identity),session:Session=Depends(db),limit:int
     total=session.scalar(select(func.count()).select_from(ContentItem).where(*conditions))
     items=list(session.scalars(select(ContentItem).where(*conditions).order_by(
         ContentItem.created_at.desc(),ContentItem.id.desc()).limit(limit).offset(offset)))
+    open_rechecks=dict(session.execute(select(RecheckAssignment.item_id,RecheckAssignment.status).where(
+        RecheckAssignment.org_id==member.org_id,RecheckAssignment.item_id.in_([i.id for i in items]),
+        RecheckAssignment.status.in_(OPEN_STATUSES))).all()) if items else {}
     return ContentPageOut(items=[ContentSummaryOut(id=i.id,brand_id=i.brand_id,title=i.title,
         creator_id=i.creator_id,reviewer_id=i.reviewer_id,state=i.state,current_revision=i.current_revision,
-        workflow_version=i.workflow_version,approval_stale=approval_is_stale(session,i),created_at=i.created_at)
+        workflow_version=i.workflow_version,approval_stale=approval_is_stale(session,i),created_at=i.created_at,
+        recheck_status=open_rechecks.get(i.id))
         for i in items],total=total,limit=limit,offset=offset)
 
 

@@ -10,7 +10,8 @@ from sqlalchemy import select, or_, and_
 from sqlalchemy.orm import Session
 
 from .models import (Job, ReviewRun, ContentRevision, ContentItem, Brand, ProcessingPolicy,
-                     Finding, AuditEvent)
+                     Finding, AuditEvent, SourceVersion)
+from .impact import finish_recheck
 from .schemas import CheckOut
 from .semantic import (LocatedFinding, ModelFailure, SemanticResult, validate_findings,
                        PROMPT_VERSION)
@@ -50,6 +51,16 @@ class ClaimedRun:
 
 def utcnow():
     return datetime.now(timezone.utc)
+
+
+def snapshot_current(db,run):
+    """The run used exactly the brand's currently effective guideline versions."""
+    at=utcnow()
+    brand_id=run.source_snapshot[0]['brand_id'] if run.source_snapshot else None
+    active=set(db.scalars(select(SourceVersion.id).where(SourceVersion.org_id==run.org_id,
+        SourceVersion.brand_id==brand_id,SourceVersion.state=='active',SourceVersion.valid_from<=at,
+        or_(SourceVersion.valid_until.is_(None),SourceVersion.valid_until>at))))
+    return active=={s['id'] for s in run.source_snapshot}
 
 
 def claim_one(engine, *, run_id=None):
@@ -92,7 +103,7 @@ def can_dispatch(engine, claim, model):
         brand=db.get(Brand,item.brand_id)
         run=db.get(ReviewRun,claim.run_id)
         revision=db.get(ContentRevision,claim.revision_id)
-        if brand.source_epoch!=run.source_epoch or item.current_revision!=revision.number:
+        if not snapshot_current(db,run) or item.current_revision!=revision.number:
             return False
         return bool(snapshot.get('enabled') and snapshot.get('consent') and
                     snapshot.get('model')==model and policy and policy.enabled and
@@ -172,7 +183,7 @@ def finish_claim(engine,claim,checks,findings,metadata):
         if job.status!='running' or job.lease_token!=claim.lease_token or job.lease_expires_at<=utcnow():
             return False
         revision=db.get(ContentRevision,claim.revision_id)
-        stale=(item.current_revision!=revision.number or brand.source_epoch!=run.source_epoch or
+        stale=(item.current_revision!=revision.number or not snapshot_current(db,run) or
                any(s.get('valid_until') and datetime.fromisoformat(s['valid_until'])<=utcnow() for s in run.source_snapshot))
         if stale:
             # Keep the historical snapshot but never mark stale results ready for review.
@@ -188,9 +199,12 @@ def finish_claim(engine,claim,checks,findings,metadata):
             db.add(Finding(org_id=claim.org_id,run_id=run.id,revision_id=revision.id,
                 **f,location=dict(block_id='text',start=start,end=end,quote=quote),resolution='unresolved'))
         job.status,job.lease_token,job.lease_expires_at='complete',None,None
-        if item.current_revision==revision.number:
+        superseded=run.trigger=='guideline_change' and stale
+        if item.current_revision==revision.number and not superseded:
             item.workflow_version+=1
             item.state=('needs_changes' if any(f['severity']=='blocker' for f in findings) else 'ready_for_review') if complete else 'incomplete'
+            if run.trigger=='guideline_change':
+                finish_recheck(db,run,item,findings,complete,utcnow())
         db.add(AuditEvent(org_id=claim.org_id,actor_id=item.creator_id,action='analysis.finished',object_id=run.id,
             details=dict(status=run.status,finding_count=len(findings),executor='worker',stale=stale),created_at=utcnow()))
         db.commit()

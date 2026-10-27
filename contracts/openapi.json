@@ -92,6 +92,197 @@
         }
       }
     },
+    "/api/v1/guideline-changes": {
+      "get": {
+        "summary": "List Changes",
+        "operationId": "list_changes_api_v1_guideline_changes_get",
+        "parameters": [
+          {
+            "name": "brand_id",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Brand Id"
+            }
+          },
+          {
+            "name": "status",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "enum": [
+                    "open",
+                    "closed"
+                  ],
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Status"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/GuidelineChangeSummaryOut"
+                  },
+                  "title": "Response List Changes Api V1 Guideline Changes Get"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/guideline-changes/{change_id}": {
+      "get": {
+        "summary": "Get Change",
+        "operationId": "get_change_api_v1_guideline_changes__change_id__get",
+        "parameters": [
+          {
+            "name": "change_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Change Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/GuidelineChangeOut"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/recheck-assignments/reviewer": {
+      "put": {
+        "summary": "Assign Rechecks",
+        "operationId": "assign_rechecks_api_v1_recheck_assignments_reviewer_put",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/RecheckAssignInput"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/RecheckAssignmentOut"
+                  },
+                  "type": "array",
+                  "title": "Response Assign Rechecks Api V1 Recheck Assignments Reviewer Put"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/guideline-changes/{change_id}/rechecks": {
+      "post": {
+        "summary": "Requeue Rechecks",
+        "description": "Re-queue rechecks that never queued or whose run failed. Safe to repeat.",
+        "operationId": "requeue_rechecks_api_v1_guideline_changes__change_id__rechecks_post",
+        "parameters": [
+          {
+            "name": "change_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Change Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RecheckQueueOut"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/v1/health/live": {
       "get": {
         "summary": "Live",
@@ -211,7 +402,8 @@
                     "incomplete",
                     "in_review",
                     "approved",
-                    "changes_requested"
+                    "changes_requested",
+                    "recheck_required"
                   ],
                   "type": "string"
                 },
@@ -220,6 +412,26 @@
                 }
               ],
               "title": "State"
+            }
+          },
+          {
+            "name": "recheck",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "enum": [
+                    "mine",
+                    "any"
+                  ],
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Recheck"
             }
           }
         ],
@@ -1013,6 +1225,59 @@
         }
       }
     },
+    "/api/v1/sources/{source_id}/impact-preview": {
+      "get": {
+        "summary": "Impact Preview",
+        "operationId": "impact_preview_api_v1_sources__source_id__impact_preview_get",
+        "parameters": [
+          {
+            "name": "source_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Source Id"
+            }
+          },
+          {
+            "name": "retire_source_ids",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              },
+              "maxItems": 100,
+              "default": [],
+              "title": "Retire Source Ids"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ImpactPreviewOut"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/v1/sources/{source_id}/activate": {
       "post": {
         "summary": "Activate Source",
@@ -1044,7 +1309,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/SourceOut"
+                  "$ref": "#/components/schemas/ActivationOut"
                 }
               }
             }
@@ -1289,6 +1554,128 @@
           "rationale"
         ],
         "title": "ActivationInput"
+      },
+      "ActivationOut": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "title": "Id"
+          },
+          "brand_id": {
+            "type": "string",
+            "title": "Brand Id"
+          },
+          "source_key": {
+            "type": "string",
+            "title": "Source Key"
+          },
+          "version": {
+            "type": "integer",
+            "title": "Version"
+          },
+          "owner_id": {
+            "type": "string",
+            "title": "Owner Id"
+          },
+          "title": {
+            "type": "string",
+            "title": "Title"
+          },
+          "text": {
+            "type": "string",
+            "title": "Text"
+          },
+          "text_hash": {
+            "type": "string",
+            "title": "Text Hash"
+          },
+          "rules": {
+            "items": {
+              "$ref": "#/components/schemas/RuleInput"
+            },
+            "type": "array",
+            "title": "Rules"
+          },
+          "valid_from": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Valid From"
+          },
+          "valid_until": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Valid Until"
+          },
+          "state": {
+            "type": "string",
+            "title": "State"
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Created At"
+          },
+          "activated_by": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Activated By"
+          },
+          "activated_at": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Activated At"
+          },
+          "change_id": {
+            "type": "string",
+            "title": "Change Id"
+          },
+          "impact_counts": {
+            "additionalProperties": true,
+            "type": "object",
+            "title": "Impact Counts"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "brand_id",
+          "source_key",
+          "version",
+          "owner_id",
+          "title",
+          "text",
+          "text_hash",
+          "rules",
+          "valid_from",
+          "valid_until",
+          "state",
+          "created_at",
+          "activated_by",
+          "activated_at",
+          "change_id",
+          "impact_counts"
+        ],
+        "title": "ActivationOut"
       },
       "AmbiguityInput": {
         "properties": {
@@ -1683,6 +2070,16 @@
             },
             "type": "array",
             "title": "Revisions"
+          },
+          "recheck": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/RecheckNoticeOut"
+              },
+              {
+                "type": "null"
+              }
+            ]
           }
         },
         "type": "object",
@@ -1779,6 +2176,17 @@
             "type": "string",
             "format": "date-time",
             "title": "Created At"
+          },
+          "recheck_status": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Recheck Status"
           }
         },
         "type": "object",
@@ -2039,6 +2447,234 @@
         ],
         "title": "FindingOut"
       },
+      "GuidelineChangeOut": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "title": "Id"
+          },
+          "brand_id": {
+            "type": "string",
+            "title": "Brand Id"
+          },
+          "source_key": {
+            "type": "string",
+            "title": "Source Key"
+          },
+          "from_source_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "From Source Id"
+          },
+          "to_source_id": {
+            "type": "string",
+            "title": "To Source Id"
+          },
+          "title": {
+            "type": "string",
+            "title": "Title"
+          },
+          "from_version": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "From Version"
+          },
+          "to_version": {
+            "type": "integer",
+            "title": "To Version"
+          },
+          "status": {
+            "type": "string",
+            "title": "Status"
+          },
+          "impact_counts": {
+            "additionalProperties": true,
+            "type": "object",
+            "title": "Impact Counts"
+          },
+          "resolved": {
+            "type": "integer",
+            "title": "Resolved"
+          },
+          "total": {
+            "type": "integer",
+            "title": "Total"
+          },
+          "created_by": {
+            "type": "string",
+            "title": "Created By"
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Created At"
+          },
+          "closed_at": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Closed At"
+          },
+          "diff": {
+            "additionalProperties": true,
+            "type": "object",
+            "title": "Diff"
+          },
+          "assignments": {
+            "items": {
+              "$ref": "#/components/schemas/RecheckAssignmentOut"
+            },
+            "type": "array",
+            "title": "Assignments"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "brand_id",
+          "source_key",
+          "from_source_id",
+          "to_source_id",
+          "title",
+          "from_version",
+          "to_version",
+          "status",
+          "impact_counts",
+          "resolved",
+          "total",
+          "created_by",
+          "created_at",
+          "closed_at",
+          "diff",
+          "assignments"
+        ],
+        "title": "GuidelineChangeOut"
+      },
+      "GuidelineChangeSummaryOut": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "title": "Id"
+          },
+          "brand_id": {
+            "type": "string",
+            "title": "Brand Id"
+          },
+          "source_key": {
+            "type": "string",
+            "title": "Source Key"
+          },
+          "from_source_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "From Source Id"
+          },
+          "to_source_id": {
+            "type": "string",
+            "title": "To Source Id"
+          },
+          "title": {
+            "type": "string",
+            "title": "Title"
+          },
+          "from_version": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "From Version"
+          },
+          "to_version": {
+            "type": "integer",
+            "title": "To Version"
+          },
+          "status": {
+            "type": "string",
+            "title": "Status"
+          },
+          "impact_counts": {
+            "additionalProperties": true,
+            "type": "object",
+            "title": "Impact Counts"
+          },
+          "resolved": {
+            "type": "integer",
+            "title": "Resolved"
+          },
+          "total": {
+            "type": "integer",
+            "title": "Total"
+          },
+          "created_by": {
+            "type": "string",
+            "title": "Created By"
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Created At"
+          },
+          "closed_at": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Closed At"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "brand_id",
+          "source_key",
+          "from_source_id",
+          "to_source_id",
+          "title",
+          "from_version",
+          "to_version",
+          "status",
+          "impact_counts",
+          "resolved",
+          "total",
+          "created_by",
+          "created_at",
+          "closed_at"
+        ],
+        "title": "GuidelineChangeSummaryOut"
+      },
       "HTTPValidationError": {
         "properties": {
           "detail": {
@@ -2051,6 +2687,139 @@
         },
         "type": "object",
         "title": "HTTPValidationError"
+      },
+      "ImpactEntryOut": {
+        "properties": {
+          "item_id": {
+            "type": "string",
+            "title": "Item Id"
+          },
+          "title": {
+            "type": "string",
+            "title": "Title"
+          },
+          "state": {
+            "type": "string",
+            "title": "State"
+          },
+          "creator_id": {
+            "type": "string",
+            "title": "Creator Id"
+          },
+          "reviewer_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Reviewer Id"
+          },
+          "revision_id": {
+            "type": "string",
+            "title": "Revision Id"
+          },
+          "prior_run_id": {
+            "type": "string",
+            "title": "Prior Run Id"
+          },
+          "impact_level": {
+            "type": "string",
+            "enum": [
+              "confirmed",
+              "likely",
+              "possible"
+            ],
+            "title": "Impact Level"
+          },
+          "reasons": {
+            "items": {
+              "additionalProperties": true,
+              "type": "object"
+            },
+            "type": "array",
+            "title": "Reasons"
+          },
+          "local_delta": {
+            "anyOf": [
+              {
+                "additionalProperties": true,
+                "type": "object"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Local Delta"
+          }
+        },
+        "type": "object",
+        "required": [
+          "item_id",
+          "title",
+          "state",
+          "creator_id",
+          "reviewer_id",
+          "revision_id",
+          "prior_run_id",
+          "impact_level",
+          "reasons",
+          "local_delta"
+        ],
+        "title": "ImpactEntryOut"
+      },
+      "ImpactPreviewOut": {
+        "properties": {
+          "source_id": {
+            "type": "string",
+            "title": "Source Id"
+          },
+          "brand_id": {
+            "type": "string",
+            "title": "Brand Id"
+          },
+          "expected_epoch": {
+            "type": "integer",
+            "title": "Expected Epoch"
+          },
+          "retired_source_ids": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Retired Source Ids"
+          },
+          "diff": {
+            "additionalProperties": true,
+            "type": "object",
+            "title": "Diff"
+          },
+          "counts": {
+            "additionalProperties": true,
+            "type": "object",
+            "title": "Counts"
+          },
+          "entries": {
+            "items": {
+              "$ref": "#/components/schemas/ImpactEntryOut"
+            },
+            "type": "array",
+            "title": "Entries"
+          }
+        },
+        "type": "object",
+        "required": [
+          "source_id",
+          "brand_id",
+          "expected_epoch",
+          "retired_source_ids",
+          "diff",
+          "counts",
+          "entries"
+        ],
+        "title": "ImpactPreviewOut"
       },
       "InsightsOut": {
         "properties": {
@@ -2377,6 +3146,336 @@
           "max_input_bytes"
         ],
         "title": "PolicyOut"
+      },
+      "RecheckAssignInput": {
+        "properties": {
+          "assignment_ids": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "maxItems": 200,
+            "minItems": 1,
+            "title": "Assignment Ids"
+          },
+          "reviewer_id": {
+            "type": "string",
+            "maxLength": 36,
+            "minLength": 1,
+            "title": "Reviewer Id"
+          },
+          "expected_versions": {
+            "additionalProperties": {
+              "type": "integer"
+            },
+            "type": "object",
+            "title": "Expected Versions"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "assignment_ids",
+          "reviewer_id",
+          "expected_versions"
+        ],
+        "title": "RecheckAssignInput"
+      },
+      "RecheckAssignmentOut": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "title": "Id"
+          },
+          "change_id": {
+            "type": "string",
+            "title": "Change Id"
+          },
+          "item_id": {
+            "type": "string",
+            "title": "Item Id"
+          },
+          "title": {
+            "type": "string",
+            "title": "Title"
+          },
+          "item_state": {
+            "type": "string",
+            "title": "Item State"
+          },
+          "creator_id": {
+            "type": "string",
+            "title": "Creator Id"
+          },
+          "revision_id": {
+            "type": "string",
+            "title": "Revision Id"
+          },
+          "prior_run_id": {
+            "type": "string",
+            "title": "Prior Run Id"
+          },
+          "prior_decision_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Prior Decision Id"
+          },
+          "state_before": {
+            "type": "string",
+            "title": "State Before"
+          },
+          "impact_level": {
+            "type": "string",
+            "title": "Impact Level"
+          },
+          "reasons": {
+            "items": {
+              "additionalProperties": true,
+              "type": "object"
+            },
+            "type": "array",
+            "title": "Reasons"
+          },
+          "recheck_run_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Recheck Run Id"
+          },
+          "recheck_status": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Recheck Status"
+          },
+          "findings_delta": {
+            "anyOf": [
+              {
+                "additionalProperties": true,
+                "type": "object"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Findings Delta"
+          },
+          "reviewer_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Reviewer Id"
+          },
+          "status": {
+            "type": "string",
+            "title": "Status"
+          },
+          "resolved_decision_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Resolved Decision Id"
+          },
+          "superseded_by": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Superseded By"
+          },
+          "version": {
+            "type": "integer",
+            "title": "Version"
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Created At"
+          },
+          "updated_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Updated At"
+          },
+          "resolved_at": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Resolved At"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "change_id",
+          "item_id",
+          "title",
+          "item_state",
+          "creator_id",
+          "revision_id",
+          "prior_run_id",
+          "prior_decision_id",
+          "state_before",
+          "impact_level",
+          "reasons",
+          "recheck_run_id",
+          "recheck_status",
+          "findings_delta",
+          "reviewer_id",
+          "status",
+          "resolved_decision_id",
+          "superseded_by",
+          "version",
+          "created_at",
+          "updated_at",
+          "resolved_at"
+        ],
+        "title": "RecheckAssignmentOut"
+      },
+      "RecheckNoticeOut": {
+        "properties": {
+          "assignment_id": {
+            "type": "string",
+            "title": "Assignment Id"
+          },
+          "change_id": {
+            "type": "string",
+            "title": "Change Id"
+          },
+          "status": {
+            "type": "string",
+            "title": "Status"
+          },
+          "impact_level": {
+            "type": "string",
+            "title": "Impact Level"
+          },
+          "reasons": {
+            "items": {
+              "additionalProperties": true,
+              "type": "object"
+            },
+            "type": "array",
+            "title": "Reasons"
+          },
+          "state_before": {
+            "type": "string",
+            "title": "State Before"
+          },
+          "findings_delta": {
+            "anyOf": [
+              {
+                "additionalProperties": true,
+                "type": "object"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Findings Delta"
+          },
+          "guideline_title": {
+            "type": "string",
+            "title": "Guideline Title"
+          },
+          "from_version": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "From Version"
+          },
+          "to_version": {
+            "type": "integer",
+            "title": "To Version"
+          },
+          "changed_rules": {
+            "type": "integer",
+            "title": "Changed Rules"
+          },
+          "changed_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Changed At"
+          }
+        },
+        "type": "object",
+        "required": [
+          "assignment_id",
+          "change_id",
+          "status",
+          "impact_level",
+          "reasons",
+          "state_before",
+          "findings_delta",
+          "guideline_title",
+          "from_version",
+          "to_version",
+          "changed_rules",
+          "changed_at"
+        ],
+        "title": "RecheckNoticeOut"
+      },
+      "RecheckQueueOut": {
+        "properties": {
+          "change_id": {
+            "type": "string",
+            "title": "Change Id"
+          },
+          "queued": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Queued"
+          }
+        },
+        "type": "object",
+        "required": [
+          "change_id",
+          "queued"
+        ],
+        "title": "RecheckQueueOut"
       },
       "ResolutionInput": {
         "properties": {

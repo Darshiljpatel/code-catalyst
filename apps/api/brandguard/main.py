@@ -70,6 +70,8 @@ def create_app(settings=None, provider_config=None):
     from .workflow import router as workflow_router
     from .governance import router as governance_router
     from .health import router as health_router
+    from .rechecks import router as rechecks_router
+    app.include_router(rechecks_router)
     app.include_router(health_router)
     app.include_router(governance_router)
     app.include_router(workflow_router)
