@@ -13,6 +13,7 @@ from sqlalchemy.orm import Session
 from .core import db, identity, Problem, digest
 from .imaging import _child_env, sha256
 from .models import DocumentImport
+from . import quota
 
 router = APIRouter(prefix='/api/v1')
 
@@ -137,6 +138,7 @@ def safe_filename(name):
 async def import_document(file: UploadFile = File(...), member=Depends(identity), session: Session = Depends(db)):
     if member.role != 'creator':
         raise Problem(403, 'forbidden', 'A creator identity is required.')
+    quota.enforce(session, member, 'uploads')
     data = await file.read(MAX_DOCUMENT_BYTES + 1)
     try:
         media, text, blocks, pages, warnings = extract_document(data)

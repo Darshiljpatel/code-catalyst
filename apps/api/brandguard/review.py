@@ -6,6 +6,7 @@ from sqlalchemy import select, or_, func
 from sqlalchemy.orm import Session
 from .core import db, identity, manager, Problem, digest
 from .documents import source_document_for
+from . import quota
 from .models import (Brand, Membership, SourceVersion, ContentItem, ContentRevision, ReviewRun, RunSource, Job, AuditEvent,
                      ProcessingPolicy, Organisation, Finding, GuidelineChange, RecheckAssignment, Asset, OcrResult)
 from .schemas import (SourceInput, ActivationInput, ContentInput, NewRevisionInput,
@@ -213,6 +214,7 @@ def create_content(body: ContentInput, member=Depends(identity), session: Sessio
     if member.role != 'creator':
         raise Problem(403, 'forbidden', 'A creator identity is required.')
     brand_for(session, member, body.brand_id)
+    quota.enforce(session, member, 'revisions')
     if body.reviewer_id is not None:
         reviewer = session.scalar(select(Membership).where(Membership.org_id == member.org_id,
             Membership.id == body.reviewer_id, Membership.role == 'reviewer'))
@@ -236,6 +238,7 @@ def get_content(item_id: str, member=Depends(identity), session: Session=Depends
 @router.post('/content/{item_id}/revisions', status_code=201, response_model=ContentOut)
 def create_revision(item_id: str, body: NewRevisionInput, member=Depends(identity), session: Session=Depends(db)):
     item = item_for(session, member, item_id, lock=True, edit=True)
+    quota.enforce(session, member, 'revisions')
     parent = session.scalar(select(ContentRevision).where(ContentRevision.org_id == member.org_id,
         ContentRevision.item_id == item.id, ContentRevision.number == item.current_revision))
     if session.scalar(select(Asset.id).where(Asset.org_id == member.org_id, Asset.item_id == item.id).limit(1)):
@@ -269,6 +272,7 @@ def queue_analysis(revision_id: str, request: Request, idempotency_key: Annotate
     if session.scalar(select(ReviewRun.id).where(ReviewRun.org_id == member.org_id,
         ReviewRun.revision_id == revision_id, ReviewRun.status.in_(('queued','running')))):
         raise Problem(409, 'analysis_pending', 'An analysis of this revision is already pending.')
+    quota.enforce(session, member, 'analysis')
     brand = brand_for(session, member, item.brand_id, lock=True)
     # Serialise consent with policy updates. Never enable external processing from a request alone.
     org = session.scalar(select(Organisation).where(Organisation.id==member.org_id).with_for_update())
@@ -292,7 +296,7 @@ def queue_analysis(revision_id: str, request: Request, idempotency_key: Annotate
     run = ReviewRun(org_id=member.org_id, revision_id=revision.id, idempotency_key=idempotency_key,
         source_epoch=brand.source_epoch, source_snapshot=[SourceOut.model_validate(s).model_dump(mode='json') for s in sources],
         checks=[dict(category=c, status='unavailable', reason='Queued; no worker has completed this check.') for c in CATEGORIES],
-        status='queued', created_at=at, processing_snapshot=processing)
+        status='queued', created_at=at, processing_snapshot=processing, initiated_by=member.id)
     session.add(run); session.flush()
     for source in sources:
         session.add(RunSource(org_id=member.org_id, run_id=run.id, source_id=source.id))

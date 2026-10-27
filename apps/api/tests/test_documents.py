@@ -3,6 +3,7 @@ import io
 from docx import Document
 from test_identity import setup, login
 from test_images import image_brand, CONTEXT
+from brandguard import quota
 from brandguard.documents import extract_document, DocumentRejected, sniff, PDF, DOCX
 
 
@@ -93,3 +94,22 @@ def test_imported_document_becomes_a_campaign_with_file_hash_and_provenance(setu
     h = login(c, orgs[0], 'creator')
     r = c.post('/api/v1/content', json=dict(brand_id=bid, title='x', text='x', document_import_id='missing-import', **CONTEXT), headers=h)
     assert r.status_code == 404 and r.json()['code'] == 'not_found'
+
+
+def test_members_hit_an_hourly_cap_on_drafts_analysis_and_uploads(setup, monkeypatch):
+    c, _, orgs, _ = setup
+    bid = image_brand(c, orgs)
+    h = login(c, orgs[0], 'creator')
+    for bucket in ('revisions', 'uploads', 'analysis'):
+        monkeypatch.setitem(quota.HOURLY_LIMITS, bucket, 1)
+    items = [c.post('/api/v1/content', json=dict(brand_id=bid, title='One', text='Calm copy.', **CONTEXT), headers=h).json()]
+    r = c.post('/api/v1/content', json=dict(brand_id=bid, title='Two', text='Calm copy.', **CONTEXT), headers=h)
+    assert r.status_code == 429 and r.json()['code'] == 'member_rate_limited'
+    monkeypatch.setitem(quota.HOURLY_LIMITS, 'revisions', 2)
+    items.append(c.post('/api/v1/content', json=dict(brand_id=bid, title='Two', text='Calm copy.', **CONTEXT), headers=h).json())
+    assert c.post('/api/v1/imports/document', files=dict(file=('a.pdf', LAUNCH_PDF, 'application/pdf')), headers=h).status_code == 201
+    r = c.post('/api/v1/imports/document', files=dict(file=('a.pdf', LAUNCH_PDF, 'application/pdf')), headers=h)
+    assert r.status_code == 429 and r.json()['code'] == 'member_rate_limited'
+    runs = [c.post(f"/api/v1/revisions/{item['revisions'][0]['id']}/analysis", json={}, headers={**h, 'Idempotency-Key': f'quota-run-{n}'})
+            for n, item in enumerate(items)]
+    assert runs[0].status_code == 202 and runs[1].status_code == 429 and runs[1].json()['code'] == 'member_rate_limited'

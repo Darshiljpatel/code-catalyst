@@ -10,6 +10,7 @@ from .core import db, identity, Problem, digest
 from .imaging import ImageRejected, normalise_upload, build_region_map, sha256, LOW_CONFIDENCE, MAX_UPLOAD_BYTES
 from .models import Asset, OcrResult, Job, ContentItem, ContentRevision, Membership
 from .review import brand_for, item_for, content_out, audit
+from . import quota
 from .schemas import StrictInput, ContentOut
 
 router = APIRouter(prefix='/api/v1')
@@ -94,6 +95,7 @@ async def upload_image(brand_id: str = Form(min_length=1, max_length=36), title:
     if not title.strip():
         raise Problem(422, 'invalid_fields', 'A campaign title is required.')
     brand_for(session, member, brand_id)
+    quota.enforce(session, member, 'uploads')
     data = await file.read(MAX_UPLOAD_BYTES + 1)
     try:
         clean, mime, width, height = normalise_upload(data)
@@ -145,6 +147,7 @@ def get_ocr(asset_id: str, member=Depends(identity), session: Session = Depends(
 @router.post('/content/{item_id}/image-revisions', status_code=201, response_model=ContentOut)
 def confirm_image_text(item_id: str, body: ImageRevisionInput, member=Depends(identity), session: Session = Depends(db)):
     item = item_for(session, member, item_id, lock=True, edit=True)
+    quota.enforce(session, member, 'revisions')
     asset = session.scalar(select(Asset).where(Asset.org_id == member.org_id, Asset.item_id == item.id).order_by(
         Asset.created_at.desc()).limit(1))
     if asset is None:
