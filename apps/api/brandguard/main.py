@@ -17,7 +17,7 @@ def create_app(settings=None, provider_config=None):
         from pathlib import Path
         load_dotenv(Path(__file__).resolve().parents[3] / '.env')
         provider_config = provider_config or ProviderConfig.from_env()
-    settings = settings or Settings(os.environ['DATABASE_URL'], os.getenv('PUBLIC_ORIGIN', 'http://localhost:8000'), os.getenv('APP_ENV', 'development'), int(os.getenv('MODEL_DAILY_RUN_LIMIT', '100')))
+    settings = settings or Settings(os.environ['DATABASE_URL'], os.getenv('PUBLIC_ORIGIN', 'http://localhost:8000'), os.getenv('APP_ENV', 'development'), int(os.getenv('MODEL_DAILY_RUN_LIMIT', '100')), os.getenv('TRUST_PROXY_HEADERS', '') == '1')
     engine = create_engine(settings.database_url, pool_pre_ping=True)
     @asynccontextmanager
     async def lifespan(app):

@@ -101,3 +101,42 @@ def test_wrong_workspace_and_validation_redaction(setup):
     assert r.status_code == 401
     r = c.post('/api/v1/sessions', json={'password':'do-not-echo'})
     assert r.status_code == 422 and 'do-not-echo' not in r.text
+
+def proxied_app(trust):
+    url = os.environ['TEST_DATABASE_URL']
+    return create_app(Settings(url, 'https://testserver', 'test', trust_proxy_headers=trust))
+
+def fail(client, email, forwarded):
+    return client.post('/api/v1/sessions', json=dict(email=email, password='wrong', org_id='x'),
+        headers={'origin':'https://testserver', 'x-forwarded-for':forwarded}).status_code
+
+def test_trusted_proxy_keys_attempts_on_forwarded_address_and_email(setup):
+    _, _, orgs, _ = setup
+    app = proxied_app(True)
+    with TestClient(app, base_url='https://testserver') as c:
+        for _ in range(20):
+            assert fail(c, 'judge-one@example.test', '203.0.113.7') == 401
+        assert fail(c, 'judge-one@example.test', '203.0.113.7') == 429
+        # Another judge behind the same proxy address, and the same email elsewhere, still work.
+        assert fail(c, 'judge-two@example.test', '203.0.113.7') == 401
+        assert fail(c, 'judge-one@example.test', '198.51.100.9, 10.0.0.1') == 401
+        r = c.post('/api/v1/sessions', json=dict(email='manager@example.test', password='correct-password', org_id=orgs[0]),
+            headers={'origin':'https://testserver', 'x-forwarded-for':'203.0.113.7'})
+        assert r.status_code == 200
+    app.state.engine.dispose()
+
+def test_per_email_cap_spans_addresses(setup):
+    app = proxied_app(True)
+    with TestClient(app, base_url='https://testserver') as c:
+        for n in range(50):
+            assert fail(c, 'target@example.test', f'192.0.2.{n}') == 401
+        assert fail(c, 'target@example.test', '192.0.2.200') == 429
+    app.state.engine.dispose()
+
+def test_forwarded_header_ignored_without_trust(setup):
+    app = proxied_app(False)
+    with TestClient(app, base_url='https://testserver') as c:
+        for n in range(20):
+            assert fail(c, 'spoof@example.test', f'192.0.2.{n}') == 401
+        assert fail(c, 'spoof@example.test', '192.0.2.99') == 429
+    app.state.engine.dispose()

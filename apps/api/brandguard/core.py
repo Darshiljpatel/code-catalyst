@@ -22,6 +22,7 @@ class Settings:
     public_origin: str = 'http://localhost:8000'
     environment: str = 'development'
     max_external_runs_per_day: int = 100
+    trust_proxy_headers: bool = False
 
     def __post_init__(self):
         if not 1 <= self.max_external_runs_per_day <= 10000:
@@ -53,6 +54,15 @@ class NewBrand(BaseModel):
 def db(request: Request):
     with Session(request.app.state.engine) as session:
         yield session
+
+def client_ip(request: Request):
+    # Behind Vercel and Render the socket peer is a proxy. Only read the forwarded
+    # chain when the deployment says a trusted proxy overwrites it.
+    if request.app.state.settings.trust_proxy_headers:
+        forwarded = request.headers.get('x-forwarded-for', '').split(',')[0].strip()
+        if forwarded:
+            return forwarded[:64]
+    return request.client.host if request.client else 'unknown'
 
 def trusted_origin(request: Request):
     if request.headers.get('origin') != request.app.state.settings.public_origin:
