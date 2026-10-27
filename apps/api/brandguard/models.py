@@ -135,6 +135,8 @@ class ContentRevision(Base):
     asset_id: Mapped[str | None] = mapped_column(String(36))
     asset_sha256: Mapped[str | None] = mapped_column(String(64))
     region_map: Mapped[list | None] = mapped_column(JSON)
+    # Imported PDF/DOCX drafts: file name, type, original hash, page/paragraph blocks and whether the text was edited.
+    source_document: Mapped[dict | None] = mapped_column(JSON)
 
 class ReviewRun(Base):
     __tablename__ = 'review_runs'
@@ -562,3 +564,26 @@ class OcrResult(Base):
     error_code: Mapped[str | None] = mapped_column(String(60))
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True))
     completed_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+
+class DocumentImport(Base):
+    """Text extracted from an uploaded PDF or DOCX draft. Only the hash and text are kept, not the file."""
+    __tablename__ = 'document_imports'
+    __table_args__ = (
+        UniqueConstraint('org_id', 'id'),
+        ForeignKeyConstraint(['org_id', 'created_by'], ['memberships.org_id', 'memberships.id']),
+        CheckConstraint("media_type IN ('application/pdf','application/vnd.openxmlformats-officedocument.wordprocessingml.document')"),
+    )
+    id: Mapped[str] = mapped_column(String(36), primary_key=True, default=uid)
+    org_id: Mapped[str] = mapped_column(String(36), index=True)
+    created_by: Mapped[str] = mapped_column(String(36))
+    filename: Mapped[str] = mapped_column(String(200))
+    media_type: Mapped[str] = mapped_column(String(100))
+    size_bytes: Mapped[int] = mapped_column(Integer)
+    original_sha256: Mapped[str] = mapped_column(String(64))
+    text: Mapped[str] = mapped_column(Text)
+    text_hash: Mapped[str] = mapped_column(String(64))
+    pages: Mapped[int | None] = mapped_column(Integer)
+    # Page and paragraph provenance: [{page, paragraph, start, end}] over `text`.
+    blocks: Mapped[list] = mapped_column(JSON)
+    warnings: Mapped[list] = mapped_column(JSON)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True))

@@ -332,7 +332,8 @@ def export_revision(revision_id:str,member=Depends(identity),session:Session=Dep
     result=ExportOut(revision_id=revision.id,content_id=item.id,text=revision.text,text_hash=decision.text_hash,
         channel=revision.channel,audience=revision.audience,purpose=revision.purpose,
         decision=DecisionOut.model_validate(decision),evidence_record=decision.evidence_record,exported_at=utcnow(),
-        image_sha256=revision.asset_sha256,region_map=revision.region_map)
+        image_sha256=revision.asset_sha256,region_map=revision.region_map,
+        source_document=revision.source_document)
     audit(session,member,'revision.exported',revision.id,decision_id=decision.id,text_hash=decision.text_hash)
     session.commit()
     return result

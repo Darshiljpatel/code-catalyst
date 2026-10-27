@@ -8,7 +8,7 @@ from brandguard.main import create_app, Settings, passwords, digest
 from brandguard.models import (Brand, Organisation, User, Membership, SessionRecord, LoginAttempt,
     AuditEvent, RunSource, Job, ReviewRun, ContentRevision, ContentItem, SourceVersion, Finding, ProcessingPolicy, Comment, FindingResolution, ManualCheck, Decision,
     GuidelineChange, RecheckAssignment, GuidelineRequest, RequestExample, ExampleSet, ExampleCase,
-    ComparisonRun, ComparisonResult, RequestReview, Asset, OcrResult)
+    ComparisonRun, ComparisonResult, RequestReview, Asset, OcrResult, DocumentImport)
 
 @pytest.fixture()
 def setup():
@@ -19,7 +19,7 @@ def setup():
     engine = app.state.engine
     with Session(engine) as db:
         for cls in (RequestReview, ComparisonResult, ComparisonRun, ExampleCase, ExampleSet, RequestExample, GuidelineRequest,
-                    RecheckAssignment, GuidelineChange, OcrResult, Asset, Comment, FindingResolution, ManualCheck, Decision, Finding, ProcessingPolicy, AuditEvent, RunSource, Job, ReviewRun, ContentRevision, ContentItem, SourceVersion,
+                    RecheckAssignment, GuidelineChange, OcrResult, Asset, DocumentImport, Comment, FindingResolution, ManualCheck, Decision, Finding, ProcessingPolicy, AuditEvent, RunSource, Job, ReviewRun, ContentRevision, ContentItem, SourceVersion,
                     SessionRecord, LoginAttempt, Brand, Membership, User, Organisation):
             db.execute(delete(cls))
         orgs = [Organisation(name='One'), Organisation(name='Two')]

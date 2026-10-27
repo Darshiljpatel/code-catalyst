@@ -86,12 +86,14 @@ class RevisionInput(StrictInput):
         return value.replace('\r\n', '\n').replace('\r', '\n')
 
 class ContentInput(RevisionInput):
+    document_import_id: str | None = Field(default=None, min_length=1, max_length=36)
     brand_id: str = Field(min_length=1, max_length=36)
     title: str = Field(min_length=1, max_length=200)
     reviewer_id: str | None = Field(default=None, min_length=1, max_length=36)
 
 class NewRevisionInput(RevisionInput):
     parent_revision_id: str = Field(min_length=1, max_length=36)
+    document_import_id: str | None = Field(default=None, min_length=1, max_length=36)
 
 class SourceOut(BaseModel):
     model_config = ConfigDict(from_attributes=True)
@@ -126,6 +128,7 @@ class RevisionOut(BaseModel):
     asset_id: str | None = None
     asset_sha256: str | None = None
     region_map: list[dict] | None = None
+    source_document: dict | None = None
 
 class ImageOut(BaseModel):
     asset_id: str
@@ -313,6 +316,7 @@ class ExportOut(BaseModel):
     exported_at: datetime
     image_sha256: str | None = None
     region_map: list[dict] | None = None
+    source_document: dict | None = None
 
 class ReviewRecordOut(BaseModel):
     run_id: str

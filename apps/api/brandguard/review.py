@@ -5,6 +5,7 @@ from fastapi import APIRouter, Depends, Header, Body, Request, Query
 from sqlalchemy import select, or_, func
 from sqlalchemy.orm import Session
 from .core import db, identity, manager, Problem, digest
+from .documents import source_document_for
 from .models import (Brand, Membership, SourceVersion, ContentItem, ContentRevision, ReviewRun, RunSource, Job, AuditEvent,
                      ProcessingPolicy, Organisation, Finding, GuidelineChange, RecheckAssignment, Asset, OcrResult)
 from .schemas import (SourceInput, ActivationInput, ContentInput, NewRevisionInput,
@@ -221,7 +222,8 @@ def create_content(body: ContentInput, member=Depends(identity), session: Sessio
         creator_id=member.id, reviewer_id=body.reviewer_id, current_revision=1, state='draft', created_at=now())
     session.add(item); session.flush()
     revision = ContentRevision(org_id=member.org_id, item_id=item.id, number=1, author_id=member.id,
-        **{k:getattr(body,k) for k in ('text','channel','audience','purpose')}, text_hash=digest(body.text), created_at=now())
+        **{k:getattr(body,k) for k in ('text','channel','audience','purpose')}, text_hash=digest(body.text), created_at=now(),
+        source_document=source_document_for(session, member, body.document_import_id, body.text))
     session.add(revision); session.flush()
     audit(session, member, 'content.created', item.id, revision_id=revision.id)
     session.commit()
@@ -244,7 +246,8 @@ def create_revision(item_id: str, body: NewRevisionInput, member=Depends(identit
     item.workflow_version += 1
     item.state = 'draft'
     revision = ContentRevision(org_id=member.org_id, item_id=item.id, number=item.current_revision, author_id=member.id,
-        **{k:getattr(body,k) for k in ('text','channel','audience','purpose')}, text_hash=digest(body.text), created_at=now())
+        **{k:getattr(body,k) for k in ('text','channel','audience','purpose')}, text_hash=digest(body.text), created_at=now(),
+        source_document=source_document_for(session, member, body.document_import_id, body.text))
     session.add(revision); session.flush()
     audit(session, member, 'revision.created', revision.id, parent_revision_id=parent.id)
     session.commit()

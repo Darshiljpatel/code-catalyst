@@ -423,7 +423,7 @@ def purge_expired(engine, now=None):
         session.execute(delete(m.SessionRecord).where(m.SessionRecord.membership_id.in_(members)))
         for model in (m.RequestReview, m.ComparisonResult, m.ComparisonRun, m.ExampleCase, m.ExampleSet, m.RequestExample,
                       m.GuidelineRequest, m.RecheckAssignment, m.GuidelineChange, m.Comment, m.FindingResolution, m.ManualCheck,
-                      m.Decision, m.Finding, m.Job, m.OcrResult, m.Asset, m.RunSource, m.ReviewRun, m.ContentRevision,
+                      m.Decision, m.Finding, m.Job, m.OcrResult, m.Asset, m.DocumentImport, m.RunSource, m.ReviewRun, m.ContentRevision,
                       m.ContentItem, m.SourceVersion, m.AuditEvent, m.ProcessingPolicy, m.Brand):
             session.execute(delete(model).where(model.org_id.in_(expired)))
         users = list(session.scalars(select(m.Membership.user_id).where(m.Membership.org_id.in_(expired))))

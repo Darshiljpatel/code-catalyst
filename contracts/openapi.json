@@ -355,6 +355,44 @@
         }
       }
     },
+    "/api/v1/imports/document": {
+      "post": {
+        "summary": "Import Document",
+        "operationId": "import_document_api_v1_imports_document_post",
+        "requestBody": {
+          "content": {
+            "multipart/form-data": {
+              "schema": {
+                "$ref": "#/components/schemas/Body_import_document_api_v1_imports_document_post"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DocumentImportOut"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/v1/brands/{brand_id}/guideline-health": {
       "get": {
         "summary": "Guideline Health",
@@ -2665,6 +2703,20 @@
         ],
         "title": "AssignmentInput"
       },
+      "Body_import_document_api_v1_imports_document_post": {
+        "properties": {
+          "file": {
+            "type": "string",
+            "contentMediaType": "application/octet-stream",
+            "title": "File"
+          }
+        },
+        "type": "object",
+        "required": [
+          "file"
+        ],
+        "title": "Body_import_document_api_v1_imports_document_post"
+      },
       "Body_upload_image_api_v1_content_image_post": {
         "properties": {
           "brand_id": {
@@ -3064,6 +3116,19 @@
             "minLength": 1,
             "title": "Purpose"
           },
+          "document_import_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 36,
+                "minLength": 1
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Document Import Id"
+          },
           "brand_id": {
             "type": "string",
             "maxLength": 36,
@@ -3446,6 +3511,84 @@
         ],
         "title": "DemoMemberOut"
       },
+      "DocumentImportOut": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "title": "Id"
+          },
+          "filename": {
+            "type": "string",
+            "title": "Filename"
+          },
+          "media_type": {
+            "type": "string",
+            "title": "Media Type"
+          },
+          "size_bytes": {
+            "type": "integer",
+            "title": "Size Bytes"
+          },
+          "original_sha256": {
+            "type": "string",
+            "title": "Original Sha256"
+          },
+          "text": {
+            "type": "string",
+            "title": "Text"
+          },
+          "text_hash": {
+            "type": "string",
+            "title": "Text Hash"
+          },
+          "pages": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Pages"
+          },
+          "blocks": {
+            "items": {
+              "additionalProperties": true,
+              "type": "object"
+            },
+            "type": "array",
+            "title": "Blocks"
+          },
+          "warnings": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Warnings"
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Created At"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "filename",
+          "media_type",
+          "size_bytes",
+          "original_sha256",
+          "text",
+          "text_hash",
+          "pages",
+          "blocks",
+          "warnings",
+          "created_at"
+        ],
+        "title": "DocumentImportOut"
+      },
       "DraftInput": {
         "properties": {
           "expected_version": {
@@ -3611,6 +3754,18 @@
               }
             ],
             "title": "Region Map"
+          },
+          "source_document": {
+            "anyOf": [
+              {
+                "additionalProperties": true,
+                "type": "object"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Source Document"
           }
         },
         "type": "object",
@@ -4495,6 +4650,19 @@
             "maxLength": 36,
             "minLength": 1,
             "title": "Parent Revision Id"
+          },
+          "document_import_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 36,
+                "minLength": 1
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Document Import Id"
           }
         },
         "additionalProperties": false,
@@ -5732,6 +5900,18 @@
               }
             ],
             "title": "Region Map"
+          },
+          "source_document": {
+            "anyOf": [
+              {
+                "additionalProperties": true,
+                "type": "object"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Source Document"
           }
         },
         "type": "object",
