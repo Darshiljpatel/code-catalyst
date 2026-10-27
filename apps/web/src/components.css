@@ -281,3 +281,23 @@
 .finding-filters label { display: block; font-size: 0.8125rem; margin-bottom: var(--space-1); }
 .finding-filters p { margin: var(--space-3) 0; }
 .finding-filters__actions { display: flex; gap: var(--space-2); flex-wrap: wrap; margin-bottom: var(--space-2); }
+
+/* Server status banner and build footer */
+.server-banner {
+  position: sticky; top: 0; z-index: 1000;
+  display: flex; align-items: center; justify-content: center; gap: var(--space-2);
+  padding: var(--space-2) var(--space-4);
+  font-size: 0.875rem; font-weight: 600; text-align: center;
+}
+.server-banner--waking { background: #fff7e0; color: #5c4400; border-bottom: 1px solid #f0d58a; }
+.server-banner--offline { background: #fdecec; color: #7a1b1b; border-bottom: 1px solid #f2b8b8; }
+.server-banner__pulse {
+  width: 0.6rem; height: 0.6rem; border-radius: 50%; background: currentColor;
+  animation: server-banner-pulse 1.2s ease-in-out infinite;
+}
+@keyframes server-banner-pulse { 50% { opacity: 0.3; } }
+@media (prefers-reduced-motion: reduce) { .server-banner__pulse { animation: none; } }
+.build-footer {
+  padding: var(--space-4); text-align: center;
+  font-size: 0.75rem; color: var(--text-muted, #5f6470);
+}

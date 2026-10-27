@@ -29,6 +29,7 @@ import { NewReviewPage } from './pages/NewReviewPage';
 import { ContentDetailPage } from './pages/ContentDetailPage';
 import { NotFoundPage } from './pages/NotFoundPage';
 import { JudgeGuide } from './components/JudgeGuide';
+import { ServerStatusBanner, BuildFooter } from './components/ServerStatusBanner';
 
 function ScrollToTop() {
   const { pathname } = useLocation();
@@ -69,7 +70,9 @@ function RootLayout() {
           Skip to main content
         </a>
 
+        <ServerStatusBanner />
         <Outlet />
+        <BuildFooter />
         <JudgeGuide />
       </UnsavedChangesProvider>
     </AuthProvider>

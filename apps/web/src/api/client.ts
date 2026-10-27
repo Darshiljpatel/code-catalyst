@@ -45,7 +45,10 @@ import type {
   AmbiguityInput,
   AmbiguityOut,
   ApiError,
+  WorkerHealthResponse,
+  VersionResponse,
 } from './types';
+import { retryStarted, retryFinished } from './serverStatus';
 
 // ---------------------------------------------------------------------------
 // Transport abstraction — swap in mock during dev; real fetch in production
@@ -94,6 +97,28 @@ export class ApiResponseError extends Error {
   }
 }
 
+/** Retry budget for a sleeping or restarting backend (Render cold starts take 30–40 s). */
+const WAKE_BUDGET_MS = 60_000;
+let _sleep = (ms: number) => new Promise<void>(resolve => setTimeout(resolve, ms));
+
+/** Test hook: replace the backoff timer. */
+export function setRetrySleep(sleep: (ms: number) => Promise<void>) {
+  _sleep = sleep;
+}
+
+function isJson(res: Response) {
+  return (res.headers.get('content-type') || '').toLowerCase().includes('application/json');
+}
+
+function unavailable(status: number): ApiResponseError {
+  return new ApiResponseError(status, {
+    code: 'server_unavailable',
+    message: 'The review server is not responding yet. Wait a moment and try again.',
+    request_id: '',
+    details: {},
+  });
+}
+
 async function request<T>(
   method: string,
   path: string,
@@ -108,16 +133,50 @@ async function request<T>(
   if (!['GET', 'HEAD', 'OPTIONS'].includes(method) && _csrfToken) {
     headers['x-csrf-token'] = _csrfToken;
   }
-  const res = await _transport(`${BASE}${path}`, {
-    method,
-    credentials: 'same-origin',
-    headers,
-    body: body !== undefined ? JSON.stringify(body) : undefined,
-  });
-  if (res.status === 204) return undefined as unknown as T;
-  const json = await res.json();
-  if (!res.ok) throw new ApiResponseError(res.status, json as ApiError);
-  return json as T;
+  // Reads are always safe to repeat; writes only when the server deduplicates them.
+  const retryable = method === 'GET' || Object.keys(headers).some(h => h.toLowerCase() === 'idempotency-key');
+  const deadline = Date.now() + WAKE_BUDGET_MS;
+  let delay = 1000;
+  let retrying = false;
+  try {
+    for (;;) {
+      let res: Response | undefined;
+      let networkError: unknown;
+      try {
+        res = await _transport(`${BASE}${path}`, {
+          method,
+          credentials: 'same-origin',
+          headers,
+          body: body !== undefined ? JSON.stringify(body) : undefined,
+        });
+      } catch (error) {
+        networkError = error;
+      }
+      // Our API always answers errors with a JSON envelope. A 502/503/504 HTML page or a
+      // dropped connection means a proxy is still waking the backend.
+      const waking = res === undefined || (!res.ok && !isJson(res));
+      if (waking && retryable && Date.now() + delay < deadline) {
+        if (!retrying) { retrying = true; retryStarted(); }
+        await _sleep(delay);
+        delay = Math.min(delay * 2, 8000);
+        continue;
+      }
+      if (res === undefined) {
+        if (networkError instanceof Error && networkError.name === 'AbortError') throw networkError;
+        throw unavailable(0);
+      }
+      if (res.status === 204) return undefined as unknown as T;
+      if (!isJson(res)) {
+        if (!res.ok) throw unavailable(res.status);
+        throw unavailable(502);
+      }
+      const json = await res.json();
+      if (!res.ok) throw new ApiResponseError(res.status, json as ApiError);
+      return json as T;
+    }
+  } finally {
+    if (retrying) retryFinished();
+  }
 }
 
 // ---------------------------------------------------------------------------
@@ -349,4 +408,12 @@ export async function getLive(): Promise<LiveResponse> {
 
 export async function getReady(): Promise<ReadyResponse> {
   return request<ReadyResponse>('GET', '/health/ready');
+}
+
+export async function getWorkerHealth(): Promise<WorkerHealthResponse> {
+  return request<WorkerHealthResponse>('GET', '/health/worker');
+}
+
+export async function getVersion(): Promise<VersionResponse> {
+  return request<VersionResponse>('GET', '/health/version');
 }
