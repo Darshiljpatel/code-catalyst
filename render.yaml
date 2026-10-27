@@ -1,0 +1,44 @@
+# Render Blueprint: always-on API and a separately supervised worker sharing one Postgres.
+# Secrets are entered in the Render dashboard (sync: false); never commit them here.
+envVarGroups:
+  - name: brandguard-shared
+    envVars:
+      - key: DATABASE_URL
+        sync: false
+      - key: APP_ENV
+        value: production
+      - key: PUBLIC_ORIGIN
+        sync: false
+      - key: NEBIUS_API_KEY
+        sync: false
+      - key: MODEL_PRIMARY_ID
+        value: Qwen/Qwen3-235B-A22B-Instruct-2507
+      - key: MODEL_DAILY_RUN_LIMIT
+        value: "500"
+      - key: SEED_PASSWORD
+        sync: false
+
+services:
+  - type: web
+    name: brandguard-api
+    runtime: docker
+    plan: starter
+    dockerfilePath: infra/Dockerfile.api
+    dockerContext: .
+    healthCheckPath: /api/v1/health/ready
+    preDeployCommand: sh -c 'alembic -c apps/api/alembic.ini upgrade head && if [ -n "$SEED_PASSWORD" ]; then python -m brandguard.seed; fi'
+    autoDeploy: true
+    envVars:
+      - fromGroup: brandguard-shared
+      - key: TRUST_PROXY_HEADERS
+        value: "1"
+
+  - type: worker
+    name: brandguard-worker
+    runtime: docker
+    plan: starter
+    dockerfilePath: infra/Dockerfile.worker
+    dockerContext: .
+    autoDeploy: true
+    envVars:
+      - fromGroup: brandguard-shared
