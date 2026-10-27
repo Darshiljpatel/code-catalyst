@@ -119,7 +119,7 @@ def create_source(brand_id: str, body: SourceInput, member=Depends(manager), ses
     ).order_by(SourceVersion.version.desc()).limit(1))
     source = SourceVersion(org_id=member.org_id, brand_id=brand_id, source_key=body.source_key,
         version=previous.version + 1 if previous else 1, owner_id=member.id, title=body.title,
-        text=body.text, text_hash=digest(body.text), rules=[r.model_dump() for r in body.rules],
+        text=body.text, text_hash=digest(body.text), rules=[r.model_dump(exclude_none=True) for r in body.rules],
         valid_from=body.valid_from, valid_until=body.valid_until, state='draft', created_at=now())
     session.add(source); session.flush()
     audit(session, member, 'source.created', source.id, version=source.version)
@@ -171,8 +171,10 @@ def impact_preview(source_id: str, retire_source_ids: Annotated[list[str], Query
 @router.post('/sources/{source_id}/activate', response_model=ActivationOut)
 def activate_source(source_id: str, body: ActivationInput, request: Request, member=Depends(manager), session: Session=Depends(db)):
     from .impact import compute_impact, record_change
+    from .requests import require_peer_review, mark_activated
     source, brand, retired_sources, new_sources, at = activation_plan(session, member, source_id,
         body.retire_source_ids, body.expected_epoch, lock=True)
+    linked_request = require_peer_review(session, member, source, body.regression_acknowledgement)
     impact = compute_impact(session, member.org_id, brand, source, retired_sources, new_sources)
     retired = {s.id for s in retired_sources}
     for other in retired_sources:
@@ -183,6 +185,8 @@ def activate_source(source_id: str, body: ActivationInput, request: Request, mem
     impact['new_sources'] = [SourceOut.model_validate(s).model_dump(mode='json') for s in eligible_sources(session, member, brand.id, at)]
     change = record_change(session, member, brand, source, retired_sources, impact,
                            request.app.state.settings.max_external_runs_per_day, at)
+    if linked_request is not None:
+        mark_activated(session, member, linked_request, change, body.regression_acknowledgement)
     audit(session, member, 'source.activated', source.id, source_epoch=brand.source_epoch,
           retired_source_ids=sorted(retired), rationale=body.rationale, change_id=change.id)
     session.commit()

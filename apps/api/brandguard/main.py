@@ -71,6 +71,8 @@ def create_app(settings=None, provider_config=None):
     from .governance import router as governance_router
     from .health import router as health_router
     from .rechecks import router as rechecks_router
+    from .requests import router as requests_router
+    app.include_router(requests_router)
     app.include_router(rechecks_router)
     app.include_router(health_router)
     app.include_router(governance_router)

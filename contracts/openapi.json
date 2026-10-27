@@ -92,6 +92,566 @@
         }
       }
     },
+    "/api/v1/brands/{brand_id}/guideline-health": {
+      "get": {
+        "summary": "Guideline Health",
+        "operationId": "guideline_health_api_v1_brands__brand_id__guideline_health_get",
+        "parameters": [
+          {
+            "name": "brand_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Brand Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/GuidelineHealthOut"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/guideline-requests": {
+      "post": {
+        "summary": "Create Request",
+        "operationId": "create_request_api_v1_guideline_requests_post",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/RequestInput"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RequestOut"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      },
+      "get": {
+        "summary": "List Requests",
+        "operationId": "list_requests_api_v1_guideline_requests_get",
+        "parameters": [
+          {
+            "name": "brand_id",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Brand Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/RequestSummaryOut"
+                  },
+                  "title": "Response List Requests Api V1 Guideline Requests Get"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/guideline-requests/{request_id}": {
+      "get": {
+        "summary": "Get Request",
+        "operationId": "get_request_api_v1_guideline_requests__request_id__get",
+        "parameters": [
+          {
+            "name": "request_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Request Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RequestOut"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      },
+      "patch": {
+        "summary": "Update Request",
+        "operationId": "update_request_api_v1_guideline_requests__request_id__patch",
+        "parameters": [
+          {
+            "name": "request_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Request Id"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/RequestPatch"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RequestOut"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/guideline-requests/{request_id}/draft": {
+      "put": {
+        "summary": "Save Draft",
+        "operationId": "save_draft_api_v1_guideline_requests__request_id__draft_put",
+        "parameters": [
+          {
+            "name": "request_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Request Id"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/DraftInput"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RequestOut"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/guideline-requests/{request_id}/example-set": {
+      "post": {
+        "summary": "Save Examples",
+        "description": "One click: labelled examples of this request join the brand's saved example set.",
+        "operationId": "save_examples_api_v1_guideline_requests__request_id__example_set_post",
+        "parameters": [
+          {
+            "name": "request_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Request Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ExampleSetOut"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/brands/{brand_id}/example-sets": {
+      "get": {
+        "summary": "List Example Sets",
+        "operationId": "list_example_sets_api_v1_brands__brand_id__example_sets_get",
+        "parameters": [
+          {
+            "name": "brand_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Brand Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/ExampleSetOut"
+                  },
+                  "title": "Response List Example Sets Api V1 Brands  Brand Id  Example Sets Get"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/brands/{brand_id}/example-sets/default": {
+      "post": {
+        "summary": "Ensure Example Set",
+        "operationId": "ensure_example_set_api_v1_brands__brand_id__example_sets_default_post",
+        "parameters": [
+          {
+            "name": "brand_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Brand Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ExampleSetOut"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/example-sets/{set_id}/cases": {
+      "post": {
+        "summary": "Add Case",
+        "operationId": "add_case_api_v1_example_sets__set_id__cases_post",
+        "parameters": [
+          {
+            "name": "set_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Set Id"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CaseInput"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ExampleSetOut"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/guideline-requests/{request_id}/comparisons": {
+      "post": {
+        "summary": "Run Comparison",
+        "description": "Evaluate every saved case under the live and the proposed rules with the local engine.",
+        "operationId": "run_comparison_api_v1_guideline_requests__request_id__comparisons_post",
+        "parameters": [
+          {
+            "name": "request_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Request Id"
+            }
+          }
+        ],
+        "responses": {
+          "201": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ComparisonOut"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/comparisons/{comparison_id}": {
+      "get": {
+        "summary": "Get Comparison",
+        "operationId": "get_comparison_api_v1_comparisons__comparison_id__get",
+        "parameters": [
+          {
+            "name": "comparison_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Comparison Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ComparisonOut"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/guideline-requests/{request_id}/reviews": {
+      "post": {
+        "summary": "Review Request",
+        "description": "Four eyes: another manager or an admin approves the exact draft and comparison.",
+        "operationId": "review_request_api_v1_guideline_requests__request_id__reviews_post",
+        "parameters": [
+          {
+            "name": "request_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Request Id"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ReviewInput"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RequestOut"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/v1/guideline-changes": {
       "get": {
         "summary": "List Changes",
@@ -1544,6 +2104,18 @@
             "maxLength": 2000,
             "minLength": 10,
             "title": "Rationale"
+          },
+          "regression_acknowledgement": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 2000
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Regression Acknowledgement"
           }
         },
         "additionalProperties": false,
@@ -1830,6 +2402,108 @@
         ],
         "title": "AssignmentInput"
       },
+      "CaseExpectation": {
+        "properties": {
+          "source_key": {
+            "type": "string",
+            "pattern": "^[A-Za-z0-9_-]{1,100}$",
+            "title": "Source Key"
+          },
+          "rule_id": {
+            "type": "string",
+            "maxLength": 100,
+            "minLength": 1,
+            "title": "Rule Id"
+          },
+          "expected": {
+            "type": "string",
+            "enum": [
+              "flag",
+              "no_flag"
+            ],
+            "title": "Expected"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "source_key",
+          "rule_id",
+          "expected"
+        ],
+        "title": "CaseExpectation"
+      },
+      "CaseInput": {
+        "properties": {
+          "label": {
+            "type": "string",
+            "maxLength": 200,
+            "minLength": 1,
+            "title": "Label"
+          },
+          "text": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 20000,
+                "minLength": 1
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Text"
+          },
+          "revision_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 36,
+                "minLength": 1
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Revision Id"
+          },
+          "channel": {
+            "type": "string",
+            "maxLength": 100,
+            "minLength": 1,
+            "title": "Channel",
+            "default": "example"
+          },
+          "audience": {
+            "type": "string",
+            "maxLength": 300,
+            "minLength": 1,
+            "title": "Audience",
+            "default": "example"
+          },
+          "purpose": {
+            "type": "string",
+            "maxLength": 500,
+            "minLength": 1,
+            "title": "Purpose",
+            "default": "example"
+          },
+          "expectations": {
+            "items": {
+              "$ref": "#/components/schemas/CaseExpectation"
+            },
+            "type": "array",
+            "maxItems": 20,
+            "title": "Expectations"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "label"
+        ],
+        "title": "CaseInput"
+      },
       "CheckOut": {
         "properties": {
           "category": {
@@ -1942,6 +2616,66 @@
           "created_at"
         ],
         "title": "CommentOut"
+      },
+      "ComparisonOut": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "title": "Id"
+          },
+          "request_id": {
+            "type": "string",
+            "title": "Request Id"
+          },
+          "proposed_source_id": {
+            "type": "string",
+            "title": "Proposed Source Id"
+          },
+          "proposed_hash": {
+            "type": "string",
+            "title": "Proposed Hash"
+          },
+          "example_set_id": {
+            "type": "string",
+            "title": "Example Set Id"
+          },
+          "status": {
+            "type": "string",
+            "title": "Status"
+          },
+          "current": {
+            "type": "boolean",
+            "title": "Current"
+          },
+          "summary": {
+            "additionalProperties": true,
+            "type": "object",
+            "title": "Summary"
+          },
+          "created_by": {
+            "type": "string",
+            "title": "Created By"
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Created At"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "request_id",
+          "proposed_source_id",
+          "proposed_hash",
+          "example_set_id",
+          "status",
+          "current",
+          "summary",
+          "created_by",
+          "created_at"
+        ],
+        "title": "ComparisonOut"
       },
       "ContentInput": {
         "properties": {
@@ -2301,6 +3035,103 @@
           "decided_at"
         ],
         "title": "DecisionOut"
+      },
+      "DraftInput": {
+        "properties": {
+          "expected_version": {
+            "type": "integer",
+            "minimum": 1.0,
+            "title": "Expected Version"
+          },
+          "title": {
+            "type": "string",
+            "maxLength": 200,
+            "minLength": 1,
+            "title": "Title"
+          },
+          "text": {
+            "type": "string",
+            "maxLength": 100000,
+            "minLength": 1,
+            "title": "Text"
+          },
+          "rules": {
+            "items": {
+              "$ref": "#/components/schemas/RuleInput"
+            },
+            "type": "array",
+            "maxItems": 100,
+            "minItems": 1,
+            "title": "Rules"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "expected_version",
+          "title",
+          "text",
+          "rules"
+        ],
+        "title": "DraftInput"
+      },
+      "ExampleLabel": {
+        "properties": {
+          "example_id": {
+            "type": "string",
+            "maxLength": 36,
+            "minLength": 1,
+            "title": "Example Id"
+          },
+          "expected": {
+            "type": "string",
+            "enum": [
+              "flag",
+              "no_flag",
+              "unsure"
+            ],
+            "title": "Expected"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "example_id",
+          "expected"
+        ],
+        "title": "ExampleLabel"
+      },
+      "ExampleSetOut": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "title": "Id"
+          },
+          "brand_id": {
+            "type": "string",
+            "title": "Brand Id"
+          },
+          "name": {
+            "type": "string",
+            "title": "Name"
+          },
+          "cases": {
+            "items": {
+              "additionalProperties": true,
+              "type": "object"
+            },
+            "type": "array",
+            "title": "Cases"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "brand_id",
+          "name",
+          "cases"
+        ],
+        "title": "ExampleSetOut"
       },
       "ExportOut": {
         "properties": {
@@ -2674,6 +3505,51 @@
           "closed_at"
         ],
         "title": "GuidelineChangeSummaryOut"
+      },
+      "GuidelineHealthOut": {
+        "properties": {
+          "brand_id": {
+            "type": "string",
+            "title": "Brand Id"
+          },
+          "window_days": {
+            "type": "integer",
+            "title": "Window Days"
+          },
+          "unclear_threshold": {
+            "type": "integer",
+            "title": "Unclear Threshold"
+          },
+          "dispute_definition": {
+            "type": "string",
+            "title": "Dispute Definition"
+          },
+          "rules": {
+            "items": {
+              "$ref": "#/components/schemas/RuleHealthOut"
+            },
+            "type": "array",
+            "title": "Rules"
+          },
+          "open_requests": {
+            "items": {
+              "additionalProperties": true,
+              "type": "object"
+            },
+            "type": "array",
+            "title": "Open Requests"
+          }
+        },
+        "type": "object",
+        "required": [
+          "brand_id",
+          "window_days",
+          "unclear_threshold",
+          "dispute_definition",
+          "rules",
+          "open_requests"
+        ],
+        "title": "GuidelineHealthOut"
       },
       "HTTPValidationError": {
         "properties": {
@@ -3477,6 +4353,405 @@
         ],
         "title": "RecheckQueueOut"
       },
+      "RequestInput": {
+        "properties": {
+          "brand_id": {
+            "type": "string",
+            "maxLength": 36,
+            "minLength": 1,
+            "title": "Brand Id"
+          },
+          "source_id": {
+            "type": "string",
+            "maxLength": 36,
+            "minLength": 1,
+            "title": "Source Id"
+          },
+          "rule_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 100,
+                "minLength": 1
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Rule Id"
+          },
+          "ambiguity_report_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 36,
+                "minLength": 1
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Ambiguity Report Id"
+          },
+          "title": {
+            "type": "string",
+            "maxLength": 200,
+            "minLength": 3,
+            "title": "Title"
+          },
+          "problem": {
+            "type": "string",
+            "maxLength": 4000,
+            "minLength": 10,
+            "title": "Problem"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "brand_id",
+          "source_id",
+          "title",
+          "problem"
+        ],
+        "title": "RequestInput"
+      },
+      "RequestOut": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "title": "Id"
+          },
+          "brand_id": {
+            "type": "string",
+            "title": "Brand Id"
+          },
+          "source_key": {
+            "type": "string",
+            "title": "Source Key"
+          },
+          "rule_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Rule Id"
+          },
+          "title": {
+            "type": "string",
+            "title": "Title"
+          },
+          "status": {
+            "type": "string",
+            "title": "Status"
+          },
+          "created_by": {
+            "type": "string",
+            "title": "Created By"
+          },
+          "assignee_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Assignee Id"
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Created At"
+          },
+          "updated_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Updated At"
+          },
+          "example_count": {
+            "type": "integer",
+            "title": "Example Count"
+          },
+          "problem": {
+            "type": "string",
+            "title": "Problem"
+          },
+          "base_source_id": {
+            "type": "string",
+            "title": "Base Source Id"
+          },
+          "draft_source_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Draft Source Id"
+          },
+          "draft_hash": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Draft Hash"
+          },
+          "change_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Change Id"
+          },
+          "version": {
+            "type": "integer",
+            "title": "Version"
+          },
+          "signals": {
+            "additionalProperties": true,
+            "type": "object",
+            "title": "Signals"
+          },
+          "examples": {
+            "items": {
+              "additionalProperties": true,
+              "type": "object"
+            },
+            "type": "array",
+            "title": "Examples"
+          },
+          "base_source": {
+            "$ref": "#/components/schemas/SourceOut"
+          },
+          "draft_source": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/SourceOut"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "diff": {
+            "anyOf": [
+              {
+                "additionalProperties": true,
+                "type": "object"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Diff"
+          },
+          "comparisons": {
+            "items": {
+              "additionalProperties": true,
+              "type": "object"
+            },
+            "type": "array",
+            "title": "Comparisons"
+          },
+          "reviews": {
+            "items": {
+              "additionalProperties": true,
+              "type": "object"
+            },
+            "type": "array",
+            "title": "Reviews"
+          },
+          "activity": {
+            "items": {
+              "additionalProperties": true,
+              "type": "object"
+            },
+            "type": "array",
+            "title": "Activity"
+          },
+          "gates": {
+            "additionalProperties": true,
+            "type": "object",
+            "title": "Gates"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "brand_id",
+          "source_key",
+          "rule_id",
+          "title",
+          "status",
+          "created_by",
+          "assignee_id",
+          "created_at",
+          "updated_at",
+          "example_count",
+          "problem",
+          "base_source_id",
+          "draft_source_id",
+          "draft_hash",
+          "change_id",
+          "version",
+          "signals",
+          "examples",
+          "base_source",
+          "draft_source",
+          "diff",
+          "comparisons",
+          "reviews",
+          "activity",
+          "gates"
+        ],
+        "title": "RequestOut"
+      },
+      "RequestPatch": {
+        "properties": {
+          "expected_version": {
+            "type": "integer",
+            "minimum": 1.0,
+            "title": "Expected Version"
+          },
+          "labels": {
+            "items": {
+              "$ref": "#/components/schemas/ExampleLabel"
+            },
+            "type": "array",
+            "maxItems": 200,
+            "title": "Labels"
+          },
+          "assignee_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 36,
+                "minLength": 1
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Assignee Id"
+          },
+          "status": {
+            "anyOf": [
+              {
+                "type": "string",
+                "enum": [
+                  "in_review",
+                  "withdrawn"
+                ]
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Status"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "expected_version"
+        ],
+        "title": "RequestPatch"
+      },
+      "RequestSummaryOut": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "title": "Id"
+          },
+          "brand_id": {
+            "type": "string",
+            "title": "Brand Id"
+          },
+          "source_key": {
+            "type": "string",
+            "title": "Source Key"
+          },
+          "rule_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Rule Id"
+          },
+          "title": {
+            "type": "string",
+            "title": "Title"
+          },
+          "status": {
+            "type": "string",
+            "title": "Status"
+          },
+          "created_by": {
+            "type": "string",
+            "title": "Created By"
+          },
+          "assignee_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Assignee Id"
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Created At"
+          },
+          "updated_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Updated At"
+          },
+          "example_count": {
+            "type": "integer",
+            "title": "Example Count"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "brand_id",
+          "source_key",
+          "rule_id",
+          "title",
+          "status",
+          "created_by",
+          "assignee_id",
+          "created_at",
+          "updated_at",
+          "example_count"
+        ],
+        "title": "RequestSummaryOut"
+      },
       "ResolutionInput": {
         "properties": {
           "rationale": {
@@ -3566,6 +4841,45 @@
           "created_at"
         ],
         "title": "ResolutionOut"
+      },
+      "ReviewInput": {
+        "properties": {
+          "rationale": {
+            "type": "string",
+            "maxLength": 4000,
+            "minLength": 20,
+            "title": "Rationale"
+          },
+          "decision": {
+            "type": "string",
+            "enum": [
+              "approved",
+              "changes_requested",
+              "rejected"
+            ],
+            "title": "Decision"
+          },
+          "comparison_run_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 36,
+                "minLength": 1
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Comparison Run Id"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "rationale",
+          "decision"
+        ],
+        "title": "ReviewInput"
       },
       "ReviewRecordOut": {
         "properties": {
@@ -3686,6 +5000,98 @@
         ],
         "title": "RevisionOut"
       },
+      "RuleHealthOut": {
+        "properties": {
+          "source_id": {
+            "type": "string",
+            "title": "Source Id"
+          },
+          "source_key": {
+            "type": "string",
+            "title": "Source Key"
+          },
+          "source_title": {
+            "type": "string",
+            "title": "Source Title"
+          },
+          "rule_id": {
+            "type": "string",
+            "title": "Rule Id"
+          },
+          "category": {
+            "type": "string",
+            "title": "Category"
+          },
+          "kind": {
+            "type": "string",
+            "title": "Kind"
+          },
+          "value": {
+            "type": "string",
+            "title": "Value"
+          },
+          "flagged_items": {
+            "type": "integer",
+            "title": "Flagged Items"
+          },
+          "confirmed_items": {
+            "type": "integer",
+            "title": "Confirmed Items"
+          },
+          "disputed_items": {
+            "type": "integer",
+            "title": "Disputed Items"
+          },
+          "ambiguity_reports": {
+            "type": "integer",
+            "title": "Ambiguity Reports"
+          },
+          "dispute_rate": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Dispute Rate"
+          },
+          "likely_unclear": {
+            "type": "boolean",
+            "title": "Likely Unclear"
+          },
+          "open_request_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Open Request Id"
+          }
+        },
+        "type": "object",
+        "required": [
+          "source_id",
+          "source_key",
+          "source_title",
+          "rule_id",
+          "category",
+          "kind",
+          "value",
+          "flagged_items",
+          "confirmed_items",
+          "disputed_items",
+          "ambiguity_reports",
+          "dispute_rate",
+          "likely_unclear",
+          "open_request_id"
+        ],
+        "title": "RuleHealthOut"
+      },
       "RuleInput": {
         "properties": {
           "id": {
@@ -3736,6 +5142,36 @@
             "maxLength": 4000,
             "minLength": 1,
             "title": "Evidence Quote"
+          },
+          "allowed_variants": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string"
+                },
+                "type": "array",
+                "maxItems": 20
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Allowed Variants"
+          },
+          "forbidden_variants": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string"
+                },
+                "type": "array",
+                "maxItems": 20
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Forbidden Variants"
           }
         },
         "additionalProperties": false,

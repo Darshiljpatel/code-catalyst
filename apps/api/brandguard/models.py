@@ -361,3 +361,140 @@ class RecheckAssignment(Base):
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True))
     updated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True))
     resolved_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+
+class GuidelineRequest(Base):
+    """A tracked guideline-improvement request (Improvement 3)."""
+    __tablename__ = 'guideline_requests'
+    __table_args__ = (
+        UniqueConstraint('org_id', 'id'),
+        ForeignKeyConstraint(['org_id', 'brand_id'], ['brands.org_id', 'brands.id']),
+        ForeignKeyConstraint(['org_id', 'base_source_id'], ['source_versions.org_id', 'source_versions.id']),
+        ForeignKeyConstraint(['org_id', 'created_by'], ['memberships.org_id', 'memberships.id']),
+        ForeignKeyConstraint(['org_id', 'assignee_id'], ['memberships.org_id', 'memberships.id']),
+        CheckConstraint("status IN ('open','in_review','changes_requested','approved','activated','withdrawn')"),
+    )
+    id: Mapped[str] = mapped_column(String(36), primary_key=True, default=uid)
+    org_id: Mapped[str] = mapped_column(String(36), index=True)
+    brand_id: Mapped[str] = mapped_column(String(36), index=True)
+    source_key: Mapped[str] = mapped_column(String(100))
+    base_source_id: Mapped[str] = mapped_column(String(36))
+    rule_id: Mapped[str | None] = mapped_column(String(100))
+    title: Mapped[str] = mapped_column(String(200))
+    problem: Mapped[str] = mapped_column(Text)
+    status: Mapped[str] = mapped_column(String(30), default='open')
+    signals: Mapped[dict] = mapped_column(JSON)
+    draft_source_id: Mapped[str | None] = mapped_column(String(36))
+    draft_hash: Mapped[str | None] = mapped_column(String(64))
+    change_id: Mapped[str | None] = mapped_column(String(36))
+    created_by: Mapped[str] = mapped_column(String(36))
+    assignee_id: Mapped[str | None] = mapped_column(String(36))
+    version: Mapped[int] = mapped_column(Integer, default=1)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True))
+    updated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True))
+
+class RequestExample(Base):
+    __tablename__ = 'request_examples'
+    __table_args__ = (
+        ForeignKeyConstraint(['org_id', 'request_id'], ['guideline_requests.org_id', 'guideline_requests.id']),
+        CheckConstraint("kind IN ('dispute','ambiguity','manual')"),
+        CheckConstraint("expected IN ('flag','no_flag','unsure')"),
+    )
+    id: Mapped[str] = mapped_column(String(36), primary_key=True, default=uid)
+    org_id: Mapped[str] = mapped_column(String(36), index=True)
+    request_id: Mapped[str] = mapped_column(String(36), index=True)
+    item_id: Mapped[str | None] = mapped_column(String(36))
+    revision_id: Mapped[str | None] = mapped_column(String(36))
+    finding_id: Mapped[str | None] = mapped_column(String(36))
+    kind: Mapped[str] = mapped_column(String(20))
+    excerpt: Mapped[str] = mapped_column(Text)
+    text: Mapped[str] = mapped_column(Text)
+    context: Mapped[dict] = mapped_column(JSON)
+    dispute: Mapped[dict] = mapped_column(JSON)
+    expected: Mapped[str] = mapped_column(String(20), default='unsure')
+    labelled_by: Mapped[str | None] = mapped_column(String(36))
+    external_ok: Mapped[bool] = mapped_column(default=False)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True))
+
+class ExampleSet(Base):
+    """Brand-scoped saved example campaigns used by comparison runs."""
+    __tablename__ = 'example_sets'
+    __table_args__ = (
+        UniqueConstraint('org_id', 'id'),
+        ForeignKeyConstraint(['org_id', 'brand_id'], ['brands.org_id', 'brands.id']),
+    )
+    id: Mapped[str] = mapped_column(String(36), primary_key=True, default=uid)
+    org_id: Mapped[str] = mapped_column(String(36), index=True)
+    brand_id: Mapped[str] = mapped_column(String(36), index=True)
+    name: Mapped[str] = mapped_column(String(200))
+    created_by: Mapped[str] = mapped_column(String(36))
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True))
+
+class ExampleCase(Base):
+    __tablename__ = 'example_cases'
+    __table_args__ = (
+        UniqueConstraint('org_id', 'id'),
+        ForeignKeyConstraint(['org_id', 'set_id'], ['example_sets.org_id', 'example_sets.id']),
+    )
+    id: Mapped[str] = mapped_column(String(36), primary_key=True, default=uid)
+    org_id: Mapped[str] = mapped_column(String(36), index=True)
+    set_id: Mapped[str] = mapped_column(String(36), index=True)
+    label: Mapped[str] = mapped_column(String(200))
+    text: Mapped[str] = mapped_column(Text)
+    context: Mapped[dict] = mapped_column(JSON)
+    # [{source_key, rule_id, expected: flag|no_flag}]
+    expectations: Mapped[list] = mapped_column(JSON)
+    origin_revision_id: Mapped[str | None] = mapped_column(String(36))
+    # Only team-written cases or copies of consented revisions may ever reach an AI provider.
+    external_ok: Mapped[bool] = mapped_column(default=False)
+    author_id: Mapped[str] = mapped_column(String(36))
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True))
+
+class ComparisonRun(Base):
+    __tablename__ = 'comparison_runs'
+    __table_args__ = (
+        UniqueConstraint('org_id', 'id'),
+        ForeignKeyConstraint(['org_id', 'request_id'], ['guideline_requests.org_id', 'guideline_requests.id']),
+    )
+    id: Mapped[str] = mapped_column(String(36), primary_key=True, default=uid)
+    org_id: Mapped[str] = mapped_column(String(36), index=True)
+    request_id: Mapped[str] = mapped_column(String(36), index=True)
+    baseline_source_ids: Mapped[list] = mapped_column(JSON)
+    proposed_source_id: Mapped[str] = mapped_column(String(36))
+    proposed_hash: Mapped[str] = mapped_column(String(64))
+    example_set_id: Mapped[str] = mapped_column(String(36))
+    status: Mapped[str] = mapped_column(String(20))
+    summary: Mapped[dict] = mapped_column(JSON)
+    created_by: Mapped[str] = mapped_column(String(36))
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True))
+
+class ComparisonResult(Base):
+    __tablename__ = 'comparison_results'
+    __table_args__ = (
+        ForeignKeyConstraint(['org_id', 'run_id'], ['comparison_runs.org_id', 'comparison_runs.id']),
+        CheckConstraint("side IN ('live','proposed')"),
+    )
+    id: Mapped[str] = mapped_column(String(36), primary_key=True, default=uid)
+    org_id: Mapped[str] = mapped_column(String(36), index=True)
+    run_id: Mapped[str] = mapped_column(String(36), index=True)
+    case_id: Mapped[str] = mapped_column(String(36))
+    side: Mapped[str] = mapped_column(String(20))
+    attempt: Mapped[int] = mapped_column(Integer, default=1)
+    findings: Mapped[list] = mapped_column(JSON)
+    checks: Mapped[list] = mapped_column(JSON)
+
+class RequestReview(Base):
+    __tablename__ = 'request_reviews'
+    __table_args__ = (
+        ForeignKeyConstraint(['org_id', 'request_id'], ['guideline_requests.org_id', 'guideline_requests.id']),
+        ForeignKeyConstraint(['org_id', 'reviewer_id'], ['memberships.org_id', 'memberships.id']),
+        CheckConstraint("decision IN ('approved','changes_requested','rejected')"),
+    )
+    id: Mapped[str] = mapped_column(String(36), primary_key=True, default=uid)
+    org_id: Mapped[str] = mapped_column(String(36), index=True)
+    request_id: Mapped[str] = mapped_column(String(36), index=True)
+    reviewer_id: Mapped[str] = mapped_column(String(36))
+    decision: Mapped[str] = mapped_column(String(30))
+    rationale: Mapped[str] = mapped_column(Text)
+    draft_hash: Mapped[str] = mapped_column(String(64))
+    comparison_run_id: Mapped[str | None] = mapped_column(String(36))
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True))
