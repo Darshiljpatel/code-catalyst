@@ -58,6 +58,8 @@ import type {
   Comparison,
   ExampleSet,
   ExampleExpectation,
+  OcrOut,
+  RegionInput,
   VersionResponse,
 } from './types';
 import { retryStarted, retryFinished } from './serverStatus';
@@ -371,6 +373,48 @@ export async function createRevision(
   payload: NewRevisionInput
 ): Promise<ContentOut> {
   return request<ContentOut>('POST', `/content/${itemId}/revisions`, payload);
+}
+
+// ---------------------------------------------------------------------------
+// Image campaigns (Improvement 2)
+// ---------------------------------------------------------------------------
+
+export const IMAGE_LIMITS = { maxBytes: 8 * 1024 * 1024, maxMegapixels: 25, types: ['image/png', 'image/jpeg'] };
+
+export function assetUrl(assetId: string) {
+  return `${BASE}/assets/${assetId}`;
+}
+
+export async function uploadImageCampaign(fields: {
+  brand_id: string; title: string; channel: string; audience: string; purpose: string; reviewer_id?: string | null; file: File;
+}): Promise<ContentOut> {
+  const form = new FormData();
+  for (const key of ['brand_id', 'title', 'channel', 'audience', 'purpose'] as const) form.append(key, fields[key]);
+  if (fields.reviewer_id) form.append('reviewer_id', fields.reviewer_id);
+  form.append('file', fields.file);
+  const headers: Record<string, string> = {};
+  if (_csrfToken) headers['x-csrf-token'] = _csrfToken;
+  let res: Response;
+  try {
+    // Multipart: the browser sets the boundary. Uploads are never retried automatically.
+    res = await _transport(`${BASE}/content/image`, { method: 'POST', credentials: 'same-origin', headers, body: form });
+  } catch {
+    throw unavailable(0);
+  }
+  if (!isJson(res)) throw unavailable(res.status);
+  const json = await res.json();
+  if (!res.ok) throw new ApiResponseError(res.status, json as ApiError);
+  return json as ContentOut;
+}
+
+export async function getOcr(assetId: string): Promise<OcrOut> {
+  return request<OcrOut>('GET', `/assets/${assetId}/ocr`);
+}
+
+export async function confirmImageText(itemId: string, payload: {
+  parent_revision_id: string | null; channel: string; audience: string; purpose: string; regions: RegionInput[]; deleted_line_ids: string[];
+}): Promise<ContentOut> {
+  return request<ContentOut>('POST', `/content/${itemId}/image-revisions`, payload);
 }
 
 // ---------------------------------------------------------------------------

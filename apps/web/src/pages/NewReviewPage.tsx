@@ -6,6 +6,8 @@ import {
   getProcessingPolicy,
   createContent,
   startAnalysis,
+  uploadImageCampaign,
+  IMAGE_LIMITS,
   ApiResponseError,
 } from '../api/client';
 import type { Brand, PolicyOut, ReviewerOut } from '../api/types';
@@ -39,10 +41,40 @@ export function NewReviewPage() {
 
   // Consent
   const [consent, setConsent] = React.useState(true);
+  // Text campaigns paste copy; image campaigns upload a PNG/JPEG whose text is read locally.
+  const [mode, setMode] = React.useState<'text' | 'image'>('text');
+  const [file, setFile] = React.useState<File | null>(null);
+  const [preview, setPreview] = React.useState<string | null>(null);
   const [baseline, setBaseline] = React.useState<string | null>(null);
   const [saved, setSaved] = React.useState(false);
   const { setGuard } = useLeaveConfirmation();
-  const fingerprint = JSON.stringify([brandId, title, channel, audience, purpose, reviewerId, text, consent]);
+  const fingerprint = JSON.stringify([brandId, title, channel, audience, purpose, reviewerId, text, consent, mode, file?.name ?? null]);
+  React.useEffect(() => {
+    if (!file) { setPreview(null); return; }
+    const url = URL.createObjectURL(file);
+    setPreview(url);
+    return () => URL.revokeObjectURL(url);
+  }, [file]);
+
+  const chooseFile = (candidate: File | undefined | null) => {
+    if (!candidate) return;
+    if (!IMAGE_LIMITS.types.includes(candidate.type)) { setError('Upload a PNG or JPEG image.'); return; }
+    if (candidate.size > IMAGE_LIMITS.maxBytes) { setError('Images must be 8 MB or smaller.'); return; }
+    setError(null);
+    setFile(candidate);
+  };
+
+  const loadSampleAd = async () => {
+    try {
+      const response = await fetch('/samples/lumadesk-social-ad.png');
+      const blob = await response.blob();
+      chooseFile(new File([blob], 'lumadesk-social-ad.png', { type: 'image/png' }));
+      setTitle('LumaDesk social ad');
+      setChannel('social');
+    } catch {
+      setError('The sample ad could not be loaded.');
+    }
+  };
   React.useLayoutEffect(() => {
     if (!loading && baseline === null) setBaseline(fingerprint);
   }, [loading, baseline, fingerprint]);
@@ -87,9 +119,13 @@ export function NewReviewPage() {
       setError('Please select a brand.');
       return;
     }
-    const issues = validateDraft({ title, text, channel, audience, purpose });
+    const issues = validateDraft({ title, text: mode === 'image' ? 'image' : text, channel, audience, purpose });
     if (issues.length) {
       setError(issues.join(' '));
+      return;
+    }
+    if (mode === 'image' && !file) {
+      setError('Choose a PNG or JPEG image to upload.');
       return;
     }
 
@@ -97,6 +133,12 @@ export function NewReviewPage() {
     setError(null);
 
     try {
+      if (mode === 'image' && file) {
+        const created = await uploadImageCampaign({ brand_id: brandId, title: title.trim(), channel: channel.trim(),
+          audience: audience.trim(), purpose: purpose.trim(), reviewer_id: reviewerId.trim() || null, file });
+        openSavedCampaign(created.id);
+        return;
+      }
       // 1. Create content item (Revision 1)
       const content = await createContent({
         brand_id: brandId,
@@ -314,6 +356,31 @@ export function NewReviewPage() {
             {reviewers.length === 0 && <p className="form-hint">A workspace administrator must add a separate reviewer before approval.</p>}
           </div>
 
+          <div className="form-group" style={{ marginBottom: 'var(--space-4)' }}>
+            <span className="form-label" id="campaign-kind-label">Campaign type</span>
+            <div className="filter-bar" role="group" aria-labelledby="campaign-kind-label">
+              <button type="button" className={`filter-btn ${mode === 'text' ? 'filter-btn--active' : ''}`} aria-pressed={mode === 'text'} onClick={() => setMode('text')}>Text campaign</button>
+              <button type="button" className={`filter-btn ${mode === 'image' ? 'filter-btn--active' : ''}`} aria-pressed={mode === 'image'} onClick={() => setMode('image')}>Image campaign</button>
+            </div>
+          </div>
+
+          {mode === 'image' ? (
+          <div className="form-group" style={{ marginBottom: 'var(--space-6)' }}>
+            <label htmlFor="file-campaign-image" className="form-label">Campaign image <span style={{ color: 'var(--color-blocker)' }}>*</span></label>
+            <div className={`image-drop${file ? ' image-drop--chosen' : ''}`}
+              onDragOver={e => e.preventDefault()}
+              onDrop={e => { e.preventDefault(); chooseFile(e.dataTransfer.files?.[0]); }}>
+              {preview ? <img src={preview} alt="Preview of the chosen campaign image" className="image-drop__preview" /> : <p>Drop a PNG or JPEG here, or choose a file.</p>}
+              <input id="file-campaign-image" type="file" accept="image/png,image/jpeg" aria-describedby="image-limits"
+                onChange={e => chooseFile(e.target.files?.[0])} />
+            </div>
+            <p id="image-limits" className="form-hint">
+              PNG or JPEG, up to 8 MB and {IMAGE_LIMITS.maxMegapixels} megapixels. Text is read on our servers and you confirm it
+              before checking; the image itself is never sent to an AI provider. Location and camera details are removed.
+            </p>
+            <button type="button" className="btn btn--ghost btn--sm" onClick={() => { void loadSampleAd(); }}>Try the sample ad</button>
+          </div>
+          ) : (
           <div className="form-group" style={{ marginBottom: 'var(--space-6)' }}>
             <ImportDraft onImported={setText} disabled={submitting} />
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', marginBottom: 'var(--space-2)' }}>
@@ -345,6 +412,7 @@ export function NewReviewPage() {
               </button>
             </div>
           </div>
+          )}
 
           <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 'var(--space-3)' }}>
             <button
@@ -360,7 +428,7 @@ export function NewReviewPage() {
               className="btn btn--primary btn--lg"
               disabled={submitting}
             >
-              {submitting ? 'Creating draft & analysing…' : 'Submit for Compliance Review →'}
+              {submitting ? (mode === 'image' ? 'Uploading…' : 'Creating draft & analysing…') : mode === 'image' ? 'Upload and read text →' : 'Submit for Compliance Review →'}
             </button>
           </div>
           </fieldset>

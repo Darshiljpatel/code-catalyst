@@ -194,6 +194,65 @@ export interface RevisionOut {
   audience: string;
   purpose: string;
   created_at: string;
+  asset_id?: string | null;
+  asset_sha256?: string | null;
+  region_map?: RegionMapEntry[] | null;
+}
+
+// ---------------------------------------------------------------------------
+// Image campaigns (Improvement 2)
+// ---------------------------------------------------------------------------
+export interface NormBox { x: number; y: number; w: number; h: number }
+
+export type RegionOrigin = 'ocr' | 'corrected' | 'added' | 'unreadable';
+
+export interface RegionMapEntry {
+  region_id: string;
+  box: NormBox;
+  ocr_text: string | null;
+  final_text: string;
+  confidence: number | null;
+  origin: RegionOrigin;
+  start: number | null;
+  end: number | null;
+}
+
+export interface ImageInfo {
+  asset_id: string;
+  sha256: string;
+  original_sha256: string;
+  mime: string;
+  width: number;
+  height: number;
+  intake: { channel: string; audience: string; purpose: string };
+  ocr_status: 'queued' | 'running' | 'complete' | 'failed' | null;
+  ocr_result_id: string | null;
+}
+
+export interface OcrLine { id: string; text: string; confidence: number; box: NormBox }
+
+export interface OcrOut {
+  id: string;
+  asset_id: string;
+  status: 'queued' | 'running' | 'complete' | 'failed';
+  engine: string;
+  engine_version: string;
+  params: Record<string, unknown>;
+  lines: OcrLine[];
+  mean_confidence: number | null;
+  error_code: string | null;
+  low_confidence_threshold: number;
+  created_at: string;
+  completed_at: string | null;
+}
+
+export interface RegionInput {
+  region_id: string;
+  box: NormBox;
+  text: string;
+  origin: RegionOrigin;
+  ocr_line_id?: string | null;
+  confirmed?: boolean;
 }
 
 export interface ContentOut {
@@ -209,6 +268,7 @@ export interface ContentOut {
   state: string;
   revisions: RevisionOut[];
   recheck?: RecheckNotice | null;
+  image?: ImageInfo | null;
 }
 
 // ---------------------------------------------------------------------------

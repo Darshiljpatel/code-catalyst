@@ -356,3 +356,48 @@
 .request-case-form input[aria-label="New example copy"] { flex: 1; min-width: 200px; }
 .request-gates { list-style: none; padding: 0; margin: 0 0 var(--space-3); display: grid; gap: 4px; }
 .request-review { display: grid; gap: var(--space-2); }
+
+/* Image campaigns (Improvement 2) */
+.image-drop { position: relative; border: 2px dashed var(--border-default); border-radius: var(--radius-md); padding: var(--space-4); text-align: center; margin-bottom: var(--space-2); }
+.image-drop--chosen { border-style: solid; border-color: var(--accent); }
+.image-drop__preview { max-width: 100%; max-height: 260px; display: block; margin: 0 auto var(--space-3); }
+.ocr-editor { padding: var(--space-5); margin-top: var(--space-4); }
+.ocr-editor__lede { color: var(--text-secondary); max-width: 80ch; }
+.ocr-editor__layout { display: grid; grid-template-columns: minmax(0, 1.1fr) minmax(280px, 1fr); gap: var(--space-5); align-items: start; margin: var(--space-4) 0; }
+@media (max-width: 860px) { .ocr-editor__layout { grid-template-columns: 1fr; } }
+.ocr-frame { position: relative; width: 100%; user-select: none; touch-action: none; cursor: crosshair; background: var(--bg-raised); }
+.ocr-frame--static { cursor: default; }
+.ocr-frame img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: fill; pointer-events: none; }
+.ocr-box { position: absolute; padding: 0; margin: 0; background: transparent; border: 2px solid; border-radius: 3px; cursor: pointer; }
+.ocr-box:focus-visible { outline: 3px solid #fff; outline-offset: 2px; }
+.ocr-box--high { border-color: #4cc38a; }
+.ocr-box--low { border-color: #f0b429; border-style: dashed; }
+.ocr-box--pending { box-shadow: 0 0 0 2px rgba(240, 180, 41, 0.45); }
+.ocr-box--added { border-color: #63a4ff; }
+.ocr-box--unreadable { border-color: #9aa0a6; border-style: dotted; background: rgba(154, 160, 166, 0.2); }
+.ocr-box--finding { border-color: var(--color-blocker); }
+.ocr-box--active, .ocr-box--selected { border-width: 3px; background: rgba(255, 255, 255, 0.18); box-shadow: 0 0 0 3px rgba(255, 137, 94, 0.8); }
+.ocr-box--drawing { border-color: #63a4ff; border-style: dashed; pointer-events: none; }
+.ocr-box__tag { position: absolute; top: -0.9rem; left: -2px; font-size: 0.7rem; font-weight: 700; background: #111; color: #fff; padding: 0 4px; border-radius: 3px; }
+.ocr-legend { display: flex; flex-wrap: wrap; gap: var(--space-2); margin-bottom: var(--space-2); font-size: 0.75rem; }
+.ocr-legend__item { padding: 1px 6px; border-radius: 999px; border: 2px solid; }
+.ocr-legend__item--high { border-color: #4cc38a; }
+.ocr-legend__item--low { border-color: #f0b429; border-style: dashed; }
+.ocr-legend__item--added { border-color: #63a4ff; }
+.ocr-legend__item--unreadable { border-color: #9aa0a6; border-style: dotted; }
+.ocr-line-list { list-style: none; padding: 0; margin: 0; display: grid; gap: var(--space-2); max-height: 560px; overflow-y: auto; }
+.ocr-line { border: 1px solid var(--border-default); border-radius: var(--radius-md); padding: var(--space-2) var(--space-3); display: grid; gap: 6px; }
+.ocr-line--active { border-color: var(--accent); }
+.ocr-line__head { display: flex; flex-wrap: wrap; gap: var(--space-2); justify-content: space-between; font-size: 0.75rem; }
+.ocr-line__level--low { color: var(--color-warning); font-weight: 700; }
+.ocr-line__level--high { color: var(--color-success); }
+.ocr-line__was { color: var(--text-secondary); }
+.ocr-line__actions { display: flex; flex-wrap: wrap; gap: 6px; }
+.ocr-editor__context { display: grid; grid-template-columns: auto 1fr; gap: var(--space-2) var(--space-3); align-items: center; max-width: 640px; margin-bottom: var(--space-4); }
+.image-pane { padding: var(--space-4); margin-bottom: var(--space-4); }
+.image-pane__head { display: flex; justify-content: space-between; align-items: center; gap: var(--space-3); }
+.image-pane__head h2 { margin: 0; font-size: 1rem; }
+.image-pane__viewport { overflow: auto; max-height: 520px; margin: var(--space-3) 0; }
+.image-pane__findings ul { margin: var(--space-1) 0 0; padding-left: 1.1em; }
+.image-pane__warning { color: var(--color-warning); font-weight: 700; }
+.image-pane__provenance ul { padding-left: 1.1em; font-size: 0.8125rem; }
