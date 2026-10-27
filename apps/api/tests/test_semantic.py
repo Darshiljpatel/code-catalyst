@@ -29,6 +29,7 @@ def review(data=None, *, config=None, sources=None, consent=True, status=200, ha
             return await handler(request)
         return httpx.Response(status,json=data if data is not None else response())
     reviewer=NebiusReviewer(config or ProviderConfig(api_key='synthetic-test-key'),httpx.MockTransport(handle))
+    reviewer.retry_delays=(0,0)
     result=asyncio.run(reviewer.review(text,{'channel':'email'},sources or SOURCES,consent=consent))
     return result,requests
 
@@ -55,9 +56,20 @@ def test_validated_unicode_location_and_minimal_request():
 ])
 def test_t08_rejects_untrusted_findings(change,code):
     f=copy.deepcopy(FINDING);f.update(change)
-    result,_=review(response(f))
+    result,requests=review(response(f))
     assert result.findings==[] and result.metadata['error_code']==code
-    assert all(c['status']=='failed' for c in result.checks)
+    if code=='invalid_model_response':
+        # Schema-breaking output still fails every category together.
+        assert all(c['status']=='failed' for c in result.checks) and len(requests)==1
+    else:
+        # One repair round, then only the affected category goes to a human with the proposal attached.
+        assert len(requests)==2 and result.metadata['repair']=={'attempted':True,'first_pass_rejected':1,'succeeded':False}
+        repair=json.loads(json.loads(requests[1].content)['messages'][-1]['content'])
+        assert repair['error_codes']==[{'index':0,'code':code}]
+        tone=next(c for c in result.checks if c['category']=='tone')
+        assert tone=={'category':'tone','status':'needs_manual_review','reason':'unverified_model_finding'}
+        assert result.metadata['unverified_suggestions'][0]['error_code']==code
+        assert result.metadata['unverified_suggestions'][0]['rationale']==FINDING['rationale']
 
 @pytest.mark.parametrize('mutation,code',[
     ('truncated','truncated_or_unfinished'),('model','model_mismatch'),
@@ -77,7 +89,12 @@ def test_t08_envelope_and_coverage_failures(mutation,code):
         if mutation=='extra':inner['approve']=True
         message['content']=json.dumps(inner)
     result,_=review(data)
-    assert result.metadata['error_code']==code and result.findings==[]
+    assert result.metadata['error_code']==code
+    if mutation=='duplicate':
+        # The first copy is kept; only the repeat is set aside for the reviewer.
+        assert len(result.findings)==1 and len(result.metadata['unverified_suggestions'])==1
+    else:
+        assert result.findings==[]
 
 @pytest.mark.parametrize('status,code',[(401,'provider_auth_failed'),(403,'provider_auth_failed'),
     (429,'rate_limited'),(503,'provider_http_error')])
@@ -126,6 +143,46 @@ def test_no_fallback_or_key_redirect():
 def test_repeated_quote_is_rejected_without_guessing():
     result,_=review(text=TEXT+' '+TEXT)
     assert result.metadata['error_code']=='invalid_location' and not result.findings
+
+
+def test_repair_round_recovers_a_corrected_finding():
+    bad=copy.deepcopy(FINDING);bad['evidence_quote']='not a quote'
+    answers=[response(bad),response()]
+    async def handler(request):
+        return httpx.Response(200,json=answers.pop(0))
+    result,requests=review(handler=handler)
+    assert len(requests)==2 and len(result.findings)==1 and result.metadata['error_code'] is None
+    assert result.metadata['repair']['succeeded'] and result.metadata['unverified_suggestions']==[]
+    assert result.metadata['usage']['total_tokens']==120
+    assert next(c for c in result.checks if c['category']=='tone')['status']=='complete'
+
+
+def test_valid_findings_survive_when_another_finding_is_rejected():
+    sources=copy.deepcopy(SOURCES)
+    sources[0]['text']+=' Trials last 14 days.'
+    sources[0]['rules'].append(dict(id='FACT1',category='facts_claims',kind='fact',key='trial',value='14 days',evidence_quote='Trials last 14 days.'))
+    text='Sign up NOW!!! A 30-day trial.'
+    tone=dict(FINDING,content_quote='Sign up NOW!!!')
+    fact=dict(FINDING,rule_id='FACT1',evidence_quote='wrong',content_quote='30-day trial',rationale='Trial is 14 days.',suggested_edit=None)
+    data=response();data['choices'][0]['message']['content']=json.dumps(dict(evaluated_categories=['tone','facts_claims'],findings=[tone,fact]))
+    result,_=review(data,sources=sources,text=text)
+    assert [f['rule_id'] for f in result.findings]==['TONE1']
+    status={c['category']:c['status'] for c in result.checks}
+    assert status=={'tone':'complete','messaging':'not_applicable','facts_claims':'needs_manual_review'}
+    assert result.metadata['unverified_suggestions'][0]['category']=='facts_claims'
+
+
+def test_transient_errors_are_retried_and_permanent_ones_are_not():
+    answers=[httpx.Response(503,json={}),httpx.Response(429,json={}),httpx.Response(200,json=response())]
+    async def flaky(request):
+        return answers.pop(0)
+    result,requests=review(handler=flaky)
+    assert len(requests)==3 and result.metadata['error_code'] is None and len(result.findings)==1
+    assert result.metadata['retried_codes']==['provider_http_error','rate_limited']
+    result,requests=review({},status=401)
+    assert len(requests)==1 and result.metadata['error_code']=='provider_auth_failed'
+    result,requests=review({},status=400)
+    assert len(requests)==1 and result.metadata['error_code']=='provider_request_rejected'
 
 
 @pytest.mark.parametrize('kind,expected_status', [('fact','contradicted'),('claim_policy','unsupported')])

@@ -188,10 +188,19 @@ def test_queued_job_past_deadline_never_sends_content(setup):
     c,engine,_,_,run=prepared(setup)
     from dataclasses import replace
     claim=claim_one(engine)
-    expired=replace(claim,created_at=utcnow()-timedelta(seconds=61))
+    expired=replace(claim,claimed_at=utcnow()-timedelta(seconds=61))
     calls=[]
     checks,findings,metadata=asyncio.run(analyse_claim(engine,expired,reviewer(calls),checker))
     assert not calls and not findings and metadata['error_code']=='deadline_exceeded'
+
+
+def test_deadline_starts_at_claim_not_at_queue_time(setup,monkeypatch):
+    c,engine,_,_,run=prepared(setup)
+    # The worker wakes five minutes after the run was queued.
+    monkeypatch.setattr('brandguard.orchestration.utcnow',lambda:utcnow()+timedelta(minutes=5))
+    calls=[];process_one(engine,reviewer(calls),checker)
+    result=c.get('/api/v1/runs/'+run['id']).json()
+    assert calls and not any(x['reason']=='deadline_exceeded' for x in result['checks'])
 
 
 def test_current_policy_required_again_at_dispatch(setup):

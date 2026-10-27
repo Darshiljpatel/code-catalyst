@@ -44,7 +44,8 @@ class ClaimedRun:
     lease_token: str
     item_id: str
     revision_id: str
-    created_at: datetime
+    # The 60-second run deadline starts when a worker claims the job, so a waking server does not eat the budget.
+    claimed_at: datetime
     processing: dict
     review_input: ReviewInput
     exhausted: bool = False
@@ -88,7 +89,7 @@ def claim_one(engine, *, run_id=None):
             # Text confirmed from an image: visual and accessibility need a look at the image itself.
             context['media']='image'
             context['unreadable_regions']=sum(r['origin']=='unreadable' for r in revision.region_map or [])
-        claim=ClaimedRun(job.id,run.id,run.org_id,token,revision.item_id,revision.id,run.created_at,
+        claim=ClaimedRun(job.id,run.id,run.org_id,token,revision.item_id,revision.id,at,
                          run.processing_snapshot,ReviewInput(revision.text,context,run.source_snapshot),exhausted)
         db.commit()
         return claim
@@ -138,7 +139,7 @@ async def analyse_claim(engine, claim, reviewer, checker=None):
     metadata={}
     checks={c:dict(category=c,status='unavailable',reason='Deterministic engine is not connected.') for c in DETERMINISTIC}
     findings=[]
-    remaining=60-(utcnow()-claim.created_at).total_seconds()
+    remaining=60-(utcnow()-claim.claimed_at).total_seconds()
     if claim.exhausted:
         return [dict(category=c,status='failed',reason='attempts_exhausted') for c in CATEGORIES],[],{'error_code':'attempts_exhausted'}
     if remaining<=0:
@@ -157,7 +158,7 @@ async def analyse_claim(engine, claim, reviewer, checker=None):
         if can_dispatch(engine,claim,reviewer.config.model):
             semantic=await reviewer.review(claim.review_input.text,claim.review_input.context,
                 claim.review_input.sources,consent=True,
-                remaining_seconds=60-(utcnow()-claim.created_at).total_seconds())
+                remaining_seconds=60-(utcnow()-claim.claimed_at).total_seconds())
         else:
             semantic=disabled_semantic('external_processing_not_authorised')
         for check in semantic.checks:
@@ -193,7 +194,7 @@ def finish_claim(engine,claim,checks,findings,metadata):
         if stale:
             # Keep the historical snapshot but never mark stale results ready for review.
             checks=[dict(c,status='needs_manual_review',reason='snapshot_stale') for c in checks]
-        if (utcnow()-claim.created_at).total_seconds()>=60:
+        if (utcnow()-claim.claimed_at).total_seconds()>=60:
             checks=[dict(category=c,status='failed',reason='deadline_exceeded') for c in CATEGORIES]
             findings=[]
         complete=all(c['status'] in ('complete','not_applicable') for c in checks)
