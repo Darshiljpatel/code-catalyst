@@ -61,11 +61,14 @@ def run_worker_loop(engine, reviewer, checker, poll_interval: float = 1.0, once:
     try:
         from brandguard.orchestration import process_one
         from brandguard.health import beat, worker_identity, utcnow, HEARTBEAT_SECONDS
+        from brandguard.orchestration import process_ocr_one
+        from brandguard.imaging import TesseractEngine
     except ImportError:
         logger.error("Failed to import brandguard.orchestration. Ensure PYTHONPATH includes apps/api.")
         return
 
     worker_id, started_at, last_beat = worker_identity(), utcnow(), 0.0
+    ocr_engine = TesseractEngine() if os.environ.get('OCR_ENABLED', '1') != '0' else None
 
     while running:
         if time.monotonic() - last_beat >= HEARTBEAT_SECONDS:
@@ -78,6 +81,8 @@ def run_worker_loop(engine, reviewer, checker, poll_interval: float = 1.0, once:
                 last_beat = time.monotonic()
         try:
             processed = process_one(engine, reviewer, checker=checker)
+            if ocr_engine is not None:
+                processed = process_ocr_one(engine, ocr_engine) or processed
             if once:
                 logger.info("Single-job execution (--once) complete.")
                 break

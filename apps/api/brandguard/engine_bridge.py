@@ -61,7 +61,11 @@ def _check_text(payload):
         if result.category in unsupported:
             status, reason = 'needs_manual_review', 'Some approved rule kinds are outside the structured checker scope.'
         if result.category in ('visual', 'accessibility'):
-            status, reason = 'not_applicable', 'Pasted-text revision: no image, font-size or declared colour-pair input. Not an accessibility certification.'
+            if payload['context'].get('media') == 'image':
+                status, reason = 'needs_manual_review', ('Image campaign: check brand visuals, colour contrast and legibility '
+                                                         'by eye. Not an accessibility certification.')
+            else:
+                status, reason = 'not_applicable', 'Pasted-text revision: no image, font-size or declared colour-pair input. Not an accessibility certification.'
         checks.append(dict(category=result.category, status=status, reason=reason))
         for finding in result.findings:
             entry = lookup.get((finding.source_version_id, finding.rule_id))

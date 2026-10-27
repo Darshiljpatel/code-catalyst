@@ -5,7 +5,8 @@ from sqlalchemy import select
 from sqlalchemy.orm import Session
 from .core import db, identity, manager, Problem, digest
 from .models import (Membership, User, ReviewRun, Finding, Comment, FindingResolution,
-                     ManualCheck, Decision)
+                     ManualCheck, Decision, Asset, OcrResult)
+from .imaging import sha256
 from .impact import resolve_on_decision, recheck_records
 from .review import (item_for, revision_for, brand_for, eligible_sources, content_out,
                      audit, CATEGORIES, run_out)
@@ -133,7 +134,21 @@ def evidence_record(session,member,revision,item,run):
         manual_checks=[ManualCheckOut.model_validate(r).model_dump(mode='json') for r in manual_checks(session,member,run,item)],
         comments=[CommentOut.model_validate(r).model_dump(mode='json') for r in session.scalars(select(Comment).where(
             Comment.org_id==member.org_id,Comment.revision_id==revision.id).order_by(Comment.created_at,Comment.id))],
-        exception_notice='A reviewer exception is not proof that a promotional claim is true.')
+        exception_notice='A reviewer exception is not proof that a promotional claim is true.',
+        **({'image':image_provenance(session,revision)} if revision.asset_id else {}))
+
+
+def image_provenance(session,revision):
+    """Image hash, region map and OCR provenance for the audit record of an image campaign."""
+    asset=session.get(Asset,revision.asset_id)
+    ocr=session.scalar(select(OcrResult).where(OcrResult.asset_id==asset.id).order_by(OcrResult.created_at.desc()).limit(1))
+    return dict(asset_id=asset.id,sha256=revision.asset_sha256,original_upload_sha256=asset.original_sha256,
+        mime=asset.mime,width=asset.width,height=asset.height,region_map=revision.region_map,
+        ocr=dict(engine=ocr.engine,engine_version=ocr.engine_version,params=ocr.params,mean_confidence=ocr.mean_confidence,
+                 status=ocr.status) if ocr else None,
+        corrections=sum(r['origin']=='corrected' for r in revision.region_map or []),
+        added_regions=sum(r['origin']=='added' for r in revision.region_map or []),
+        unreadable_regions=sum(r['origin']=='unreadable' for r in revision.region_map or []))
 
 
 @router.get('/reviewers',response_model=list[ReviewerOut])
@@ -285,7 +300,7 @@ def decide_revision(revision_id:str,body:DecisionInput,member=Depends(identity),
     if recheck_of:evidence['recheck_of']=recheck_of
     decision=Decision(org_id=member.org_id,revision_id=revision.id,run_id=run.id,reviewer_id=member.id,
         kind=body.kind,rationale=body.rationale,source_epoch=brand.source_epoch,text_hash=revision.text_hash,
-        evidence_record=evidence,decided_at=utcnow())
+        evidence_record=evidence,decided_at=utcnow(),asset_sha256=revision.asset_sha256)
     session.add(decision);session.flush()
     resolve_on_decision(session,item,decision,decision.decided_at)
     item.state='approved' if body.kind=='approved' else 'changes_requested'
@@ -307,11 +322,17 @@ def export_revision(revision_id:str,member=Depends(identity),session:Session=Dep
     reviewer_member(session,member.org_id,decision.reviewer_id,item.creator_id)
     if digest(revision.text)!=decision.text_hash or revision.text_hash!=decision.text_hash:
         conflict('content_hash_mismatch','The content no longer matches the approved revision.')
+    if revision.asset_id:
+        # Approval binds to both the text hash and the image hash.
+        asset=session.get(Asset,revision.asset_id)
+        if not (decision.asset_sha256==revision.asset_sha256==sha256(asset.bytes)):
+            conflict('asset_hash_mismatch','The image no longer matches the approved revision.')
     require_checks(session,member,run,item)
     require_blockers(session,member,run,item)
     result=ExportOut(revision_id=revision.id,content_id=item.id,text=revision.text,text_hash=decision.text_hash,
         channel=revision.channel,audience=revision.audience,purpose=revision.purpose,
-        decision=DecisionOut.model_validate(decision),evidence_record=decision.evidence_record,exported_at=utcnow())
+        decision=DecisionOut.model_validate(decision),evidence_record=decision.evidence_record,exported_at=utcnow(),
+        image_sha256=revision.asset_sha256,region_map=revision.region_map)
     audit(session,member,'revision.exported',revision.id,decision_id=decision.id,text_hash=decision.text_hash)
     session.commit()
     return result

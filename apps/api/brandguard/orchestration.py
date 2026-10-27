@@ -12,6 +12,7 @@ from sqlalchemy.orm import Session
 from .models import (Job, ReviewRun, ContentRevision, ContentItem, Brand, ProcessingPolicy,
                      Finding, AuditEvent, SourceVersion)
 from .impact import finish_recheck
+from .imaging import regions_for
 from .schemas import CheckOut
 from .semantic import (LocatedFinding, ModelFailure, SemanticResult, validate_findings,
                        PROMPT_VERSION)
@@ -66,7 +67,7 @@ def snapshot_current(db,run):
 def claim_one(engine, *, run_id=None):
     with Session(engine) as db:
         at=utcnow()
-        query=select(Job).where(or_(
+        query=select(Job).where(Job.kind=='review',or_(
             and_(Job.status=='queued',Job.available_at<=at),
             and_(Job.status=='running',Job.lease_expires_at<=at)
         ))
@@ -82,9 +83,13 @@ def claim_one(engine, *, run_id=None):
         if not exhausted:
             job.attempts+=1
         run.status='running'
+        context={k:getattr(revision,k) for k in ('channel','audience','purpose')}
+        if revision.asset_id:
+            # Text confirmed from an image: visual and accessibility need a look at the image itself.
+            context['media']='image'
+            context['unreadable_regions']=sum(r['origin']=='unreadable' for r in revision.region_map or [])
         claim=ClaimedRun(job.id,run.id,run.org_id,token,revision.item_id,revision.id,run.created_at,
-                         run.processing_snapshot,ReviewInput(revision.text,
-                            {k:getattr(revision,k) for k in ('channel','audience','purpose')},run.source_snapshot),exhausted)
+                         run.processing_snapshot,ReviewInput(revision.text,context,run.source_snapshot),exhausted)
         db.commit()
         return claim
 
@@ -196,8 +201,12 @@ def finish_claim(engine,claim,checks,findings,metadata):
         for finding in findings:
             f=dict(finding)
             start,end,quote=f.pop('start'),f.pop('end'),f.pop('content_quote')
+            location=dict(block_id='text',start=start,end=end,quote=quote)
+            if revision.region_map:
+                # Findings on image text link back to the image regions they came from.
+                location['regions']=regions_for(revision.region_map,start,end)
             db.add(Finding(org_id=claim.org_id,run_id=run.id,revision_id=revision.id,
-                **f,location=dict(block_id='text',start=start,end=end,quote=quote),resolution='unresolved'))
+                **f,location=location,resolution='unresolved'))
         job.status,job.lease_token,job.lease_expires_at='complete',None,None
         superseded=run.trigger=='guideline_change' and stale
         if item.current_revision==revision.number and not superseded:
@@ -223,4 +232,57 @@ def process_one(engine,reviewer,checker=None,*,run_id=None):
         checks=[dict(category=c,status='failed',reason=code) for c in CATEGORIES]
         findings,metadata=[],dict(error_code=code)
     finish_claim(engine,claim,checks,findings,metadata)
+    return True
+
+
+def process_ocr_one(engine, ocr_engine):
+    """Claim one OCR job, recognise the image in a bounded child and store the lines."""
+    from .models import OcrResult, Asset
+    with Session(engine) as db:
+        at=utcnow()
+        job=db.scalar(select(Job).where(Job.kind=='ocr',or_(and_(Job.status=='queued',Job.available_at<=at),
+            and_(Job.status=='running',Job.lease_expires_at<=at))).order_by(Job.available_at,Job.id).with_for_update(skip_locked=True).limit(1))
+        if job is None:
+            return False
+        result=db.get(OcrResult,job.ocr_result_id)
+        token=secrets.token_hex(32)
+        exhausted=job.attempts>=3
+        job.status,job.lease_token,job.lease_expires_at='running',token,at+timedelta(seconds=90)
+        if not exhausted:
+            job.attempts+=1
+        result.status='running'
+        data=db.get(Asset,result.asset_id).bytes
+        job_id,result_id=job.id,result.id
+        db.commit()
+    if exhausted:
+        outcome=dict(status='failed',error_code='attempts_exhausted',engine=getattr(ocr_engine,'name','none'),
+                     engine_version='unknown',params={},words=[],lines=[],mean_confidence=None)
+    else:
+        try:
+            outcome=ocr_engine.recognise(data)
+        except Exception:
+            outcome=dict(status='failed',error_code='ocr_failed',engine=getattr(ocr_engine,'name','none'),
+                         engine_version='unknown',params={},words=[],lines=[],mean_confidence=None)
+    with Session(engine) as db:
+        job=db.scalar(select(Job).where(Job.id==job_id).with_for_update())
+        if job.status!='running' or job.lease_token!=token:
+            return True
+        result=db.get(OcrResult,result_id)
+        result.engine,result.engine_version=outcome['engine'],outcome['engine_version']
+        result.params,result.words,result.lines=outcome['params'],outcome['words'],outcome['lines']
+        result.mean_confidence=outcome['mean_confidence']
+        result.status='complete' if outcome.get('status')=='complete' else 'failed'
+        result.error_code=outcome.get('error_code')
+        result.completed_at=utcnow()
+        job.status,job.lease_token,job.lease_expires_at='complete',None,None
+        asset=db.get(Asset,result.asset_id)
+        item=db.scalar(select(ContentItem).where(ContentItem.id==asset.item_id).with_for_update())
+        if item.state=='ocr_pending':
+            # Even a failed extraction moves on: the creator can type the text by hand.
+            item.state='text_check'
+            item.workflow_version+=1
+        db.add(AuditEvent(org_id=item.org_id,actor_id=item.creator_id,action='ocr.finished',object_id=result.id,
+            details=dict(status=result.status,lines=len(result.lines),engine=result.engine,
+                         engine_version=result.engine_version,error_code=result.error_code),created_at=utcnow()))
+        db.commit()
     return True

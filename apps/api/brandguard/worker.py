@@ -6,7 +6,8 @@ from pathlib import Path
 from dotenv import load_dotenv
 from sqlalchemy import create_engine
 from .semantic import NebiusReviewer, ProviderConfig
-from .orchestration import process_one
+from .orchestration import process_one, process_ocr_one
+from .imaging import TesseractEngine
 from .engine_bridge import check_text
 from .health import beat, worker_identity, utcnow, HEARTBEAT_SECONDS
 
@@ -19,12 +20,14 @@ def main():
     engine=create_engine(os.environ['DATABASE_URL'],pool_pre_ping=True)
     reviewer=NebiusReviewer(ProviderConfig.from_env())
     worker_id,started_at,last_beat=worker_identity(),utcnow(),0.0
+    ocr=TesseractEngine()
     try:
         while True:
             if time.monotonic()-last_beat>=HEARTBEAT_SECONDS:
                 beat(engine,worker_id,started_at)
                 last_beat=time.monotonic()
             processed=process_one(engine,reviewer,check_text)
+            processed=process_ocr_one(engine,ocr)or processed
             if args.once:
                 break
             if not processed:

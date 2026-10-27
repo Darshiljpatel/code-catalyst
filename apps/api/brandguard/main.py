@@ -33,7 +33,8 @@ def create_app(settings=None, provider_config=None):
         response = await call_next(request)
         response.headers['X-Request-ID'] = request.state.request_id
         response.headers['X-Content-Type-Options'] = 'nosniff'
-        response.headers['Cache-Control'] = 'no-store'
+        # API data is never cached; image bytes opt in to private caching explicitly.
+        response.headers.setdefault('Cache-Control', 'no-store')
         return response
 
     @app.exception_handler(Problem)
@@ -72,6 +73,8 @@ def create_app(settings=None, provider_config=None):
     from .health import router as health_router
     from .rechecks import router as rechecks_router
     from .requests import router as requests_router
+    from .images import router as images_router
+    app.include_router(images_router)
     app.include_router(requests_router)
     app.include_router(rechecks_router)
     app.include_router(health_router)

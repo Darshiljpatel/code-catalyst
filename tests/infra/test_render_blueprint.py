@@ -16,3 +16,8 @@ def test_api_image_no_longer_backgrounds_an_unsupervised_worker():
     entrypoint = Path('infra/entrypoint.sh').read_text(encoding='utf-8')
     assert 'python -m apps.worker --interval 1 &' not in entrypoint
     assert 'EMBEDDED_WORKER' in entrypoint
+
+
+def test_worker_image_installs_tesseract_for_local_ocr():
+    worker = Path('infra/Dockerfile.worker').read_text(encoding='utf-8')
+    assert 'tesseract-ocr' in worker and 'tesseract-ocr-eng' in worker

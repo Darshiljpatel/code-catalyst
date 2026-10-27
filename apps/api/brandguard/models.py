@@ -123,6 +123,10 @@ class ContentRevision(Base):
     audience: Mapped[str] = mapped_column(String(300))
     purpose: Mapped[str] = mapped_column(String(500))
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True))
+    # Image campaigns: the confirmed image and the map from character ranges to image regions.
+    asset_id: Mapped[str | None] = mapped_column(String(36))
+    asset_sha256: Mapped[str | None] = mapped_column(String(64))
+    region_map: Mapped[list | None] = mapped_column(JSON)
 
 class ReviewRun(Base):
     __tablename__ = 'review_runs'
@@ -164,10 +168,15 @@ class Job(Base):
         ForeignKeyConstraint(['org_id', 'run_id'], ['review_runs.org_id', 'review_runs.id']),
         CheckConstraint("status IN ('queued','running','complete','failed')"),
         CheckConstraint('attempts >= 0 AND attempts <= 3'),
+        CheckConstraint("kind IN ('review','ocr','regression')", name='ck_job_kind'),
+        CheckConstraint("(kind = 'review') = (run_id IS NOT NULL)", name='ck_job_target'),
     )
     id: Mapped[str] = mapped_column(String(36), primary_key=True, default=uid)
     org_id: Mapped[str] = mapped_column(String(36))
-    run_id: Mapped[str] = mapped_column(String(36))
+    # One queue serves all background work: review runs and OCR of uploaded images.
+    kind: Mapped[str] = mapped_column(String(20), default='review', server_default='review')
+    run_id: Mapped[str | None] = mapped_column(String(36))
+    ocr_result_id: Mapped[str | None] = mapped_column(String(36), unique=True)
     status: Mapped[str] = mapped_column(String(20), default='queued', index=True)
     attempts: Mapped[int] = mapped_column(Integer, default=0)
     lease_token: Mapped[str | None] = mapped_column(String(64))
@@ -297,6 +306,7 @@ class Decision(Base):
     text_hash: Mapped[str] = mapped_column(String(64))
     evidence_record: Mapped[dict] = mapped_column(JSON)
     decided_at: Mapped[datetime] = mapped_column(DateTime(timezone=True))
+    asset_sha256: Mapped[str | None] = mapped_column(String(64))
 
 class WorkerHeartbeat(Base):
     """One row per worker process; readiness and the offline banner read the freshest row."""
@@ -498,3 +508,49 @@ class RequestReview(Base):
     draft_hash: Mapped[str] = mapped_column(String(64))
     comparison_run_id: Mapped[str | None] = mapped_column(String(36))
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True))
+
+from sqlalchemy import LargeBinary
+
+class Asset(Base):
+    """An uploaded campaign image, stored in Postgres (capped at 8 MB) with its hashes."""
+    __tablename__ = 'assets'
+    __table_args__ = (
+        UniqueConstraint('org_id', 'id'),
+        ForeignKeyConstraint(['org_id', 'item_id'], ['content_items.org_id', 'content_items.id']),
+        ForeignKeyConstraint(['org_id', 'created_by'], ['memberships.org_id', 'memberships.id']),
+        CheckConstraint("mime IN ('image/png','image/jpeg')"),
+    )
+    id: Mapped[str] = mapped_column(String(36), primary_key=True, default=uid)
+    org_id: Mapped[str] = mapped_column(String(36), index=True)
+    item_id: Mapped[str] = mapped_column(String(36), index=True)
+    kind: Mapped[str] = mapped_column(String(20), default='image')
+    mime: Mapped[str] = mapped_column(String(30))
+    bytes: Mapped[bytes] = mapped_column(LargeBinary)
+    sha256: Mapped[str] = mapped_column(String(64))
+    original_sha256: Mapped[str] = mapped_column(String(64))
+    width: Mapped[int] = mapped_column(Integer)
+    height: Mapped[int] = mapped_column(Integer)
+    # Channel, audience and purpose given at upload, reused when the text is confirmed.
+    intake: Mapped[dict] = mapped_column(JSON)
+    created_by: Mapped[str] = mapped_column(String(36))
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True))
+
+class OcrResult(Base):
+    __tablename__ = 'ocr_results'
+    __table_args__ = (
+        ForeignKeyConstraint(['org_id', 'asset_id'], ['assets.org_id', 'assets.id']),
+        CheckConstraint("status IN ('queued','running','complete','failed')"),
+    )
+    id: Mapped[str] = mapped_column(String(36), primary_key=True, default=uid)
+    org_id: Mapped[str] = mapped_column(String(36), index=True)
+    asset_id: Mapped[str] = mapped_column(String(36), index=True)
+    engine: Mapped[str] = mapped_column(String(40))
+    engine_version: Mapped[str] = mapped_column(String(80))
+    params: Mapped[dict] = mapped_column(JSON)
+    words: Mapped[list] = mapped_column(JSON)
+    lines: Mapped[list] = mapped_column(JSON)
+    mean_confidence: Mapped[float | None]
+    status: Mapped[str] = mapped_column(String(20))
+    error_code: Mapped[str | None] = mapped_column(String(60))
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True))
+    completed_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))

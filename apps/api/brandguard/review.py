@@ -6,10 +6,10 @@ from sqlalchemy import select, or_, func
 from sqlalchemy.orm import Session
 from .core import db, identity, manager, Problem, digest
 from .models import (Brand, Membership, SourceVersion, ContentItem, ContentRevision, ReviewRun, RunSource, Job, AuditEvent,
-                     ProcessingPolicy, Organisation, Finding, GuidelineChange, RecheckAssignment)
+                     ProcessingPolicy, Organisation, Finding, GuidelineChange, RecheckAssignment, Asset, OcrResult)
 from .schemas import (SourceInput, ActivationInput, ContentInput, NewRevisionInput,
                       SourceOut, ContentOut, RevisionOut, RunOut, AnalysisInput, FindingOut,
-                      ActivationOut, ImpactPreviewOut, RecheckNoticeOut)
+                      ActivationOut, ImpactPreviewOut, RecheckNoticeOut, ImageOut)
 
 router = APIRouter(prefix='/api/v1')
 CATEGORIES = ('terminology','tone','messaging','facts_claims','visual','accessibility')
@@ -77,7 +77,18 @@ def content_out(session, item):
         ReviewRun.revision_id==current.id).order_by(ReviewRun.created_at.desc(),ReviewRun.id.desc()).limit(1)) if current else None
     return ContentOut(id=item.id, brand_id=item.brand_id, title=item.title, creator_id=item.creator_id,
                       reviewer_id=item.reviewer_id, current_revision=item.current_revision, workflow_version=item.workflow_version, latest_run_id=latest_run_id, approval_stale=approval_is_stale(session,item), state=item.state,
-                      revisions=[RevisionOut.model_validate(r) for r in revisions], recheck=recheck_notice(session,item))
+                      revisions=[RevisionOut.model_validate(r) for r in revisions], recheck=recheck_notice(session,item),
+                      image=image_info(session,item))
+
+def image_info(session, item):
+    asset = session.scalar(select(Asset).where(Asset.org_id == item.org_id, Asset.item_id == item.id).order_by(
+        Asset.created_at.desc()).limit(1))
+    if asset is None:
+        return None
+    ocr = session.scalar(select(OcrResult).where(OcrResult.asset_id == asset.id).order_by(OcrResult.created_at.desc()).limit(1))
+    return ImageOut(asset_id=asset.id, sha256=asset.sha256, original_sha256=asset.original_sha256, mime=asset.mime,
+        width=asset.width, height=asset.height, intake=asset.intake, ocr_status=ocr.status if ocr else None,
+        ocr_result_id=ocr.id if ocr else None)
 
 def recheck_notice(session, item):
     from .impact import OPEN_STATUSES
@@ -221,7 +232,9 @@ def create_revision(item_id: str, body: NewRevisionInput, member=Depends(identit
     item = item_for(session, member, item_id, lock=True, edit=True)
     parent = session.scalar(select(ContentRevision).where(ContentRevision.org_id == member.org_id,
         ContentRevision.item_id == item.id, ContentRevision.number == item.current_revision))
-    if body.parent_revision_id != parent.id:
+    if session.scalar(select(Asset.id).where(Asset.org_id == member.org_id, Asset.item_id == item.id).limit(1)):
+        raise Problem(409, 'image_campaign', 'Edit image campaigns through the extracted-text editor so regions stay linked.')
+    if parent is None or body.parent_revision_id != parent.id:
         raise Problem(409, 'stale_revision', 'Content changed. Reload before saving your revision.')
     item.current_revision += 1
     item.workflow_version += 1

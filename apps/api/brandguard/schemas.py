@@ -123,6 +123,20 @@ class RevisionOut(BaseModel):
     audience: str
     purpose: str
     created_at: datetime
+    asset_id: str | None = None
+    asset_sha256: str | None = None
+    region_map: list[dict] | None = None
+
+class ImageOut(BaseModel):
+    asset_id: str
+    sha256: str
+    original_sha256: str
+    mime: str
+    width: int
+    height: int
+    intake: dict
+    ocr_status: str | None
+    ocr_result_id: str | None
 
 class RecheckNoticeOut(BaseModel):
     assignment_id: str
@@ -151,6 +165,7 @@ class ContentOut(BaseModel):
     state: str
     revisions: list[RevisionOut]
     recheck: RecheckNoticeOut | None = None
+    image: ImageOut | None = None
 
 class CheckOut(BaseModel):
     category: Literal['terminology','tone','messaging','facts_claims','visual','accessibility']
@@ -278,6 +293,7 @@ class DecisionOut(BaseModel):
     source_epoch: int
     text_hash: str
     decided_at: datetime
+    asset_sha256: str | None = None
 
 class ReviewerOut(BaseModel):
     id: str
@@ -295,6 +311,8 @@ class ExportOut(BaseModel):
     decision: DecisionOut
     evidence_record: dict
     exported_at: datetime
+    image_sha256: str | None = None
+    region_map: list[dict] | None = None
 
 class ReviewRecordOut(BaseModel):
     run_id: str
