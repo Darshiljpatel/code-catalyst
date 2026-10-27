@@ -4,7 +4,7 @@
  * Authorisation is always enforced server-side (CLAUDE.md, CONTRACTS.md).
  */
 import React, { createContext, useContext, useEffect, useReducer } from 'react';
-import { getMe, login, logout, ApiResponseError } from '../api/client';
+import { getMe, login, logout, createSandbox, switchDemoRole, ApiResponseError } from '../api/client';
 import type { LoginRequest, MeResponse } from '../api/types';
 
 export interface AuthState {
@@ -38,6 +38,8 @@ interface AuthContextValue extends AuthState {
   signIn: (payload: LoginRequest) => Promise<void>;
   signOut: () => Promise<void>;
   clearError: () => void;
+  startDemo: (role?: string) => Promise<void>;
+  switchRole: (membershipId: string) => Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextValue | null>(null);
@@ -84,8 +86,19 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   const clearError = () => dispatch({ type: 'CLEAR_ERROR' });
 
+  // A private demo workspace signs this browser in directly; no credentials are shown.
+  const startDemo = async (role = 'creator') => {
+    await createSandbox(role);
+    dispatch({ type: 'AUTHENTICATED', user: await getMe() });
+  };
+
+  const switchRole = async (membershipId: string) => {
+    await switchDemoRole(membershipId);
+    dispatch({ type: 'AUTHENTICATED', user: await getMe() });
+  };
+
   return (
-    <AuthContext.Provider value={{ ...state, signIn, signOut, clearError }}>
+    <AuthContext.Provider value={{ ...state, signIn, signOut, clearError, startDemo, switchRole }}>
       {children}
     </AuthContext.Provider>
   );

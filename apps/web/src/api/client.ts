@@ -59,6 +59,8 @@ import type {
   ExampleSet,
   ExampleExpectation,
   OcrOut,
+  DemoMember,
+  SandboxOut,
   RegionInput,
   VersionResponse,
 } from './types';
@@ -206,6 +208,26 @@ export async function login(payload: LoginRequest): Promise<LoginResponse> {
 export async function logout(): Promise<void> {
   await request<void>('DELETE', '/sessions/current');
   clearCsrfToken();
+}
+
+// ---------------------------------------------------------------------------
+// Private demo sandboxes and the role switcher
+// ---------------------------------------------------------------------------
+
+export async function createSandbox(role = 'creator'): Promise<SandboxOut> {
+  const data = await request<SandboxOut>('POST', '/demo/sandboxes', { role });
+  setCsrfToken(data.csrf_token);
+  return data;
+}
+
+export async function getDemoMembers(): Promise<DemoMember[]> {
+  return request<DemoMember[]>('GET', '/demo/members');
+}
+
+export async function switchDemoRole(membershipId: string): Promise<SandboxOut> {
+  const data = await request<SandboxOut>('POST', '/demo/switch', { membership_id: membershipId });
+  setCsrfToken(data.csrf_token);
+  return data;
 }
 
 // ---------------------------------------------------------------------------

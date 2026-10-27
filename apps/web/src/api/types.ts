@@ -34,6 +34,25 @@ export interface LoginResponse {
   csrf_token: string;
   org_id: string;
   role: 'creator' | 'manager' | 'reviewer' | 'admin';
+  label?: string | null;
+  is_demo?: boolean;
+  demo_expires_at?: string | null;
+}
+
+export interface DemoMember {
+  membership_id: string;
+  role: string;
+  label: string;
+  email: string;
+}
+
+export interface SandboxOut {
+  org_id: string;
+  role: string;
+  membership_id: string;
+  csrf_token: string;
+  expires_at: string;
+  members: DemoMember[];
 }
 
 // ---------------------------------------------------------------------------
@@ -45,6 +64,9 @@ export interface MeResponse {
   user_id: string;
   org_id: string;
   role: 'creator' | 'manager' | 'reviewer' | 'admin';
+  label?: string;
+  is_demo?: boolean;
+  demo_expires_at?: string | null;
 }
 
 // ---------------------------------------------------------------------------

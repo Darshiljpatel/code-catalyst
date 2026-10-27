@@ -401,3 +401,12 @@
 .image-pane__findings ul { margin: var(--space-1) 0 0; padding-left: 1.1em; }
 .image-pane__warning { color: var(--color-warning); font-weight: 700; }
 .image-pane__provenance ul { padding-left: 1.1em; font-size: 0.8125rem; }
+
+/* Private demo */
+.demo-cta { margin-bottom: var(--space-5); display: grid; gap: var(--space-2); }
+.demo-cta__hint { font-size: 0.8125rem; color: var(--text-secondary); margin: 0; }
+.demo-cta__divider { display: flex; align-items: center; gap: var(--space-3); color: var(--text-muted); font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.08em; margin-top: var(--space-3); }
+.demo-cta__divider::before, .demo-cta__divider::after { content: ''; flex: 1; border-top: 1px solid var(--border-default); }
+.role-switcher { display: flex; align-items: center; gap: var(--space-2); margin-right: var(--space-2); }
+.role-switcher__label { font-size: 0.75rem; color: var(--text-secondary); white-space: nowrap; }
+@media (max-width: 720px) { .role-switcher__label { display: none; } }
