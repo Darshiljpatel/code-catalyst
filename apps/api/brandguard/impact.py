@@ -37,7 +37,7 @@ def rule_diff(old_source, new_source, other_retired=()):
     removed = [dict(rule_id=i, before=old[i], source_id=old_source.id) for i in old if i not in new]
     modified, unchanged = [], 0
     for rule_id in [i for i in new if i in old]:
-        fields = [f for f in RULE_FIELDS if old[rule_id].get(f) != new[rule_id].get(f)]
+        fields = [f for f in RULE_FIELDS if (old[rule_id].get(f) or None) != (new[rule_id].get(f) or None)]
         if fields:
             modified.append(dict(rule_id=rule_id, before=old[rule_id], after=new[rule_id], fields=fields))
         else:

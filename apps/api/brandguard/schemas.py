@@ -13,6 +13,27 @@ class RuleInput(StrictInput):
     key: str = Field(min_length=1, max_length=100)
     value: str = Field(min_length=1, max_length=2000)
     evidence_quote: str = Field(min_length=1, max_length=4000)
+    # Terminology only: exact spellings that are also acceptable, and spellings always flagged.
+    allowed_variants: list[str] | None = Field(default=None, max_length=20)
+    forbidden_variants: list[str] | None = Field(default=None, max_length=20)
+
+    @field_validator('allowed_variants', 'forbidden_variants')
+    @classmethod
+    def clean_variants(cls, value):
+        if value is None:
+            return None
+        cleaned = [v.strip() for v in value]
+        if any(not v or len(v) > 100 for v in cleaned) or len(set(cleaned)) != len(cleaned):
+            raise ValueError('Variants must be distinct, non-blank and at most 100 characters')
+        return cleaned or None
+
+    @model_validator(mode='after')
+    def variants_are_terminology(self):
+        if (self.allowed_variants or self.forbidden_variants) and self.kind != 'terminology':
+            raise ValueError('Variants apply to terminology rules only')
+        if set(self.allowed_variants or []) & set(self.forbidden_variants or []):
+            raise ValueError('A variant cannot be both allowed and forbidden')
+        return self
 
 class SourceInput(StrictInput):
     source_key: str = Field(pattern=r'^[A-Za-z0-9_-]{1,100}$')
@@ -48,6 +69,8 @@ class ActivationInput(StrictInput):
     verified: Literal[True]
     retire_source_ids: list[str] = Field(default_factory=list, max_length=100)
     rationale: str = Field(min_length=10, max_length=2000)
+    # Required when the linked improvement request's comparison found regressions.
+    regression_acknowledgement: str | None = Field(default=None, max_length=2000)
 
 class RevisionInput(StrictInput):
     text: str = Field(min_length=1, max_length=100000)

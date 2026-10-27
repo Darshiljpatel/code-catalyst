@@ -107,6 +107,7 @@ def _check_terminology(extraction: ExtractionResult, rules: List[Dict[str, Any]]
     findings: List[Finding] = []
     term_rules = [r for r in rules if r.get("category") == "terminology" or r.get("kind") == "terminology"]
     approved_terms = {(r.get("canonical_term") or r.get("value") or "").casefold() for r in term_rules}
+    approved_terms |= {v.casefold() for r in term_rules for v in (r.get("allowed_variants") or [])}
 
     for block in extraction.blocks:
         for rule in term_rules:
@@ -129,13 +130,15 @@ def _check_terminology(extraction: ExtractionResult, rules: List[Dict[str, Any]]
                     suggested_edit=canonical,
                 ))
 
+            # Exact alternative spellings the guideline explicitly allows (e.g. an all-caps headline).
+            allowed = {canonical, *(rule.get("allowed_variants") or [])}
             if canonical:
                 for match in _make_boundary_regex(canonical, ignore_case=True).finditer(block.text):
-                    if match.group(0) != canonical:
+                    if match.group(0) not in allowed:
                         add(match)
-            for pattern in rule.get("forbidden_patterns", []):
+            for pattern in [*rule.get("forbidden_patterns", []), *(rule.get("forbidden_variants") or [])]:
                 for match in _make_boundary_regex(pattern, ignore_case=True).finditer(block.text):
-                    if match.group(0) != canonical:
+                    if match.group(0) not in allowed:
                         add(match)
 
             # Only an approved, single-word brand name can anchor a likely typo.
