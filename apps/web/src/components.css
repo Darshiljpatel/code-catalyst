@@ -341,3 +341,18 @@
 .impact-preview { margin-bottom: var(--space-4); }
 .impact-preview__headline { font-weight: 700; color: var(--text-primary); }
 .impact-preview__list { margin: var(--space-2) 0 0; padding-left: 1.1em; max-height: 140px; overflow-y: auto; font-size: 0.8125rem; }
+
+/* Guideline health and improvement requests (Improvement 3) */
+.health-bar { display: inline-flex; align-items: center; gap: var(--space-2); }
+.health-bar__track { width: 80px; height: 8px; border-radius: 999px; background: var(--bg-raised); border: 1px solid var(--border-default); overflow: hidden; }
+.health-bar__track span { display: block; height: 100%; background: var(--color-warning); }
+.health-bar__label { font-variant-numeric: tabular-nums; font-size: 0.8125rem; }
+.health-bar__none { color: var(--text-muted); font-size: 0.8125rem; }
+.request-draft { display: grid; gap: var(--space-3); }
+.request-draft__rule { border: 1px solid var(--border-default); border-radius: var(--radius-md); padding: var(--space-3); display: grid; gap: var(--space-2); }
+.request-draft__rule--focus { border-color: var(--accent); }
+.request-draft__variants { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: var(--space-3); }
+.request-case-form { display: flex; flex-wrap: wrap; gap: var(--space-2); align-items: center; }
+.request-case-form input[aria-label="New example copy"] { flex: 1; min-width: 200px; }
+.request-gates { list-style: none; padding: 0; margin: 0 0 var(--space-3); display: grid; gap: 4px; }
+.request-review { display: grid; gap: var(--space-2); }

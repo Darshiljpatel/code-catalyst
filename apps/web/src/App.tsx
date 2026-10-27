@@ -9,6 +9,8 @@
  *   /review/new        — content intake / new review (D2)
  *   /content/:contentId — campaign revisions & review workspace (D2/D3)
  *   /rechecks[/:id]    — re-review inbox after guideline changes (managers)
+ *   /brands/:id/health — guideline health and improvement requests (managers)
+ *   /requests/:id      — one improvement request: draft, comparison, peer review
  *   *                  — 404
  *
  * The mock transport is enabled ONLY when:
@@ -30,6 +32,8 @@ import { NewReviewPage } from './pages/NewReviewPage';
 import { ContentDetailPage } from './pages/ContentDetailPage';
 import { NotFoundPage } from './pages/NotFoundPage';
 import { RechecksPage } from './pages/RechecksPage';
+import { GuidelineHealthPage } from './pages/GuidelineHealthPage';
+import { RequestPage } from './pages/RequestPage';
 import { JudgeGuide } from './components/JudgeGuide';
 import { ServerStatusBanner, BuildFooter } from './components/ServerStatusBanner';
 
@@ -92,6 +96,8 @@ const router = createBrowserRouter(createRoutesFromElements(
       <Route path="/content/:contentId" element={<ContentDetailPage />} />
       <Route path="/rechecks" element={<RechecksPage />} />
       <Route path="/rechecks/:changeId" element={<RechecksPage />} />
+      <Route path="/brands/:brandId/health" element={<GuidelineHealthPage />} />
+      <Route path="/requests/:requestId" element={<RequestPage />} />
     </Route>
     <Route path="/404" element={<NotFoundPage />} />
     <Route path="*" element={<NotFoundPage />} />

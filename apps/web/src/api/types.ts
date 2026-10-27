@@ -112,6 +112,8 @@ export type RuleKind =
   | 'alt_text';
 
 export interface RuleInput {
+  allowed_variants?: string[] | null;
+  forbidden_variants?: string[] | null;
   id: string;
   category: RuleCategory;
   kind: RuleKind;
@@ -150,6 +152,7 @@ export interface SourceOut {
 }
 
 export interface ActivationInput {
+  regression_acknowledgement?: string;
   expected_epoch: number;
   verified: true;
   retire_source_ids: string[];
@@ -350,6 +353,148 @@ export interface RecheckAssignment {
 export interface GuidelineChange extends GuidelineChangeSummary {
   diff: RuleDiff;
   assignments: RecheckAssignment[];
+}
+
+// ---------------------------------------------------------------------------
+// Guideline improvement requests (Improvement 3)
+// ---------------------------------------------------------------------------
+export interface RuleHealth {
+  source_id: string;
+  source_key: string;
+  source_title: string;
+  rule_id: string;
+  category: string;
+  kind: string;
+  value: string;
+  flagged_items: number;
+  confirmed_items: number;
+  disputed_items: number;
+  ambiguity_reports: number;
+  dispute_rate: number | null;
+  likely_unclear: boolean;
+  open_request_id: string | null;
+}
+
+export interface GuidelineHealth {
+  brand_id: string;
+  window_days: number;
+  unclear_threshold: number;
+  dispute_definition: string;
+  rules: RuleHealth[];
+  open_requests: { id: string; title: string; rule_id: string | null; source_key: string; status: string }[];
+}
+
+export type RequestStatus = 'open' | 'in_review' | 'changes_requested' | 'approved' | 'activated' | 'withdrawn';
+export type ExampleExpectation = 'flag' | 'no_flag' | 'unsure';
+
+export interface RequestExample {
+  id: string;
+  item_id: string | null;
+  revision_id: string | null;
+  finding_id: string | null;
+  kind: 'dispute' | 'ambiguity' | 'manual';
+  excerpt: string;
+  dispute: { actor_id?: string; action?: string; rationale?: string };
+  expected: ExampleExpectation;
+  labelled_by: string | null;
+}
+
+export interface ComparisonCase {
+  case_id: string;
+  label: string;
+  text: string;
+  expectations: { source_key: string; rule_id: string; expected: 'flag' | 'no_flag' }[];
+  live: FindingDeltaEntry[];
+  proposed: FindingDeltaEntry[];
+  verdict: 'fixed' | 'regressed' | 'unchanged' | 'unstable' | 'changed' | 'not_run';
+}
+
+export interface SideMetrics {
+  true_positives: number;
+  false_positives: number;
+  false_negatives: number;
+  precision: number | null;
+  recall: number | null;
+}
+
+export interface Comparison {
+  id: string;
+  request_id: string;
+  proposed_source_id: string;
+  proposed_hash: string;
+  example_set_id: string;
+  status: string;
+  current: boolean;
+  summary: {
+    counts: Record<string, number>;
+    verdict: string;
+    cases: ComparisonCase[];
+    live_metrics: SideMetrics;
+    proposed_metrics: SideMetrics;
+    ai: { status: string; reason: string };
+  };
+  created_by: string;
+  created_at: string;
+}
+
+export interface RequestReview {
+  id: string;
+  reviewer_id: string;
+  decision: 'approved' | 'changes_requested' | 'rejected';
+  rationale: string;
+  draft_hash: string;
+  comparison_run_id: string | null;
+  current: boolean;
+  created_at: string;
+}
+
+export interface RequestGates {
+  has_draft: boolean;
+  comparison_current: boolean;
+  comparison_run_id: string | null;
+  approval_current: boolean;
+  regressions: number;
+  base_changed: boolean;
+  can_activate: boolean;
+}
+
+export interface GuidelineRequestSummary {
+  id: string;
+  brand_id: string;
+  source_key: string;
+  rule_id: string | null;
+  title: string;
+  status: RequestStatus;
+  created_by: string;
+  assignee_id: string | null;
+  created_at: string;
+  updated_at: string;
+  example_count: number;
+}
+
+export interface GuidelineRequest extends GuidelineRequestSummary {
+  problem: string;
+  base_source_id: string;
+  draft_source_id: string | null;
+  draft_hash: string | null;
+  change_id: string | null;
+  version: number;
+  signals: Record<string, unknown>;
+  examples: RequestExample[];
+  base_source: SourceOut;
+  draft_source: SourceOut | null;
+  diff: RuleDiff | null;
+  comparisons: Comparison[];
+  reviews: RequestReview[];
+  activity: { action: string; actor_id: string; created_at: string; details: Record<string, unknown> }[];
+  gates: RequestGates;
+}
+
+export interface ExampleSet {
+  id: string;
+  brand_id: string;
+  name: string;
+  cases: { id: string; label: string; text: string; expectations: ComparisonCase['expectations']; origin_revision_id: string | null; external_ok: boolean }[];
 }
 
 export interface ActivationOut extends SourceOut {

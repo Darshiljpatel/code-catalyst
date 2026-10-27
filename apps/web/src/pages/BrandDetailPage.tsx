@@ -100,6 +100,11 @@ export function BrandDetailPage() {
               </div>
 
               <div style={{ display: 'flex', gap: 'var(--space-3)', alignItems: 'center', flexWrap: 'wrap' }}>
+                {user?.role === 'manager' && (
+                  <button id="btn-guideline-health" className="btn btn--primary" onClick={() => navigate(`/brands/${brand.id}/health`)}>
+                    Guideline health
+                  </button>
+                )}
                 <button
                   id="btn-brand-insights"
                   className="btn btn--secondary"

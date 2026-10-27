@@ -20,6 +20,7 @@ import type {
   ReadyResponse,
   SourceOut,
   SourceInput,
+  RuleInput,
   ActivationInput,
   ContentInput,
   ContentOut,
@@ -51,6 +52,12 @@ import type {
   GuidelineChangeSummary,
   GuidelineChange,
   RecheckAssignment,
+  GuidelineHealth,
+  GuidelineRequest,
+  GuidelineRequestSummary,
+  Comparison,
+  ExampleSet,
+  ExampleExpectation,
   VersionResponse,
 } from './types';
 import { retryStarted, retryFinished } from './serverStatus';
@@ -279,6 +286,68 @@ export async function assignRecheckReviewer(
     reviewer_id: reviewerId,
     expected_versions: Object.fromEntries(assignments.map(a => [a.id, a.version])),
   });
+}
+
+// ---------------------------------------------------------------------------
+// Guideline improvement requests (Improvement 3)
+// ---------------------------------------------------------------------------
+
+export async function getGuidelineHealth(brandId: string): Promise<GuidelineHealth> {
+  return request<GuidelineHealth>('GET', `/brands/${brandId}/guideline-health`);
+}
+
+export async function createGuidelineRequest(payload: {
+  brand_id: string; source_id: string; rule_id?: string | null; ambiguity_report_id?: string; title: string; problem: string;
+}): Promise<GuidelineRequest> {
+  return request<GuidelineRequest>('POST', '/guideline-requests', payload);
+}
+
+export async function getGuidelineRequests(brandId?: string): Promise<GuidelineRequestSummary[]> {
+  return request<GuidelineRequestSummary[]>('GET', `/guideline-requests${brandId ? `?brand_id=${encodeURIComponent(brandId)}` : ''}`);
+}
+
+export async function getGuidelineRequest(requestId: string): Promise<GuidelineRequest> {
+  return request<GuidelineRequest>('GET', `/guideline-requests/${requestId}`);
+}
+
+export async function updateGuidelineRequest(requestId: string, payload: {
+  expected_version: number; labels?: { example_id: string; expected: ExampleExpectation }[]; status?: 'in_review' | 'withdrawn';
+}): Promise<GuidelineRequest> {
+  return request<GuidelineRequest>('PATCH', `/guideline-requests/${requestId}`, payload);
+}
+
+export async function saveRequestDraft(requestId: string, payload: {
+  expected_version: number; title: string; text: string; rules: RuleInput[];
+}): Promise<GuidelineRequest> {
+  return request<GuidelineRequest>('PUT', `/guideline-requests/${requestId}/draft`, payload);
+}
+
+export async function saveRequestExamples(requestId: string): Promise<ExampleSet> {
+  return request<ExampleSet>('POST', `/guideline-requests/${requestId}/example-set`);
+}
+
+export async function getExampleSets(brandId: string): Promise<ExampleSet[]> {
+  return request<ExampleSet[]>('GET', `/brands/${brandId}/example-sets`);
+}
+
+export async function ensureExampleSet(brandId: string): Promise<ExampleSet> {
+  return request<ExampleSet>('POST', `/brands/${brandId}/example-sets/default`);
+}
+
+export async function addExampleCase(setId: string, payload: {
+  label: string; text?: string; revision_id?: string; expectations: ExampleSet['cases'][number]['expectations'];
+}): Promise<ExampleSet> {
+  return request<ExampleSet>('POST', `/example-sets/${setId}/cases`, payload);
+}
+
+export async function runComparison(requestId: string): Promise<Comparison> {
+  return request<Comparison>('POST', `/guideline-requests/${requestId}/comparisons`);
+}
+
+export async function reviewGuidelineRequest(requestId: string, payload: {
+  decision: 'approved' | 'changes_requested' | 'rejected'; rationale: string; comparison_run_id?: string | null;
+}): Promise<GuidelineRequest> {
+  return request<GuidelineRequest>('POST', `/guideline-requests/${requestId}/reviews`, payload);
 }
 
 export async function requeueRechecks(changeId: string): Promise<{ change_id: string; queued: string[] }> {
