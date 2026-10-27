@@ -222,6 +222,7 @@ function CampaignWorkspace() {
         channel: draftChannel.trim(),
         audience: draftAudience.trim(),
         purpose: draftPurpose.trim(),
+        document_import_id: currentRevision.source_document?.import_id ?? null,
       });
       setContent(updated);
       const newLatestIdx = updated.revisions.length - 1;
@@ -478,6 +479,12 @@ function CampaignWorkspace() {
           <div className="workspace-subtitle">
             Campaign studio <span aria-hidden="true">/</span> Revision <strong>#{content.current_revision}</strong>
           </div>
+          {currentRevision?.source_document && <p className="workspace-subtitle" data-testid="source-document">
+            Imported from <strong>{currentRevision.source_document.filename}</strong>
+            {currentRevision.source_document.pages != null && ` (${currentRevision.source_document.pages} pages)`}
+            {' '}· file fingerprint <code title={currentRevision.source_document.original_sha256}>{currentRevision.source_document.original_sha256.slice(0, 12)}…</code>
+            {currentRevision.source_document.edited ? ' · text edited after import' : ' · text unchanged from the file'}
+          </p>}
         </div>
 
         <div className="workspace-actions">

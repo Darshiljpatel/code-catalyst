@@ -38,6 +38,8 @@ export function NewReviewPage() {
   const [reviewerId, setReviewerId] = React.useState('');
   const [reviewers, setReviewers] = React.useState<ReviewerOut[]>([]);
   const [text, setText] = React.useState(FIXTURE_LUMADESK_DRAFT_TEXT);
+  // Set when the draft came from a PDF/DOCX import; the server records whether the text was edited afterwards.
+  const [documentImportId, setDocumentImportId] = React.useState<string | null>(null);
 
   // Consent
   const [consent, setConsent] = React.useState(true);
@@ -148,6 +150,7 @@ export function NewReviewPage() {
         audience: audience.trim(),
         purpose: purpose.trim(),
         reviewer_id: reviewerId.trim() || null,
+        document_import_id: documentImportId,
       });
 
       // 2. Start review run on first revision
@@ -382,7 +385,7 @@ export function NewReviewPage() {
           </div>
           ) : (
           <div className="form-group" style={{ marginBottom: 'var(--space-6)' }}>
-            <ImportDraft onImported={setText} disabled={submitting} />
+            <ImportDraft onImported={(imported, importId) => { setText(imported); setDocumentImportId(importId); }} disabled={submitting} />
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', marginBottom: 'var(--space-2)' }}>
               <label htmlFor="txt-content-text" className="form-label" style={{ margin: 0 }}>
                 Draft Campaign Copy <span style={{ color: 'var(--color-blocker)' }}>*</span>
@@ -406,7 +409,7 @@ export function NewReviewPage() {
               <button
                 type="button"
                 className="btn btn--ghost btn--sm"
-                onClick={() => setText(FIXTURE_LUMADESK_DRAFT_TEXT)}
+                onClick={() => { setText(FIXTURE_LUMADESK_DRAFT_TEXT); setDocumentImportId(null); }}
               >
                 Reset to LumaDesk Demo Copy
               </button>

@@ -62,6 +62,7 @@ import type {
   DemoMember,
   SandboxOut,
   RegionInput,
+  DocumentImportOut,
   VersionResponse,
 } from './types';
 import { retryStarted, retryFinished } from './serverStatus';
@@ -427,6 +428,26 @@ export async function uploadImageCampaign(fields: {
   const json = await res.json();
   if (!res.ok) throw new ApiResponseError(res.status, json as ApiError);
   return json as ContentOut;
+}
+
+// PDF and DOCX drafts: text is extracted server-side; only the file hash and text are kept.
+export const DOCUMENT_LIMITS = { maxBytes: 10 * 1024 * 1024, maxPages: 50 };
+
+export async function importDocument(file: File): Promise<DocumentImportOut> {
+  const form = new FormData();
+  form.append('file', file);
+  const headers: Record<string, string> = {};
+  if (_csrfToken) headers['x-csrf-token'] = _csrfToken;
+  let res: Response;
+  try {
+    res = await _transport(`${BASE}/imports/document`, { method: 'POST', credentials: 'same-origin', headers, body: form });
+  } catch {
+    throw unavailable(0);
+  }
+  if (!isJson(res)) throw unavailable(res.status);
+  const json = await res.json();
+  if (!res.ok) throw new ApiResponseError(res.status, json as ApiError);
+  return json as DocumentImportOut;
 }
 
 export async function getOcr(assetId: string): Promise<OcrOut> {

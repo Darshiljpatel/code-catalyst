@@ -195,6 +195,7 @@ export interface ContentInput {
   audience: string;
   purpose: string;
   reviewer_id?: string | null;
+  document_import_id?: string | null;
 }
 
 export interface NewRevisionInput {
@@ -203,6 +204,7 @@ export interface NewRevisionInput {
   channel: string;
   audience: string;
   purpose: string;
+  document_import_id?: string | null;
 }
 
 export interface RevisionOut {
@@ -219,6 +221,35 @@ export interface RevisionOut {
   asset_id?: string | null;
   asset_sha256?: string | null;
   region_map?: RegionMapEntry[] | null;
+  source_document?: SourceDocument | null;
+}
+
+export interface DocumentBlock { page: number | null; paragraph: number; start: number; end: number }
+
+export interface DocumentImportOut {
+  id: string;
+  filename: string;
+  media_type: string;
+  size_bytes: number;
+  original_sha256: string;
+  text: string;
+  text_hash: string;
+  pages: number | null;
+  blocks: DocumentBlock[];
+  warnings: string[];
+  created_at: string;
+}
+
+export interface SourceDocument {
+  import_id: string;
+  filename: string;
+  media_type: string;
+  original_sha256: string;
+  extracted_text_hash: string;
+  pages: number | null;
+  edited: boolean;
+  blocks: DocumentBlock[] | null;
+  warnings: string[];
 }
 
 // ---------------------------------------------------------------------------
