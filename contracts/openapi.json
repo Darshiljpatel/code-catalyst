@@ -393,6 +393,43 @@
         }
       }
     },
+    "/api/v1/imports/scanned-page": {
+      "post": {
+        "summary": "Scanned Page",
+        "description": "A scanned PDF page as a PNG, so the creator can check it as an image campaign with OCR.",
+        "operationId": "scanned_page_api_v1_imports_scanned_page_post",
+        "requestBody": {
+          "content": {
+            "multipart/form-data": {
+              "schema": {
+                "$ref": "#/components/schemas/Body_scanned_page_api_v1_imports_scanned_page_post"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/v1/verify/approval-record": {
       "post": {
         "summary": "Verify Record",
@@ -2808,6 +2845,20 @@
           "file"
         ],
         "title": "Body_import_document_api_v1_imports_document_post"
+      },
+      "Body_scanned_page_api_v1_imports_scanned_page_post": {
+        "properties": {
+          "file": {
+            "type": "string",
+            "contentMediaType": "application/octet-stream",
+            "title": "File"
+          }
+        },
+        "type": "object",
+        "required": [
+          "file"
+        ],
+        "title": "Body_scanned_page_api_v1_imports_scanned_page_post"
       },
       "Body_upload_image_api_v1_content_image_post": {
         "properties": {

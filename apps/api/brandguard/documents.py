@@ -6,7 +6,7 @@ import subprocess
 import sys
 import zipfile
 from datetime import datetime, timezone
-from fastapi import APIRouter, Depends, File, UploadFile
+from fastapi import APIRouter, Depends, File, UploadFile, Response
 from pydantic import BaseModel
 from sqlalchemy import select
 from sqlalchemy.orm import Session
@@ -114,6 +114,49 @@ def _extract_child(media, data):
     return dict(text=text, blocks=blocks, pages=pages, warnings=warnings)
 
 
+def _scanned_page_child(data):
+    """First page without a text layer -> its largest embedded image as PNG, for the image pipeline."""
+    import base64
+    from PIL import Image
+    from pypdf import PdfReader
+    reader = PdfReader(io.BytesIO(data))
+    if reader.is_encrypted:
+        return dict(error='encrypted_document', message='This PDF is password-protected. Remove the password and try again.')
+    if len(reader.pages) > MAX_PAGES:
+        return dict(error='too_many_pages', message=f'PDFs can have at most {MAX_PAGES} pages; this one has {len(reader.pages)}.')
+    scanned = [n for n, page in enumerate(reader.pages, 1) if not (page.extract_text() or '').strip()]
+    for number in scanned:
+        images = list(reader.pages[number - 1].images)
+        if not images:
+            continue
+        best = max(images, key=lambda image: image.image.width * image.image.height)
+        picture = best.image.convert('RGB')
+        out = io.BytesIO()
+        picture.save(out, format='PNG')
+        return dict(png=base64.b64encode(out.getvalue()).decode(), page=number, scanned_pages=len(scanned), pages=len(reader.pages))
+    return dict(error='no_page_image', message='No scanned page image was found. Export the page as PNG or JPEG and use an image campaign.')
+
+
+def extract_scanned_page(data):
+    """Returns (png_bytes, page, scanned_pages, pages) or raises DocumentRejected."""
+    import base64
+    if len(data) > MAX_DOCUMENT_BYTES:
+        raise DocumentRejected('document_too_large', 'Documents must be 10 MB or smaller.')
+    if sniff(data) != PDF:
+        raise DocumentRejected('unsupported_document', 'Upload a scanned PDF.')
+    try:
+        process = subprocess.run([sys.executable, '-m', 'brandguard.documents', 'scan'], input=data, capture_output=True,
+                                 timeout=30, env=_child_env())
+        if process.returncode != 0:
+            raise ValueError('child_failed')
+        result = json.loads(process.stdout)
+    except (subprocess.TimeoutExpired, ValueError, OSError):
+        raise DocumentRejected('invalid_document', 'This file could not be read. It may be damaged, encrypted or too complex.')
+    if 'error' in result:
+        raise DocumentRejected(result['error'], result['message'])
+    return base64.b64decode(result['png']), result['page'], result['scanned_pages'], result['pages']
+
+
 def child_main(media):
     import resource
     limit = 768 * 1024 * 1024
@@ -122,7 +165,7 @@ def child_main(media):
     resource.setrlimit(resource.RLIMIT_CORE, (0, 0))
     data = sys.stdin.buffer.read(MAX_DOCUMENT_BYTES + 1)
     try:
-        result = _extract_child(media, data)
+        result = _scanned_page_child(data) if media == 'scan' else _extract_child(media, data)
     except Exception:
         result = dict(error='invalid_document', message='This file could not be read. It may be damaged, encrypted or too complex.')
     sys.stdout.write(json.dumps(result))
@@ -150,6 +193,21 @@ async def import_document(file: UploadFile = File(...), member=Depends(identity)
     session.add(record)
     session.commit()
     return DocumentImportOut.model_validate(record, from_attributes=True)
+
+
+@router.post('/imports/scanned-page')
+async def scanned_page(file: UploadFile = File(...), member=Depends(identity), session: Session = Depends(db)):
+    """A scanned PDF page as a PNG, so the creator can check it as an image campaign with OCR."""
+    if member.role != 'creator':
+        raise Problem(403, 'forbidden', 'Only a creator can do this. Switch to the creator role or sign in as a creator.')
+    quota.enforce(session, member, 'uploads')
+    data = await file.read(MAX_DOCUMENT_BYTES + 1)
+    try:
+        png, page, scanned, pages = extract_scanned_page(data)
+    except DocumentRejected as error:
+        raise Problem(413 if error.code == 'document_too_large' else 422, error.code, error.message)
+    return Response(content=png, media_type='image/png', headers={
+        'X-Scanned-Page': str(page), 'X-Scanned-Pages': str(scanned), 'X-Page-Count': str(pages)})
 
 
 def source_document_for(session, member, import_id, text):

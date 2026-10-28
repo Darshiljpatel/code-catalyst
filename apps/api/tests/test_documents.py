@@ -113,3 +113,29 @@ def test_members_hit_an_hourly_cap_on_drafts_analysis_and_uploads(setup, monkeyp
     runs = [c.post(f"/api/v1/revisions/{item['revisions'][0]['id']}/analysis", json={}, headers={**h, 'Idempotency-Key': f'quota-run-{n}'})
             for n, item in enumerate(items)]
     assert runs[0].status_code == 202 and runs[1].status_code == 429 and runs[1].json()['code'] == 'member_rate_limited'
+
+
+def scanned_pdf(pages=1):
+    from PIL import Image, ImageDraw
+    images = []
+    for n in range(pages):
+        page = Image.new('RGB', (600, 800), (255, 255, 255))
+        ImageDraw.Draw(page).rectangle((60, 60 + n * 10, 400, 100), fill=(10, 10, 10))
+        images.append(page)
+    out = io.BytesIO()
+    images[0].save(out, format='PDF', save_all=True, append_images=images[1:])
+    return out.getvalue()
+
+
+def test_scanned_pdf_page_becomes_a_png_for_the_image_pipeline(setup):
+    from PIL import Image
+    from brandguard.documents import extract_scanned_page
+    png, page, scanned, pages = extract_scanned_page(scanned_pdf(2))
+    assert png[:8] == b'\x89PNG\r\n\x1a\n' and (page, scanned, pages) == (1, 2, 2)
+    assert Image.open(io.BytesIO(png)).size == (600, 800)
+    c, _, orgs, _ = setup
+    h = login(c, orgs[0], 'creator')
+    r = c.post('/api/v1/imports/scanned-page', files=dict(file=('scan.pdf', scanned_pdf(), 'application/pdf')), headers=h)
+    assert r.status_code == 200 and r.headers['content-type'] == 'image/png' and r.headers['x-scanned-page'] == '1'
+    r = c.post('/api/v1/imports/scanned-page', files=dict(file=('text.pdf', LAUNCH_PDF, 'application/pdf')), headers=h)
+    assert r.status_code == 422 and r.json()['code'] == 'no_page_image'
