@@ -869,7 +869,7 @@ function CampaignWorkspace() {
                             <div style={{ fontSize: '0.8125rem', color: 'var(--color-success)' }}>
                               Suggestion: <code>{finding.suggested_edit}</code>
                             </div>
-                            <div className="finding-card__actions">
+                            <div className="finding-card__actions finding-suggestion__actions">
                               <button
                                 type="button"
                                 className="btn btn--ghost btn--sm"

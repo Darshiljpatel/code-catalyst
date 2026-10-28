@@ -143,8 +143,10 @@
 .finding-card__actions .btn { font-size: 11px; padding: 6px 10px; min-height: 34px; }
 .finding-card__header > div > span:last-child:not(.badge) { font-size: 9px !important; }
 .finding-suggestion { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 12px; margin-top: 14px; padding-top: 12px; border-top: 1px solid var(--border-subtle); }
-.finding-suggestion > div:first-child { min-width: 0; }
-.finding-suggestion code { white-space: pre-wrap; }
+.finding-suggestion > div:first-child { min-width: 0; flex: 1 1 auto; }
+.finding-suggestion code { white-space: pre-wrap; word-break: break-word; }
+.finding-suggestion .finding-card__actions,
+.finding-suggestion__actions { margin-left: auto; justify-content: flex-end; flex-shrink: 0; }
 .review-empty-mark { font: 48px var(--font-display); color: var(--accent); margin-bottom: 16px; }
 .info-box { border-color: var(--border-default); }
 .drawer-content { background: var(--bg-card); }
