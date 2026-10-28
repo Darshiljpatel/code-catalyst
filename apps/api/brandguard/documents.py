@@ -179,8 +179,9 @@ def safe_filename(name):
 
 @router.post('/imports/document', status_code=201, response_model=DocumentImportOut)
 async def import_document(file: UploadFile = File(...), member=Depends(identity), session: Session = Depends(db)):
-    if member.role != 'creator':
-        raise Problem(403, 'forbidden', 'Only a creator can do this. Switch to the creator role or sign in as a creator.')
+    # Creators import drafts; managers import brand books for AI rule drafting.
+    if member.role not in ('creator', 'manager'):
+        raise Problem(403, 'forbidden', 'Only a creator or manager can import documents.')
     quota.enforce(session, member, 'uploads')
     data = await file.read(MAX_DOCUMENT_BYTES + 1)
     try:

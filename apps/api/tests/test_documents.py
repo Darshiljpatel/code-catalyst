@@ -89,8 +89,8 @@ def test_imported_document_becomes_a_campaign_with_file_hash_and_provenance(setu
     scanned = c.post('/api/v1/imports/document', files=dict(file=('scan.pdf', make_pdf([[]]), 'application/pdf')), headers=h)
     assert scanned.status_code == 422 and scanned.json()['code'] == 'no_text_layer'
     # Imports belong to the creator who uploaded them and to their workspace.
-    mh = login(c, orgs[0])
-    assert c.post('/api/v1/imports/document', files=dict(file=('a.pdf', LAUNCH_PDF, 'application/pdf')), headers=mh).status_code == 403
+    rh = login(c, orgs[0], 'reviewer')
+    assert c.post('/api/v1/imports/document', files=dict(file=('a.pdf', LAUNCH_PDF, 'application/pdf')), headers=rh).status_code == 403
     h = login(c, orgs[0], 'creator')
     r = c.post('/api/v1/content', json=dict(brand_id=bid, title='x', text='x', document_import_id='missing-import', **CONTEXT), headers=h)
     assert r.status_code == 404 and r.json()['code'] == 'not_found'

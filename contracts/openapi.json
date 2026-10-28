@@ -522,6 +522,55 @@
         }
       }
     },
+    "/api/v1/brands/{brand_id}/rule-drafts": {
+      "post": {
+        "summary": "Create Rule Drafts",
+        "operationId": "create_rule_drafts_api_v1_brands__brand_id__rule_drafts_post",
+        "parameters": [
+          {
+            "name": "brand_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Brand Id"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/brandguard__rule_drafting__DraftInput"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DraftOut"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/v1/brands/{brand_id}/guideline-health": {
       "get": {
         "summary": "Guideline Health",
@@ -753,7 +802,7 @@
           "content": {
             "application/json": {
               "schema": {
-                "$ref": "#/components/schemas/DraftInput"
+                "$ref": "#/components/schemas/brandguard__requests__DraftInput"
               }
             }
           }
@@ -3732,44 +3781,50 @@
         ],
         "title": "DocumentImportOut"
       },
-      "DraftInput": {
+      "DraftOut": {
         "properties": {
-          "expected_version": {
-            "type": "integer",
-            "minimum": 1.0,
-            "title": "Expected Version"
-          },
-          "title": {
+          "source_text": {
             "type": "string",
-            "maxLength": 200,
-            "minLength": 1,
-            "title": "Title"
+            "title": "Source Text"
           },
-          "text": {
-            "type": "string",
-            "maxLength": 100000,
-            "minLength": 1,
-            "title": "Text"
-          },
-          "rules": {
+          "proposals": {
             "items": {
-              "$ref": "#/components/schemas/RuleInput"
+              "additionalProperties": true,
+              "type": "object"
             },
             "type": "array",
-            "maxItems": 100,
-            "minItems": 1,
-            "title": "Rules"
+            "title": "Proposals"
+          },
+          "rejected": {
+            "items": {
+              "additionalProperties": true,
+              "type": "object"
+            },
+            "type": "array",
+            "title": "Rejected"
+          },
+          "warnings": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Warnings"
+          },
+          "metadata": {
+            "additionalProperties": true,
+            "type": "object",
+            "title": "Metadata"
           }
         },
-        "additionalProperties": false,
         "type": "object",
         "required": [
-          "expected_version",
-          "title",
-          "text",
-          "rules"
+          "source_text",
+          "proposals",
+          "rejected",
+          "warnings",
+          "metadata"
         ],
-        "title": "DraftInput"
+        "title": "DraftOut"
       },
       "ExampleLabel": {
         "properties": {
@@ -6901,6 +6956,66 @@
           "checks"
         ],
         "title": "VerificationOut"
+      },
+      "brandguard__requests__DraftInput": {
+        "properties": {
+          "expected_version": {
+            "type": "integer",
+            "minimum": 1.0,
+            "title": "Expected Version"
+          },
+          "title": {
+            "type": "string",
+            "maxLength": 200,
+            "minLength": 1,
+            "title": "Title"
+          },
+          "text": {
+            "type": "string",
+            "maxLength": 100000,
+            "minLength": 1,
+            "title": "Text"
+          },
+          "rules": {
+            "items": {
+              "$ref": "#/components/schemas/RuleInput"
+            },
+            "type": "array",
+            "maxItems": 100,
+            "minItems": 1,
+            "title": "Rules"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "expected_version",
+          "title",
+          "text",
+          "rules"
+        ],
+        "title": "DraftInput"
+      },
+      "brandguard__rule_drafting__DraftInput": {
+        "properties": {
+          "document_import_id": {
+            "type": "string",
+            "maxLength": 36,
+            "minLength": 1,
+            "title": "Document Import Id"
+          },
+          "external_processing_consent": {
+            "type": "boolean",
+            "title": "External Processing Consent"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "document_import_id",
+          "external_processing_consent"
+        ],
+        "title": "DraftInput"
       }
     }
   }

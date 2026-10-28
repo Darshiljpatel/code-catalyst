@@ -77,12 +77,14 @@ def create_app(settings=None, provider_config=None):
     from .documents import router as documents_router
     from .verify import router as verify_router
     from .retention import router as retention_router
+    from .rule_drafting import router as rule_drafting_router
     from .demo import router as demo_router
     app.include_router(demo_router)
     app.include_router(images_router)
     app.include_router(documents_router)
     app.include_router(verify_router)
     app.include_router(retention_router)
+    app.include_router(rule_drafting_router)
     app.include_router(requests_router)
     app.include_router(rechecks_router)
     app.include_router(health_router)
