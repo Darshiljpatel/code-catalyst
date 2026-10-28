@@ -636,3 +636,23 @@ export async function getRetention(): Promise<RetentionOut> {
 export async function updateRetention(payload: { retention_days: number | null; rationale: string }): Promise<RetentionOut> {
   return request<RetentionOut>('PUT', '/retention', payload);
 }
+
+/** A scanned PDF page as a PNG file, ready for an image campaign. Errors use the usual JSON envelope. */
+export async function importScannedPage(file: File): Promise<File> {
+  const form = new FormData();
+  form.append('file', file);
+  const headers: Record<string, string> = {};
+  if (_csrfToken) headers['x-csrf-token'] = _csrfToken;
+  let res: Response;
+  try {
+    res = await _transport(`${BASE}/imports/scanned-page`, { method: 'POST', credentials: 'same-origin', headers, body: form });
+  } catch {
+    throw unavailable(0);
+  }
+  if (res.ok && res.headers.get('content-type')?.startsWith('image/png')) {
+    const page = res.headers.get('x-scanned-page') || '1';
+    return new File([await res.blob()], `${file.name.replace(/\.pdf$/i, '')}-page-${page}.png`, { type: 'image/png' });
+  }
+  if (!isJson(res)) throw unavailable(res.status);
+  throw new ApiResponseError(res.status, await res.json() as ApiError);
+}

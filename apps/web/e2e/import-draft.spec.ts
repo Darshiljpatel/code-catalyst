@@ -119,3 +119,17 @@ test('PDF and Word drafts are extracted on the server, previewed with warnings a
   await page.locator('#btn-submit-review').click();
   await expect.poll(() => createPayload.document_import_id).toBe('import-1');
 });
+
+test('a scanned PDF without a text layer can be checked as an image campaign', async ({ page }) => {
+  const png = Buffer.from('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8z8BQDwAEhQGAhKmMIQAAAABJRU5ErkJggg==', 'base64');
+  await page.route('**/api/v1/imports/document', route => route.fulfill({ status: 422,
+    json: { code: 'no_text_layer', message: 'No text was found. Scanned PDFs need OCR.', request_id: 'r', details: {} } }));
+  await page.route('**/api/v1/imports/scanned-page', route => route.fulfill({ status: 200, contentType: 'image/png',
+    headers: { 'x-scanned-page': '1' }, body: png }));
+  await page.goto('/review/new');
+  await page.getByLabel('Choose draft file').setInputFiles({ name: 'flyer.pdf', mimeType: 'application/pdf', buffer: Buffer.from('%PDF-1.4 scan') });
+  await expect(page.locator('.draft-import').getByRole('alert')).toContainText('Scanned PDFs need OCR');
+  await page.getByRole('button', { name: 'Check this scan as an image campaign' }).click();
+  await expect(page.getByRole('button', { name: 'Image campaign' })).toHaveAttribute('aria-pressed', 'true');
+  await expect(page.getByAltText('Preview of the chosen campaign image')).toBeVisible();
+});

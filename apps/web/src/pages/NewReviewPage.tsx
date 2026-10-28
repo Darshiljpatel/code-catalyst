@@ -5,6 +5,7 @@ import {
   getReviewers,
   getProcessingPolicy,
   createContent,
+  importScannedPage,
   startAnalysis,
   uploadImageCampaign,
   IMAGE_LIMITS,
@@ -75,6 +76,15 @@ export function NewReviewPage() {
       setChannel('social');
     } catch {
       setError('The sample ad could not be loaded.');
+    }
+  };
+  const checkScannedPdf = async (scan: File) => {
+    try {
+      const page = await importScannedPage(scan);
+      setMode('image');
+      chooseFile(page);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'The scanned page could not be read.');
     }
   };
   React.useLayoutEffect(() => {
@@ -385,7 +395,7 @@ export function NewReviewPage() {
           </div>
           ) : (
           <div className="form-group" style={{ marginBottom: 'var(--space-6)' }}>
-            <ImportDraft onImported={(imported, importId) => { setText(imported); setDocumentImportId(importId); }} disabled={submitting} />
+            <ImportDraft onImported={(imported, importId) => { setText(imported); setDocumentImportId(importId); }} onScannedPdf={scan => { void checkScannedPdf(scan); }} disabled={submitting} />
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', marginBottom: 'var(--space-2)' }}>
               <label htmlFor="txt-content-text" className="form-label" style={{ margin: 0 }}>
                 Draft Campaign Copy <span style={{ color: 'var(--color-blocker)' }}>*</span>
