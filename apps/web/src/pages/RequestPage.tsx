@@ -192,7 +192,7 @@ export function RequestPage() {
               <tbody>
                 {request.examples.map(example => (
                   <tr key={example.id}>
-                    <td>“{example.excerpt || '—'}”{example.item_id && <div><Link to={`/content/${example.item_id}`} className="recheck-table__sub">Open campaign</Link></div>}</td>
+                    <td>{example.redacted_at ? <em>Campaign text removed by the retention policy</em> : <>“{example.excerpt || '—'}”{example.item_id && <div><Link to={`/content/${example.item_id}`} className="recheck-table__sub">Open campaign</Link></div>}</>}</td>
                     <td>{ACTION_LABEL[example.dispute.action || ''] || example.dispute.action}: {example.dispute.rationale}</td>
                     <td>
                       <select aria-label={`Label for “${example.excerpt}”`} className="input input--sm" disabled={closed}

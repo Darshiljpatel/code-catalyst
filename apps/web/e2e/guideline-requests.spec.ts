@@ -23,7 +23,7 @@ function requestBody(stage: number, me: string) {
     problem: '3 campaigns disputed this rule in the last 30 days.', base_source_id: 'src-1', draft_source_id: draft?.id ?? null, draft_hash: draft ? 'd' : null,
     change_id: null, version: stage + 1, signals: {}, base_source: base, draft_source: draft,
     examples: [{ id: 'ex-1', item_id: 'item-1', revision_id: 'rev-1', finding_id: 'f-1', kind: 'dispute', excerpt: 'LUMADESK',
-      dispute: { actor_id: 'creator', action: 'request_dismissal', rationale: 'Headline style uses capitals.' }, expected: stage >= 1 ? 'no_flag' : 'unsure', labelled_by: null }],
+      dispute: { actor_id: 'creator', action: 'request_dismissal', rationale: 'Headline style uses capitals.' }, expected: stage >= 1 ? 'no_flag' : 'unsure', labelled_by: null, redacted_at: null }],
     diff: draft ? { added: [], removed: [], unchanged: 0, modified: [{ rule_id: 'T01', before: rule, after: draft.rules[0], fields: ['allowed_variants'] }],
       from_source: { id: 'src-1', version: 1, title: 'LumaDesk guide', text: 'Write LumaDesk.' }, to_source: { id: 'src-2', version: 2, title: 'LumaDesk guide', text: 'Write LumaDesk.' }, retired_sources: [] } : null,
     comparisons: comparison,

@@ -510,6 +510,7 @@ export interface RequestExample {
   dispute: { actor_id?: string; action?: string; rationale?: string };
   expected: ExampleExpectation;
   labelled_by: string | null;
+  redacted_at: string | null;
 }
 
 export interface ComparisonCase {
