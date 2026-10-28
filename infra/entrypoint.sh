@@ -11,7 +11,7 @@ if [ -n "$SEED_PASSWORD" ]; then
   python -m brandguard.seed || true
 fi
 
-if [ "${EMBEDDED_WORKER:-0}" = "1" ]; then
+if [ "${EMBEDDED_WORKER:-1}" = "1" ]; then
   echo "[BrandGuard] Starting supervised embedded worker..."
   # Restart the worker if it exits; the heartbeat makes an outage visible either way.
   ( while true; do python -m apps.worker --interval 1 || true; sleep 2; done ) &
