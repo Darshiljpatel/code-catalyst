@@ -75,10 +75,12 @@ def create_app(settings=None, provider_config=None):
     from .requests import router as requests_router
     from .images import router as images_router
     from .documents import router as documents_router
+    from .verify import router as verify_router
     from .demo import router as demo_router
     app.include_router(demo_router)
     app.include_router(images_router)
     app.include_router(documents_router)
+    app.include_router(verify_router)
     app.include_router(requests_router)
     app.include_router(rechecks_router)
     app.include_router(health_router)

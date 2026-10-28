@@ -393,6 +393,44 @@
         }
       }
     },
+    "/api/v1/verify/approval-record": {
+      "post": {
+        "summary": "Verify Record",
+        "operationId": "verify_record_api_v1_verify_approval_record_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/RecordInput"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/VerificationOut"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/v1/brands/{brand_id}/guideline-health": {
       "get": {
         "summary": "Guideline Health",
@@ -5180,6 +5218,71 @@
         ],
         "title": "RecheckQueueOut"
       },
+      "RecordDecision": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "maxLength": 36,
+            "minLength": 1,
+            "title": "Id"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id"
+        ],
+        "title": "RecordDecision"
+      },
+      "RecordInput": {
+        "properties": {
+          "revision_id": {
+            "type": "string",
+            "maxLength": 36,
+            "minLength": 1,
+            "title": "Revision Id"
+          },
+          "text": {
+            "type": "string",
+            "maxLength": 100000,
+            "title": "Text"
+          },
+          "text_hash": {
+            "type": "string",
+            "maxLength": 64,
+            "title": "Text Hash"
+          },
+          "decision": {
+            "$ref": "#/components/schemas/RecordDecision"
+          },
+          "evidence_record": {
+            "additionalProperties": true,
+            "type": "object",
+            "title": "Evidence Record"
+          },
+          "image_sha256": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 64
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Image Sha256"
+          }
+        },
+        "type": "object",
+        "required": [
+          "revision_id",
+          "text",
+          "text_hash",
+          "decision",
+          "evidence_record"
+        ],
+        "title": "RecordInput",
+        "description": "The audit record JSON downloaded from an approved export. Extra fields are ignored."
+      },
       "RegionInput": {
         "properties": {
           "region_id": {
@@ -6553,6 +6656,79 @@
           "type"
         ],
         "title": "ValidationError"
+      },
+      "VerificationCheck": {
+        "properties": {
+          "code": {
+            "type": "string",
+            "title": "Code"
+          },
+          "passed": {
+            "type": "boolean",
+            "title": "Passed"
+          },
+          "message": {
+            "type": "string",
+            "title": "Message"
+          }
+        },
+        "type": "object",
+        "required": [
+          "code",
+          "passed",
+          "message"
+        ],
+        "title": "VerificationCheck"
+      },
+      "VerificationOut": {
+        "properties": {
+          "verified": {
+            "type": "boolean",
+            "title": "Verified"
+          },
+          "still_current": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Still Current"
+          },
+          "decision_id": {
+            "type": "string",
+            "title": "Decision Id"
+          },
+          "content_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Content Id"
+          },
+          "checks": {
+            "items": {
+              "$ref": "#/components/schemas/VerificationCheck"
+            },
+            "type": "array",
+            "title": "Checks"
+          }
+        },
+        "type": "object",
+        "required": [
+          "verified",
+          "still_current",
+          "decision_id",
+          "content_id",
+          "checks"
+        ],
+        "title": "VerificationOut"
       }
     }
   }
