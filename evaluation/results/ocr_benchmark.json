@@ -12,28 +12,28 @@
   "low_confidence_threshold": 0.8,
   "metrics": {
     "character_error_rate": {
-      "rate": 0.164,
+      "rate": 0.1358,
       "n": 994,
       "ci95": [
-        0.1423,
-        0.1883
+        0.1159,
+        0.1585
       ],
       "note": "edits / ground-truth characters; interval indicative"
     },
     "word_error_rate": {
-      "rate": 0.1768,
+      "rate": 0.1436,
       "n": 181,
       "ci95": [
-        0.1281,
-        0.2389
+        0.1,
+        0.2022
       ]
     },
     "words_read_exactly": {
-      "rate": 0.8398,
+      "rate": 0.8564,
       "n": 181,
       "ci95": [
-        0.7794,
-        0.8861
+        0.7978,
+        0.9
       ]
     },
     "lines_read_exactly": {
@@ -69,16 +69,16 @@
       ]
     },
     "box_match_iou_0_5": {
-      "rate": 0.8085,
+      "rate": 0.8511,
       "n": 47,
       "ci95": [
-        0.6746,
-        0.8958
+        0.7231,
+        0.9259
       ]
     },
-    "mean_box_iou": 0.7533,
+    "mean_box_iou": 0.792,
     "low_confidence_flag": {
-      "ocr_lines": 55,
+      "ocr_lines": 48,
       "flagged": 3,
       "wrong": 4,
       "precision": {
@@ -101,17 +101,17 @@
     },
     "claims": {
       "reference": 8,
-      "raw_missed": 2,
+      "raw_missed": 1,
       "raw_false": 0,
       "corrected_missed": 1,
       "corrected_false": 0,
       "images_with_claims": 7,
       "raw_recall": {
-        "rate": 0.75,
+        "rate": 0.875,
         "n": 8,
         "ci95": [
-          0.4093,
-          0.9285
+          0.5291,
+          0.9776
         ]
       },
       "corrected_recall": {
@@ -165,7 +165,7 @@
           "text": "Team plans from $12 per seat",
           "read": "Team plans from $12 per seat",
           "exact": true,
-          "iou": 0.792,
+          "iou": 0.996,
           "box_matched": true,
           "contrast": 12.63,
           "size_px": 36,
@@ -189,14 +189,7 @@
           "truth_line": 1
         },
         {
-          "text": "Team",
-          "confidence": 0.965,
-          "flagged": false,
-          "wrong": false,
-          "truth_line": 2
-        },
-        {
-          "text": "plans from $12 per seat",
+          "text": "Team plans from $12 per seat",
           "confidence": 0.965,
           "flagged": false,
           "wrong": false,
@@ -239,7 +232,7 @@
           "text": "Save 15% with annual plans",
           "read": "Save 15% with annual plans",
           "exact": true,
-          "iou": 0.612,
+          "iou": 0.992,
           "box_matched": true,
           "contrast": 7.9,
           "size_px": 48,
@@ -267,14 +260,7 @@
           "truth_line": 0
         },
         {
-          "text": "Save 15%",
-          "confidence": 0.961,
-          "flagged": false,
-          "wrong": false,
-          "truth_line": 1
-        },
-        {
-          "text": "with annual plans",
+          "text": "Save 15% with annual plans",
           "confidence": 0.958,
           "flagged": false,
           "wrong": false,
@@ -381,7 +367,7 @@
           "text": "Luma Desk for hybrid teams",
           "read": "Luma Desk for hybrid teams",
           "exact": true,
-          "iou": 0.773,
+          "iou": 0.993,
           "box_matched": true,
           "contrast": 1.54,
           "size_px": 60,
@@ -392,7 +378,7 @@
           "text": "$12 per seat per month",
           "read": "$12 per seat per month",
           "exact": true,
-          "iou": 0.991,
+          "iou": 0.701,
           "box_matched": true,
           "contrast": 1.67,
           "size_px": 44,
@@ -402,22 +388,22 @@
       ],
       "ocr_lines": [
         {
-          "text": "Luma",
-          "confidence": 0.956,
-          "flagged": false,
-          "wrong": false,
-          "truth_line": 0
-        },
-        {
-          "text": "Desk for hybrid teams",
+          "text": "Luma Desk for hybrid teams",
           "confidence": 0.928,
           "flagged": false,
           "wrong": false,
           "truth_line": 0
         },
         {
-          "text": "$12 per seat per month",
+          "text": "$12 per seat per",
           "confidence": 0.96,
+          "flagged": false,
+          "wrong": false,
+          "truth_line": 1
+        },
+        {
+          "text": "month",
+          "confidence": 0.968,
           "flagged": false,
           "wrong": false,
           "truth_line": 1
@@ -431,13 +417,7 @@
             "blocker"
           ]
         ],
-        "raw_missed": [
-          [
-            "T01",
-            "terminology",
-            "blocker"
-          ]
-        ],
+        "raw_missed": [],
         "raw_false": [],
         "corrected_missed": [],
         "corrected_false": []
@@ -507,13 +487,13 @@
       "mean_confidence": 0.954,
       "truth": "Hot desking made simple LumaDesk shows who sits where. Prices exclude VAT. Annual plans save 15%.",
       "read": "Hot desking made simple LumaDesk shows who sits where. Prices exclude VAT. Annual plans save 15%.",
-      "corrected": "Hot desking made simple LumaDesk shows who sits where. Prices exclude VAT. Annual plans save 15%.",
+      "corrected": "Hot desking made simple LumaDesk shows who sits where. 15%. Prices exclude VAT. Annual plans save",
       "lines": [
         {
           "text": "Hot desking made simple",
           "read": "Hot desking made simple",
           "exact": true,
-          "iou": 0.829,
+          "iou": 0.991,
           "box_matched": true,
           "contrast": 11.09,
           "size_px": 60,
@@ -533,9 +513,9 @@
         },
         {
           "text": "Prices exclude VAT. Annual plans save 15%.",
-          "read": "Prices exclude VAT. Annual plans save 15%.",
-          "exact": true,
-          "iou": 0.977,
+          "read": "Prices exclude VAT. Annual plans save",
+          "exact": false,
+          "iou": 0.862,
           "box_matched": true,
           "contrast": 7.4,
           "size_px": 16,
@@ -545,14 +525,7 @@
       ],
       "ocr_lines": [
         {
-          "text": "Hot",
-          "confidence": 0.93,
-          "flagged": false,
-          "wrong": false,
-          "truth_line": 0
-        },
-        {
-          "text": "desking made simple",
+          "text": "Hot desking made simple",
           "confidence": 0.915,
           "flagged": false,
           "wrong": false,
@@ -566,11 +539,18 @@
           "truth_line": 1
         },
         {
-          "text": "Prices exclude VAT. Annual plans save 15%.",
-          "confidence": 0.946,
+          "text": "Prices exclude VAT. Annual plans save",
+          "confidence": 0.966,
           "flagged": false,
           "wrong": false,
           "truth_line": 2
+        },
+        {
+          "text": "15%.",
+          "confidence": 0.946,
+          "flagged": false,
+          "wrong": true,
+          "truth_line": null
         }
       ],
       "claims": {
@@ -588,11 +568,11 @@
         "wrong_claim"
       ],
       "status": "complete",
-      "cer": 0.2222,
-      "wer": 0.2,
+      "cer": 0.0,
+      "wer": 0.0,
       "mean_confidence": 0.966,
       "truth": "The calm way to share desks Only $10 per seat",
-      "read": "The calm way to share desks $10 per seat Only",
+      "read": "The calm way to share desks Only $10 per seat",
       "corrected": "The calm way to share desks Only $10 per seat",
       "lines": [
         {
@@ -610,7 +590,7 @@
           "text": "Only $10 per seat",
           "read": "Only $10 per seat",
           "exact": true,
-          "iou": 0.676,
+          "iou": 0.992,
           "box_matched": true,
           "contrast": 9.62,
           "size_px": 50,
@@ -627,14 +607,7 @@
           "truth_line": 0
         },
         {
-          "text": "$10 per seat",
-          "confidence": 0.967,
-          "flagged": false,
-          "wrong": false,
-          "truth_line": 1
-        },
-        {
-          "text": "Only",
+          "text": "Only $10 per seat",
           "confidence": 0.967,
           "flagged": false,
           "wrong": false,
@@ -745,7 +718,7 @@
           "text": "Meet LumaDesk Rooms",
           "read": "Meet LumaDesk Rooms",
           "exact": true,
-          "iou": 0.761,
+          "iou": 0.994,
           "box_matched": true,
           "contrast": 8.49,
           "size_px": 66,
@@ -756,7 +729,7 @@
           "text": "Start a 14-day trial",
           "read": "Start a 14-day trial",
           "exact": true,
-          "iou": 0.603,
+          "iou": 0.995,
           "box_matched": true,
           "contrast": 8.49,
           "size_px": 46,
@@ -766,28 +739,14 @@
       ],
       "ocr_lines": [
         {
-          "text": "Meet",
-          "confidence": 0.93,
-          "flagged": false,
-          "wrong": false,
-          "truth_line": 0
-        },
-        {
-          "text": "LumaDesk Rooms",
+          "text": "Meet LumaDesk Rooms",
           "confidence": 0.918,
           "flagged": false,
           "wrong": false,
           "truth_line": 0
         },
         {
-          "text": "Start a",
-          "confidence": 0.962,
-          "flagged": false,
-          "wrong": false,
-          "truth_line": 1
-        },
-        {
-          "text": "14-day trial",
+          "text": "Start a 14-day trial",
           "confidence": 0.962,
           "flagged": false,
           "wrong": false,
@@ -830,8 +789,8 @@
           "text": "Save 15% on annual plans",
           "read": "Save 15% on annual plans",
           "exact": true,
-          "iou": 0.484,
-          "box_matched": false,
+          "iou": 0.784,
+          "box_matched": true,
           "contrast": 6.22,
           "size_px": 56,
           "flagged": false,
@@ -858,14 +817,14 @@
           "truth_line": 0
         },
         {
-          "text": "Save 15% on",
-          "confidence": 0.954,
+          "text": "Save",
+          "confidence": 0.967,
           "flagged": false,
           "wrong": false,
           "truth_line": 1
         },
         {
-          "text": "annual plans",
+          "text": "15% on annual plans",
           "confidence": 0.954,
           "flagged": false,
           "wrong": false,
@@ -916,7 +875,7 @@
           "text": "Plans from $12 per seat",
           "read": "Plans from $12 per seat",
           "exact": true,
-          "iou": 0.525,
+          "iou": 0.992,
           "box_matched": true,
           "contrast": 1.97,
           "size_px": 40,
@@ -933,14 +892,7 @@
           "truth_line": 0
         },
         {
-          "text": "Plans from",
-          "confidence": 0.956,
-          "flagged": false,
-          "wrong": false,
-          "truth_line": 1
-        },
-        {
-          "text": "$12 per seat",
+          "text": "Plans from $12 per seat",
           "confidence": 0.956,
           "flagged": false,
           "wrong": false,
@@ -967,13 +919,13 @@
       "mean_confidence": 0.965,
       "truth": "Desks when you need them Start free trial 14 days free, cancel anytime",
       "read": "Desks when you need them 14 days free, cancel anytime",
-      "corrected": "Desks when you need them days free, cancel anytime 14",
+      "corrected": "Desks when you need them 14 days free, cancel anytime",
       "lines": [
         {
           "text": "Desks when you need them",
           "read": "Desks when you need them",
           "exact": true,
-          "iou": 0.997,
+          "iou": 0.588,
           "box_matched": true,
           "contrast": 15.97,
           "size_px": 58,
@@ -993,9 +945,9 @@
         },
         {
           "text": "14 days free, cancel anytime",
-          "read": "days free, cancel anytime",
-          "exact": false,
-          "iou": 0.884,
+          "read": "14 days free, cancel anytime",
+          "exact": true,
+          "iou": 0.984,
           "box_matched": true,
           "contrast": 3.45,
           "size_px": 24,
@@ -1005,21 +957,21 @@
       ],
       "ocr_lines": [
         {
-          "text": "Desks when you need them",
+          "text": "Desks when you",
           "confidence": 0.961,
           "flagged": false,
           "wrong": false,
           "truth_line": 0
         },
         {
-          "text": "14",
-          "confidence": 0.968,
+          "text": "need them",
+          "confidence": 0.961,
           "flagged": false,
-          "wrong": true,
-          "truth_line": null
+          "wrong": false,
+          "truth_line": 0
         },
         {
-          "text": "days free, cancel anytime",
+          "text": "14 days free, cancel anytime",
           "confidence": 0.966,
           "flagged": false,
           "wrong": false,
@@ -1113,7 +1065,7 @@
           "text": "Try it free for 14 days",
           "read": "Try it free for 14 days",
           "exact": true,
-          "iou": 0.82,
+          "iou": 0.996,
           "box_matched": true,
           "contrast": 4.83,
           "size_px": 64,
@@ -1134,14 +1086,7 @@
       ],
       "ocr_lines": [
         {
-          "text": "Try",
-          "confidence": 0.969,
-          "flagged": false,
-          "wrong": false,
-          "truth_line": 0
-        },
-        {
-          "text": "it free for 14 days",
+          "text": "Try it free for 14 days",
           "confidence": 0.961,
           "flagged": false,
           "wrong": false,
@@ -1176,11 +1121,11 @@
         "light_weight"
       ],
       "status": "complete",
-      "cer": 0.3673,
-      "wer": 0.5,
+      "cer": 0.0,
+      "wer": 0.0,
       "mean_confidence": 0.955,
       "truth": "Hybrid work, sorted Save 15% yearly with LumaDesk",
-      "read": "Hybrid work, sorted yearly with LumaDesk Save 15%",
+      "read": "Hybrid work, sorted Save 15% yearly with LumaDesk",
       "corrected": "Hybrid work, sorted Save 15% yearly with LumaDesk",
       "lines": [
         {
@@ -1198,7 +1143,7 @@
           "text": "Save 15% yearly with LumaDesk",
           "read": "Save 15% yearly with LumaDesk",
           "exact": true,
-          "iou": 0.651,
+          "iou": 0.949,
           "box_matched": true,
           "contrast": 6.91,
           "size_px": 44,
@@ -1215,15 +1160,8 @@
           "truth_line": 0
         },
         {
-          "text": "yearly with LumaDesk",
+          "text": "Save 15% yearly with LumaDesk",
           "confidence": 0.916,
-          "flagged": false,
-          "wrong": false,
-          "truth_line": 1
-        },
-        {
-          "text": "Save 15%",
-          "confidence": 0.962,
           "flagged": false,
           "wrong": false,
           "truth_line": 1
@@ -1402,7 +1340,7 @@
           "text": "$12 per seat, billed monthly",
           "read": "$12 per seat, billed monthly",
           "exact": true,
-          "iou": 0.993,
+          "iou": 0.508,
           "box_matched": true,
           "contrast": 4.86,
           "size_px": 44,
@@ -1419,7 +1357,14 @@
           "truth_line": 0
         },
         {
-          "text": "$12 per seat, billed monthly",
+          "text": "$12 per seat,",
+          "confidence": 0.969,
+          "flagged": false,
+          "wrong": false,
+          "truth_line": 1
+        },
+        {
+          "text": "billed monthly",
           "confidence": 0.967,
           "flagged": false,
           "wrong": false,
@@ -1480,7 +1425,7 @@
           "text": "LumaDesk. Terms apply.",
           "read": "LumaDesk. Terms apply.",
           "exact": true,
-          "iou": 0.986,
+          "iou": 0.562,
           "box_matched": true,
           "contrast": 5.4,
           "size_px": 18,
@@ -1504,8 +1449,15 @@
           "truth_line": 1
         },
         {
-          "text": "LumaDesk. Terms apply.",
+          "text": "LumaDesk. Terms",
           "confidence": 0.876,
+          "flagged": false,
+          "wrong": false,
+          "truth_line": 2
+        },
+        {
+          "text": "apply.",
+          "confidence": 0.967,
           "flagged": false,
           "wrong": false,
           "truth_line": 2
@@ -1536,8 +1488,8 @@
           "text": "Two weeks free",
           "read": "Two weeks@",
           "exact": false,
-          "iou": 0.498,
-          "box_matched": false,
+          "iou": 0.793,
+          "box_matched": true,
           "contrast": 1.95,
           "size_px": 72,
           "flagged": true,
@@ -1557,14 +1509,7 @@
       ],
       "ocr_lines": [
         {
-          "text": "Two",
-          "confidence": 0.949,
-          "flagged": false,
-          "wrong": false,
-          "truth_line": 0
-        },
-        {
-          "text": "weeks@",
+          "text": "Two weeks@",
           "confidence": 0.635,
           "flagged": true,
           "wrong": true,
