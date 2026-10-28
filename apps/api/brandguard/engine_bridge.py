@@ -21,7 +21,7 @@ def failed(code):
 
 def _check_text(payload):
     from review_engine.extraction import extract
-    from review_engine.deterministic import check
+    from review_engine.deterministic import check, fact_template
 
     text, sources = payload['text'], payload['sources']
     if len(text) > 100_000 or '\r' in text or sum(len(s['rules']) for s in sources) > 1000:
@@ -43,9 +43,9 @@ def _check_text(payload):
                 else:
                     unsupported.add('terminology')
             elif rule['category'] == 'facts_claims' and rule['kind'] == 'fact':
-                # P2's implemented structured numeric check is trial duration.
-                # Other structured facts remain visible for human/semantic review.
-                if rule['key'] == 'trial_duration':
+                # Structured checks: trial duration, and any approved value with one number and an
+                # anchoring phrase (prices, percentages, counts). Other facts stay with human/semantic review.
+                if rule['key'] == 'trial_duration' or fact_template(rule['value']) is not None:
                     rules.append(rule)
                 else:
                     unsupported.add('facts_claims')

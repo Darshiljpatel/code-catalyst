@@ -106,3 +106,24 @@ def test_rule_ids_are_namespaced_by_source_version():
     _,findings=checked_engine_result(result,inp)
     assert {f['source_version_id'] for f in findings}=={first[0]['id'],second[0]['id']}
     assert len(findings)==2
+
+
+def test_prices_percentages_and_counts_are_checked_locally():
+    text = 'Seats are $15 per seat. Subscribers save 20% today. Up to 5 users on Starter. Up to 3 users is fine.'
+    snapshot = copy.deepcopy(sources())
+    snapshot[0]['text'] += ' Team costs $12 per seat. Subscribers save 15%. Starter allows up to 3 users. Our mission matters.'
+    snapshot[0]['rules'] += [
+        dict(id='P01', category='facts_claims', kind='fact', key='seat_price', value='$12 per seat', evidence_quote='Team costs $12 per seat.'),
+        dict(id='P02', category='facts_claims', kind='fact', key='discount', value='save 15%', evidence_quote='Subscribers save 15%.'),
+        dict(id='P03', category='facts_claims', kind='fact', key='starter_users', value='up to 3 users', evidence_quote='Starter allows up to 3 users.')]
+    inp, result = evaluate(text, snapshot)
+    checks, findings = checked_engine_result(result, inp)
+    assert sorted((f['rule_id'], f['content_quote']) for f in findings) == [
+        ('P01', '$15 per seat'), ('P02', 'save 20%'), ('P03', 'Up to 5 users')]
+    assert all(f['evidence_status'] == 'contradicted' and f['severity'] == 'blocker' for f in findings)
+    assert next(c for c in checks if c['category'] == 'facts_claims')['status'] == 'complete'
+    # A fact without a single anchored number still goes to a person.
+    snapshot[0]['rules'].append(dict(id='P04', category='facts_claims', kind='fact', key='mission', value='Our mission matters.',
+                                     evidence_quote='Our mission matters.'))
+    inp, result = evaluate(text, snapshot)
+    assert next(c for c in result.checks if c['category'] == 'facts_claims')['status'] == 'needs_manual_review'
