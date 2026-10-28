@@ -2129,6 +2129,25 @@
         }
       }
     },
+    "/api/v1/provider-status": {
+      "get": {
+        "summary": "Provider Status",
+        "description": "Admin card: how the AI provider behaved for this workspace (24-hour window, last success within 7 days).",
+        "operationId": "provider_status_api_v1_provider_status_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProviderStatusOut"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/v1/sessions": {
       "post": {
         "summary": "Login",
@@ -5078,6 +5097,67 @@
           "max_input_bytes"
         ],
         "title": "PolicyOut"
+      },
+      "ProviderStatusOut": {
+        "properties": {
+          "model": {
+            "type": "string",
+            "title": "Model"
+          },
+          "runs_24h": {
+            "type": "integer",
+            "title": "Runs 24H"
+          },
+          "errors_24h": {
+            "type": "integer",
+            "title": "Errors 24H"
+          },
+          "error_rate_24h": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Error Rate 24H"
+          },
+          "p95_latency_ms_24h": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "P95 Latency Ms 24H"
+          },
+          "last_success_at": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Last Success At"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "model",
+          "runs_24h",
+          "errors_24h",
+          "error_rate_24h",
+          "p95_latency_ms_24h",
+          "last_success_at"
+        ],
+        "title": "ProviderStatusOut"
       },
       "RecheckAssignInput": {
         "properties": {

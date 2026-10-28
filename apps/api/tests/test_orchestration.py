@@ -238,3 +238,20 @@ def test_stale_source_epoch_prevents_external_dispatch(setup):
     login(c,orgs[0],'creator')
     result=c.get('/api/v1/runs/'+run['id']).json()
     assert result['stale'] and result['status']=='incomplete'
+
+
+def test_admin_provider_status_reports_errors_and_latency(setup):
+    c,engine,orgs,item,run=prepared(setup)
+    process_one(engine,reviewer(),checker)
+    h=login(c,orgs[0],'admin')
+    status=c.get('/api/v1/provider-status',headers=h).json()
+    assert status['runs_24h']==1 and status['errors_24h']==0 and status['error_rate_24h']==0
+    assert status['p95_latency_ms_24h'] is not None and status['last_success_at']
+    assert c.get('/api/v1/provider-status',headers=login(c,orgs[0],'manager')).status_code==403
+
+
+def test_second_evaluated_model_is_allowed_but_unevaluated_ones_are_not():
+    from brandguard.semantic import ProviderConfig
+    assert ProviderConfig(model='Qwen/Qwen3-30B-A3B-Instruct-2507').model.endswith('30B-A3B-Instruct-2507')
+    with pytest.raises(ValueError):
+        ProviderConfig(model='Qwen/Qwen3-8B')
