@@ -437,6 +437,8 @@ class RequestExample(Base):
     labelled_by: Mapped[str | None] = mapped_column(String(36))
     external_ok: Mapped[bool] = mapped_column(default=False)
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True))
+    # Set when retention purged the campaign this example was copied from; its text copies are blanked.
+    redacted_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
 
 class ExampleSet(Base):
     """Brand-scoped saved example campaigns used by comparison runs."""

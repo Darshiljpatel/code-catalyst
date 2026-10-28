@@ -1,9 +1,14 @@
 """Retention: admins choose how long campaigns are kept; an hourly purge deletes older ones and writes a
-deletion ledger (one audit event per campaign listing every deleted row id) that restore re-applies."""
+deletion ledger (one audit event per campaign listing every deleted row id) that restore re-applies.
+
+Guideline improvement requests keep their own copies of campaign text. When the campaign is purged, its request
+examples are redacted (the row and its label stay so the request history still adds up), example-set cases copied
+from it are deleted, and comparison results lose the quotes and text of those cases. The ledger lists them too."""
+import copy
 from datetime import datetime, timedelta, timezone
 from fastapi import APIRouter, Depends
 from pydantic import BaseModel, Field
-from sqlalchemy import select, delete, func, or_
+from sqlalchemy import select, delete, func, or_, update
 from sqlalchemy.orm import Session
 from .core import db, identity, Problem
 from .schemas import StrictInput
@@ -60,8 +65,61 @@ def set_retention(body: RetentionInput, member=Depends(identity), session: Sessi
     return retention_out(session, org)
 
 
-def purge_campaigns(session, org, item_ids):
-    """Delete the campaigns and every row that belongs to them. Returns the ledger details per campaign."""
+REMOVED_LABEL = 'Removed by retention'
+
+
+def redact_example_fields(at):
+    """Column values of a request example once its campaign is purged (also re-applied on restore)."""
+    return dict(excerpt='', text='', context={}, redacted_at=at)
+
+
+def redact_findings(findings):
+    return [dict(f, quote='') if 'quote' in f else f for f in findings or []]
+
+
+def redact_comparison_summary(summary, case_ids):
+    """Blank the text, label and quotes of the given cases in a comparison run summary. Returns a new dict."""
+    summary = copy.deepcopy(summary or {})
+    for case in summary.get('cases', []):
+        if case.get('case_id') in case_ids:
+            case.update(text='', label=REMOVED_LABEL, live=redact_findings(case.get('live')),
+                        proposed=redact_findings(case.get('proposed')))
+    return summary
+
+
+def purge_request_copies(session, org, item_ids, owner, at):
+    """Redact request examples and delete example cases copied from the purged campaigns.
+    Returns {item_id: (redacted example ids, deleted case ids)}."""
+    from . import models as m
+    copies = {item_id: ([], []) for item_id in item_ids}
+    examples = session.execute(select(m.RequestExample.id, m.RequestExample.item_id, m.RequestExample.revision_id).where(
+        m.RequestExample.org_id == org.id, or_(m.RequestExample.item_id.in_(item_ids), m.RequestExample.revision_id.in_(list(owner)))))
+    for example_id, item_id, revision_id in examples:
+        copies[item_id if item_id in copies else owner[revision_id]][0].append(example_id)
+    cases = session.execute(select(m.ExampleCase.id, m.ExampleCase.origin_revision_id).where(
+        m.ExampleCase.org_id == org.id, m.ExampleCase.origin_revision_id.in_(list(owner))))
+    for case_id, revision_id in cases:
+        copies[owner[revision_id]][1].append(case_id)
+    example_ids = [i for redacted, _ in copies.values() for i in redacted]
+    case_ids = {i for _, deleted in copies.values() for i in deleted}
+    if example_ids:
+        session.execute(update(m.RequestExample).where(m.RequestExample.org_id == org.id, m.RequestExample.id.in_(example_ids))
+                        .values(**redact_example_fields(at)))
+    if case_ids:
+        for result in session.scalars(select(m.ComparisonResult).where(m.ComparisonResult.org_id == org.id,
+                                                                      m.ComparisonResult.case_id.in_(case_ids))):
+            result.findings = redact_findings(result.findings)
+        run_ids = select(m.ComparisonResult.run_id).where(m.ComparisonResult.org_id == org.id, m.ComparisonResult.case_id.in_(case_ids))
+        for run in session.scalars(select(m.ComparisonRun).where(m.ComparisonRun.org_id == org.id, m.ComparisonRun.id.in_(run_ids))):
+            run.summary = redact_comparison_summary(run.summary, case_ids)
+        session.flush()
+        session.execute(delete(m.ExampleCase).where(m.ExampleCase.org_id == org.id, m.ExampleCase.id.in_(case_ids)))
+    return copies
+
+
+def purge_campaigns(session, org, item_ids, at=None):
+    """Delete the campaigns and every row that belongs to them. Returns the ledger details per campaign:
+    {item_id: dict(deleted_ids, redacted_examples, redacted_cases)}."""
     from . import models as m
     revisions = select(m.ContentRevision.id).where(m.ContentRevision.org_id == org.id, m.ContentRevision.item_id.in_(item_ids))
     runs = select(m.ReviewRun.id).where(m.ReviewRun.org_id == org.id, m.ReviewRun.revision_id.in_(revisions))
@@ -97,9 +155,12 @@ def purge_campaigns(session, org, item_ids):
             ledger[run_owner[run_id]].append(row_id)
     for asset_id, item_id in session.execute(select(m.Asset.id, m.Asset.item_id).where(m.Asset.id.in_(assets))):
         ledger[item_id].append(asset_id)
+    copies = purge_request_copies(session, org, item_ids, owner, at or utcnow())
     for model, condition in plan:
         session.execute(delete(model).where(model.org_id == org.id, condition))
-    return ledger
+    # Deleted example cases are suppressed on restore like any other row; their comparison text is re-redacted.
+    return {item_id: dict(deleted_ids=deleted + copies[item_id][1], redacted_examples=copies[item_id][0],
+                          redacted_cases=copies[item_id][1]) for item_id, deleted in ledger.items()}
 
 
 def purge_expired_content(engine, now=None):
@@ -126,12 +187,12 @@ def purge_expired_content(engine, now=None):
             if not item_ids:
                 continue
             titles = dict(session.execute(select(m.ContentItem.id, m.ContentItem.title).where(m.ContentItem.id.in_(item_ids))).all())
-            ledger = purge_campaigns(session, org, item_ids)
-            for item_id, deleted_ids in ledger.items():
-                # The ledger is the audit trail: restore re-applies these deletions after a backup is loaded.
+            ledger = purge_campaigns(session, org, item_ids, at=now)
+            for item_id, entry in ledger.items():
+                # The ledger is the audit trail: restore re-applies these deletions and redactions after a backup is loaded.
                 session.add(m.AuditEvent(org_id=org.id, actor_id=org.retention_set_by, action='retention.purged', object_id=item_id,
                     details=dict(reason='retention_purge', retention_days=org.retention_days, title_length=len(titles.get(item_id, '')),
-                                 deleted_ids=deleted_ids), created_at=now))
+                                 **entry), created_at=now))
             total += len(item_ids)
         session.commit()
     return total

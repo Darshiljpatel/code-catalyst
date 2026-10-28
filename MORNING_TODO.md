@@ -94,11 +94,12 @@ only uvicorn. It no longer runs migrations, the seed or a background worker on s
   local engine package; the AI side needs a live key. OCR, impact and comparison benchmarks were not built.
 - Retention (row 24) is off until an admin sets a period in Processing policy. It deletes campaigns with no activity
   for that many days (except ones in analysis/review) and writes `retention.purged` audit events that restore re-applies.
-  Guideline-request examples keep their own text copies and are not purged yet.
+  Guideline-request examples copied from a purged campaign are redacted (text blanked, label kept), example-set cases
+  copied from it are deleted and comparison results lose their quotes; the ledger lists them and restore re-applies it.
 - The comparison benchmark's ground truth is a predicate per seeded change. On the first run I corrected one
   predicate (it missed "trial for 14 days" in V2-26, which genuinely regresses) and switched the production rule
   value to the full approved phrase ("save 15%"; a bare "15%" is deliberately not checked locally). Both are in
   `evaluation/comparison_benchmark.py`. Worth a second pair of eyes before quoting the 24/24 figure.
 
 ### 7. New migrations to run on deploy
-- `0010_document_imports` and `0011_retention` (additive). The Render pre-deploy command runs them.
+- `0010_document_imports`, `0011_retention` and `0012_retention_examples` (additive). The Render pre-deploy command runs them.

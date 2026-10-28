@@ -66,6 +66,29 @@ def verify_snapshot_integrity(snapshot_path: Path | str) -> Tuple[bool, str, Dic
     return True, "Snapshot verified with matching SHA-256 checksum", data
 
 
+REMOVED_LABEL = "Removed by retention"
+
+
+def _without_quotes(findings):
+    return [dict(f, quote="") if isinstance(f, dict) and "quote" in f else f for f in findings or []]
+
+
+def redact_row(table_name, row, example_times, case_ids):
+    """Re-applies retention redaction of guideline-request copies (mirrors brandguard.retention).
+    Returns the row unchanged (same object) when nothing applies."""
+    if table_name == "request_examples" and row.get("id") in example_times:
+        return dict(row, excerpt="", text="", context={}, redacted_at=row.get("redacted_at") or example_times.get(row["id"]))
+    if table_name == "comparison_results" and row.get("case_id") in case_ids:
+        return dict(row, findings=_without_quotes(row.get("findings")))
+    if table_name == "comparison_runs" and isinstance(row.get("summary"), dict):
+        cases = row["summary"].get("cases") or []
+        if any(isinstance(c, dict) and c.get("case_id") in case_ids for c in cases):
+            cases = [dict(c, text="", label=REMOVED_LABEL, live=_without_quotes(c.get("live")),
+                          proposed=_without_quotes(c.get("proposed"))) if c.get("case_id") in case_ids else c for c in cases]
+            return dict(row, summary=dict(row["summary"], cases=cases))
+    return row
+
+
 def restore_database_records(
     target_db_url: str,
     tables: Dict[str, List[Dict[str, Any]]],
@@ -133,11 +156,14 @@ def restore_snapshot(
     files = payload.get("files", [])
 
     # Collect tombstoned IDs for Case T21 reapplication
-    tombstone_ids = {t["target_id"] for t in tombstones if "target_id" in t}
+    tombstone_ids = {t["target_id"] for t in tombstones if "target_id" in t and t.get("action", "delete") == "delete"}
+    redacted_at = {t["target_id"]: t.get("deleted_at") for t in tombstones if t.get("action") == "redact"}
+    redacted_cases = {t["target_id"] for t in tombstones if t.get("action") == "redact_case"}
 
     # Filter tables reapplying tombstones
     restored_tables: Dict[str, List[Dict[str, Any]]] = {}
     purged_records_count = 0
+    redacted_records_count = 0
 
     for table_name, rows in raw_tables.items():
         filtered_rows = []
@@ -146,8 +172,14 @@ def restore_snapshot(
             if reapply_tombstones and row_id in tombstone_ids:
                 purged_records_count += 1
                 logger.info(f"Reapplied tombstone: suppressed deleted record {row_id} in {table_name}")
-            else:
-                filtered_rows.append(row)
+                continue
+            if reapply_tombstones:
+                redacted = redact_row(table_name, row, redacted_at, redacted_cases)
+                if redacted is not row:
+                    redacted_records_count += 1
+                    logger.info(f"Reapplied tombstone: redacted copied campaign text in {table_name} {row_id}")
+                    row = redacted
+            filtered_rows.append(row)
         restored_tables[table_name] = filtered_rows
 
     # Unpack files if target_dir provided
@@ -201,6 +233,7 @@ def restore_snapshot(
         "tables": restored_tables,
         "files_restored": restored_files_count,
         "tombstones_reapplied": purged_records_count,
+        "redactions_reapplied": redacted_records_count,
         "db_restored": db_insert_summary,
         "export": sample_export,
     }
