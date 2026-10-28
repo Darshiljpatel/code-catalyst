@@ -911,3 +911,13 @@ export interface InsightsOut {
 }
 
 export type BrandInsights = InsightsOut;
+
+export interface VerificationCheck { code: string; passed: boolean; message: string }
+
+export interface VerificationOut {
+  verified: boolean;
+  still_current: boolean | null;
+  decision_id: string;
+  content_id: string | null;
+  checks: VerificationCheck[];
+}

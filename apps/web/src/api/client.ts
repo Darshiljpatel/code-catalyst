@@ -63,6 +63,7 @@ import type {
   SandboxOut,
   RegionInput,
   DocumentImportOut,
+  VerificationOut,
   VersionResponse,
 } from './types';
 import { retryStarted, retryFinished } from './serverStatus';
@@ -617,4 +618,12 @@ export async function getWorkerHealth(): Promise<WorkerHealthResponse> {
 
 export async function getVersion(): Promise<VersionResponse> {
   return request<VersionResponse>('GET', '/health/version');
+}
+
+// ---------------------------------------------------------------------------
+// Approval-record verification
+// ---------------------------------------------------------------------------
+
+export async function verifyApprovalRecord(record: unknown): Promise<VerificationOut> {
+  return request<VerificationOut>('POST', '/verify/approval-record', record);
 }

@@ -32,6 +32,7 @@ import { NewReviewPage } from './pages/NewReviewPage';
 import { ContentDetailPage } from './pages/ContentDetailPage';
 import { NotFoundPage } from './pages/NotFoundPage';
 import { RechecksPage } from './pages/RechecksPage';
+import { VerifyRecordPage } from './pages/VerifyRecordPage';
 import { GuidelineHealthPage } from './pages/GuidelineHealthPage';
 import { RequestPage } from './pages/RequestPage';
 import { JudgeGuide } from './components/JudgeGuide';
@@ -96,6 +97,7 @@ const router = createBrowserRouter(createRoutesFromElements(
       <Route path="/content/:contentId" element={<ContentDetailPage />} />
       <Route path="/rechecks" element={<RechecksPage />} />
       <Route path="/rechecks/:changeId" element={<RechecksPage />} />
+      <Route path="/verify" element={<VerifyRecordPage />} />
       <Route path="/brands/:brandId/health" element={<GuidelineHealthPage />} />
       <Route path="/requests/:requestId" element={<RequestPage />} />
     </Route>
