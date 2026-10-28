@@ -98,3 +98,12 @@ def test_wilson_interval():
     assert wilson(0, 0) == (None, None)
     low, high = wilson(5, 10)
     assert low < 0.5 < high
+
+
+def test_comparison_runner_catches_every_seeded_regression_and_none_on_the_control():
+    from evaluation.comparison_benchmark import run
+    result = run()
+    assert result['seeded_regressions'] >= 20 and result['caught'] == result['seeded_regressions']
+    assert result['false_alarms'] == 0
+    control = next(s for s in result['seeds'] if s['seed'].startswith('control'))
+    assert control['seeded_regressions'] == 0 and not control['false_alarms']
