@@ -65,7 +65,7 @@ def test_t14_attempts_exhaustion_in_orchestration():
         lease_token="tok",
         item_id="item-1",
         revision_id="rev-1",
-        created_at=datetime.now(timezone.utc),
+        claimed_at=datetime.now(timezone.utc),
         processing={},
         review_input=ReviewInput(text="Sample text", context={}, sources=[]),
         exhausted=True
@@ -98,7 +98,7 @@ def test_t15_deadline_exceeded_in_orchestration():
         lease_token="tok",
         item_id="item-1",
         revision_id="rev-1",
-        created_at=datetime.now(timezone.utc) - timedelta(seconds=70),
+        claimed_at=datetime.now(timezone.utc) - timedelta(seconds=70),
         processing={},
         review_input=ReviewInput(text="Sample text", context={}, sources=[]),
         exhausted=False

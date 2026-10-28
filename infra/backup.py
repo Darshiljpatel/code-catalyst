@@ -138,6 +138,9 @@ def extract_tombstones(db_records: Dict[str, List[Dict[str, Any]]]) -> List[Dict
     tombstones = []
     for event in db_records.get("audit_events", []):
         action = str(event.get("action", "")).lower()
+        # Changing the retention period deletes nothing; its object is the workspace itself.
+        if action == "retention.updated":
+            continue
         if "delete" in action or "purge" in action or "retention" in action:
             details = event.get("details")
             reason = "retention_purge"
@@ -152,12 +155,25 @@ def extract_tombstones(db_records: Dict[str, List[Dict[str, Any]]]) -> List[Dict
                 except Exception:
                     reason = details
             target_id = event.get("object_id") or event.get("target_id")
-            if target_id:
+            # An import purge is logged against the workspace; only its listed rows were deleted.
+            if target_id and action != "retention.purged_imports":
                 tombstones.append({
                     "target_id": str(target_id),
                     "deleted_at": event.get("created_at"),
                     "reason": reason,
                 })
+            # Retention purges list every deleted row (revisions, runs, findings, images) in the ledger.
+            if isinstance(details, dict) and isinstance(details.get("deleted_ids"), list):
+                tombstones.extend({"target_id": str(row_id), "deleted_at": event.get("created_at"), "reason": reason}
+                                  for row_id in details["deleted_ids"])
+            # Guideline-request copies of the campaign text are redacted, not deleted.
+            if isinstance(details, dict):
+                tombstones.extend({"target_id": str(row_id), "deleted_at": event.get("created_at"), "reason": reason,
+                                   "action": "redact", "table": "request_examples"}
+                                  for row_id in details.get("redacted_examples") or [])
+                tombstones.extend({"target_id": str(row_id), "deleted_at": event.get("created_at"), "reason": reason,
+                                   "action": "redact_case"}
+                                  for row_id in details.get("redacted_cases") or [])
     return tombstones
 
 

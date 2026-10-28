@@ -1,5 +1,6 @@
 import { useDialogFocus } from '../hooks/useDialogFocus';
 import React from 'react';
+import { Link } from 'react-router-dom';
 import type { ExportOut } from '../api/types';
 import { exportRevision } from '../api/client';
 import { Spinner, Alert } from './Primitives';
@@ -112,7 +113,7 @@ function RevisionExport({ revisionId, onClose }: ExportModalProps) {
               <div style={{ display: 'flex', gap: 'var(--space-4)', fontSize: '0.75rem', color: 'var(--text-secondary)', marginTop: '6px', flexWrap: 'wrap' }}>
                 <div>Decision: <strong style={{ color: 'var(--color-success)' }}>{exportData.decision.kind.toUpperCase()}</strong></div>
                 <div>Approver: <code>{exportData.decision.reviewer_id}</code></div>
-                <div>Source Epoch: <strong>#{exportData.decision.source_epoch}</strong></div>
+                <div>Guideline version: <strong>#{exportData.decision.source_epoch}</strong></div>
                 <div>Date: {new Date(exportData.exported_at).toLocaleString()}</div>
               </div>
             </div>
@@ -175,6 +176,9 @@ function RevisionExport({ revisionId, onClose }: ExportModalProps) {
               </button>
               <button type="button" className="btn btn--secondary" onClick={() => handleDownload('txt')}>Download approved text (.txt)</button>
             </div>
+            <p style={{ fontSize: '0.8125rem', color: 'var(--text-muted)', marginTop: 'var(--space-3)' }}>
+              Anyone in this workspace can later check a downloaded record on <Link to="/verify" onClick={onClose}>Verify a record</Link>.
+            </p>
           </div>
         ) : null}
       </div>

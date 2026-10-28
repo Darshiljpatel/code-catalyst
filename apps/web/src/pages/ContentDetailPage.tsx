@@ -1,3 +1,5 @@
+import { ImageTextEditor } from '../components/ImageTextEditor';
+import { ImageRegionsPane } from '../components/ImageRegionsPane';
 import { categoryLabel } from '../components/categoryLabel';
 import { DraftFieldCount } from '../components/DraftFieldCount';
 import { draftFieldIssue, validateDraft } from '../api/draftValidation';
@@ -6,6 +8,7 @@ import { ALL_FINDINGS, filterFindings, type FindingFilters as FilterValues } fro
 import { FindingFilters } from '../components/FindingFilters';
 import { AssignReviewerModal } from '../components/AssignReviewerModal';
 import { resolutionActions } from '../api/resolutionActions';
+import { RecheckBanner } from '../components/RecheckBanner';
 import React from 'react';
 import { workingDraft, changeDraftText, stageDraftEdit, projectDraftRange, undoDraftChange } from '../api/draftEdits';
 import { incompleteCategories, submissionIssues } from '../api/reviewReadiness';
@@ -78,6 +81,7 @@ function CampaignWorkspace() {
 
   // Selected finding for evidence drawer / highlighting
   const [activeFinding, setActiveFinding] = React.useState<FindingOut | null>(null);
+  const [editingImageText, setEditingImageText] = React.useState(false);
   const [editingSuggestionFinding, setEditingSuggestionFinding] = React.useState<FindingOut | null>(null);
 
   // Diff comparison mode between revisions
@@ -218,6 +222,7 @@ function CampaignWorkspace() {
         channel: draftChannel.trim(),
         audience: draftAudience.trim(),
         purpose: draftPurpose.trim(),
+        document_import_id: currentRevision.source_document?.import_id ?? null,
       });
       setContent(updated);
       const newLatestIdx = updated.revisions.length - 1;
@@ -338,7 +343,10 @@ function CampaignWorkspace() {
       ? 'Your campaign edits and discussion notes have not been saved. Save the edits and post the notes, or discard them before leaving.'
       : 'Your discussion notes have not been posted. Keep editing to post them, or discard them before leaving.') : undefined,
     postingNote ? 'Posting your discussion note. Wait for the request to finish before leaving.' : undefined);
-  const canEditDraft = Boolean(user?.membership_id === content?.creator_id &&
+  const isImage = Boolean(content?.image);
+  const canEditImageText = Boolean(isImage && user?.membership_id === content?.creator_id &&
+    !['ocr_pending', 'analysing', 'in_review', 'approved'].includes(content?.state || '') && !['queued', 'running'].includes(run?.status || ''));
+  const canEditDraft = !isImage && Boolean(user?.membership_id === content?.creator_id &&
     currentRevision?.number === content?.current_revision && !savingRevision && !postingNote && !analysing && !['queued', 'running'].includes(run?.status || ''));
   const stagedCount = draft.changes.filter(change => change.findingId).length;
   const findingFilterValues = findingFilterState.runId === run?.id ? findingFilterState.values : ALL_FINDINGS;
@@ -436,6 +444,25 @@ function CampaignWorkspace() {
     );
   }
 
+  if (content.image && (content.revisions.length === 0 || content.state === 'ocr_pending' || content.state === 'text_check' || editingImageText)) {
+    return (
+      <main className="page-container review-workspace" id="main-content">
+        <button className="btn btn--ghost btn--sm" onClick={() => navigate('/')} style={{ marginBottom: 'var(--space-2)' }}>← Back to campaigns</button>
+        <div className="workspace-title">
+          <h1 style={{ margin: 0, fontSize: '1.75rem' }}>{content.title}</h1>
+          <span className="badge badge--neutral">{content.state === 'ocr_pending' ? 'READING TEXT' : content.state === 'text_check' ? 'CHECK TEXT' : content.state.toUpperCase()}</span>
+        </div>
+        {user?.membership_id === content.creator_id ? (
+          <ImageTextEditor content={content}
+            onCancel={editingImageText ? () => setEditingImageText(false) : undefined}
+            onConfirmed={next => { setEditingImageText(false); setContent(next); setRun(null); }} />
+        ) : (
+          <Alert kind="info">The creator is still checking the text read from this image.</Alert>
+        )}
+      </main>
+    );
+  }
+
   return (
     <main className={`page-container review-workspace${hasDraftChanges ? ' review-workspace--dirty' : ''}`} id="main-content">
       {error && <Alert kind="error">{error}</Alert>}
@@ -452,6 +479,12 @@ function CampaignWorkspace() {
           <div className="workspace-subtitle">
             Campaign studio <span aria-hidden="true">/</span> Revision <strong>#{content.current_revision}</strong>
           </div>
+          {currentRevision?.source_document && <p className="workspace-subtitle" data-testid="source-document">
+            Imported from <strong>{currentRevision.source_document.filename}</strong>
+            {currentRevision.source_document.pages != null && ` (${currentRevision.source_document.pages} pages)`}
+            {' '}· file fingerprint <code title={currentRevision.source_document.original_sha256}>{currentRevision.source_document.original_sha256.slice(0, 12)}…</code>
+            {currentRevision.source_document.edited ? ' · text edited after import' : ' · text unchanged from the file'}
+          </p>}
         </div>
 
         <div className="workspace-actions">
@@ -527,6 +560,11 @@ function CampaignWorkspace() {
           )}
         </div>
       </div>
+
+      {content.recheck && (
+        <RecheckBanner notice={content.recheck}
+          viewer={user?.membership_id === content.creator_id ? 'creator' : user?.membership_id === content.reviewer_id ? 'reviewer' : 'manager'} />
+      )}
 
       {/* Revision Switcher Tabs */}
       <div className="filter-bar" style={{ marginBottom: 'var(--space-6)' }}>
@@ -673,6 +711,17 @@ function CampaignWorkspace() {
             </form>
           ) : (
             <div className="document-canvas">
+              {content.image && currentRevision?.region_map && (
+                <ImageRegionsPane image={content.image} regionMap={currentRevision.region_map}
+                  findings={run?.revision_id === currentRevision.id ? run.findings : []}
+                  activeRegionIds={((activeFinding?.location as { regions?: string[] } | undefined)?.regions) ?? []}
+                  onSelectFinding={setActiveFinding}
+                  showProvenance={user?.membership_id !== content.creator_id} />
+              )}
+              {canEditImageText && (
+                <button type="button" className="btn btn--secondary btn--sm" style={{ marginBottom: 'var(--space-3)' }}
+                  onClick={() => setEditingImageText(true)}>Edit extracted text</button>
+              )}
               <div className="document-canvas__masthead"><span>CAMPAIGN COPY</span><span>NO. {String(currentRevision?.number || 1).padStart(2, '0')}</span></div>
               <p className="document-canvas__hint">{hasDraftChanges ? 'Your working draft. Save all changes together when you’re ready.' : run?.findings.some(f => typeof f.location.start === 'number' && typeof f.location.end === 'number') ? 'Select an underlined phrase to follow the evidence.' : 'Your words. Ready for a closer look.'}</p>
               {renderAnnotatedDocument()}

@@ -10,6 +10,8 @@ test('fictional sample correction works with the keyboard without signing in', a
   await page.goto('/login');
   await page.keyboard.press('Tab'); // Skip-to-content link
   await page.keyboard.press('Tab');
+  await expect(page.getByRole('button', { name: /Try a private demo/ })).toBeFocused();
+  await page.keyboard.press('Tab');
   await expect(page.getByLabel('Email', { exact: true })).toBeFocused();
   const apply = page.getByRole('button', { name: 'Apply fix' });
   await apply.focus();

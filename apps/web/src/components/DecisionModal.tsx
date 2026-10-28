@@ -104,7 +104,7 @@ export function DecisionModal({
           <div style={{ background: 'var(--glass-bg)', padding: 'var(--space-3)', borderRadius: 'var(--radius-sm)', fontSize: '0.75rem', color: 'var(--text-secondary)', marginBottom: 'var(--space-5)' }}>
             <div>Target Revision: <code>{revisionId}</code></div>
             <div>Workflow Version: <strong>#{expectedItemVersion}</strong></div>
-            <div>Source Epoch: <strong>#{expectedSourceEpoch}</strong></div>
+            <div>Guideline version: <strong>#{expectedSourceEpoch}</strong></div>
             <div>Target Run: <code>{expectedRunId}</code></div>
           </div>
 

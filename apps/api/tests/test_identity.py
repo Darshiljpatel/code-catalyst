@@ -6,7 +6,9 @@ from sqlalchemy import delete, select
 from sqlalchemy.orm import Session
 from brandguard.main import create_app, Settings, passwords, digest
 from brandguard.models import (Brand, Organisation, User, Membership, SessionRecord, LoginAttempt,
-    AuditEvent, RunSource, Job, ReviewRun, ContentRevision, ContentItem, SourceVersion, Finding, ProcessingPolicy, Comment, FindingResolution, ManualCheck, Decision)
+    AuditEvent, RunSource, Job, ReviewRun, ContentRevision, ContentItem, SourceVersion, Finding, ProcessingPolicy, Comment, FindingResolution, ManualCheck, Decision,
+    GuidelineChange, RecheckAssignment, GuidelineRequest, RequestExample, ExampleSet, ExampleCase,
+    ComparisonRun, ComparisonResult, RequestReview, Asset, OcrResult, DocumentImport)
 
 @pytest.fixture()
 def setup():
@@ -16,7 +18,8 @@ def setup():
     app = create_app(Settings(url, 'https://testserver', 'test'))
     engine = app.state.engine
     with Session(engine) as db:
-        for cls in (Comment, FindingResolution, ManualCheck, Decision, Finding, ProcessingPolicy, AuditEvent, RunSource, Job, ReviewRun, ContentRevision, ContentItem, SourceVersion,
+        for cls in (RequestReview, ComparisonResult, ComparisonRun, ExampleCase, ExampleSet, RequestExample, GuidelineRequest,
+                    RecheckAssignment, GuidelineChange, OcrResult, Asset, DocumentImport, Comment, FindingResolution, ManualCheck, Decision, Finding, ProcessingPolicy, AuditEvent, RunSource, Job, ReviewRun, ContentRevision, ContentItem, SourceVersion,
                     SessionRecord, LoginAttempt, Brand, Membership, User, Organisation):
             db.execute(delete(cls))
         orgs = [Organisation(name='One'), Organisation(name='Two')]
@@ -101,3 +104,56 @@ def test_wrong_workspace_and_validation_redaction(setup):
     assert r.status_code == 401
     r = c.post('/api/v1/sessions', json={'password':'do-not-echo'})
     assert r.status_code == 422 and 'do-not-echo' not in r.text
+
+def proxied_app(trust):
+    url = os.environ['TEST_DATABASE_URL']
+    return create_app(Settings(url, 'https://testserver', 'test', trust_proxy_headers=trust))
+
+def fail(client, email, forwarded):
+    return client.post('/api/v1/sessions', json=dict(email=email, password='wrong', org_id='x'),
+        headers={'origin':'https://testserver', 'x-forwarded-for':forwarded}).status_code
+
+def test_trusted_proxy_keys_attempts_on_forwarded_address_and_email(setup):
+    _, _, orgs, _ = setup
+    app = proxied_app(True)
+    with TestClient(app, base_url='https://testserver') as c:
+        for _ in range(20):
+            assert fail(c, 'judge-one@example.test', '203.0.113.7') == 401
+        assert fail(c, 'judge-one@example.test', '203.0.113.7') == 429
+        # Another judge behind the same proxy address, and the same email elsewhere, still work.
+        assert fail(c, 'judge-two@example.test', '203.0.113.7') == 401
+        assert fail(c, 'judge-one@example.test', '198.51.100.9, 10.0.0.1') == 401
+        r = c.post('/api/v1/sessions', json=dict(email='manager@example.test', password='correct-password', org_id=orgs[0]),
+            headers={'origin':'https://testserver', 'x-forwarded-for':'203.0.113.7'})
+        assert r.status_code == 200
+    app.state.engine.dispose()
+
+def test_per_email_cap_spans_addresses(setup):
+    app = proxied_app(True)
+    with TestClient(app, base_url='https://testserver') as c:
+        for n in range(50):
+            assert fail(c, 'target@example.test', f'192.0.2.{n}') == 401
+        assert fail(c, 'target@example.test', '192.0.2.200') == 429
+    app.state.engine.dispose()
+
+def test_forwarded_header_ignored_without_trust(setup):
+    app = proxied_app(False)
+    with TestClient(app, base_url='https://testserver') as c:
+        for n in range(20):
+            assert fail(c, 'spoof@example.test', f'192.0.2.{n}') == 401
+        assert fail(c, 'spoof@example.test', '192.0.2.99') == 429
+    app.state.engine.dispose()
+
+
+def test_workspace_is_resolved_from_the_email_when_the_account_has_one(setup):
+    c, engine, orgs, _ = setup
+    r = c.post('/api/v1/sessions', json=dict(email='creator@example.test', password='correct-password'), headers={'origin': 'https://testserver'})
+    assert r.status_code == 200 and r.json()['org_id'] == orgs[0]
+    bad = c.post('/api/v1/sessions', json=dict(email='creator@example.test', password='wrong'), headers={'origin': 'https://testserver'})
+    assert bad.status_code == 401 and bad.json()['code'] == 'invalid_credentials'
+    with Session(engine) as db:
+        user = db.scalar(select(User).where(User.email == 'creator@example.test'))
+        db.add(Membership(user_id=user.id, org_id=orgs[1], role='creator')); db.commit()
+    r = c.post('/api/v1/sessions', json=dict(email='creator@example.test', password='correct-password'), headers={'origin': 'https://testserver'})
+    assert r.status_code == 422 and r.json()['code'] == 'workspace_required'
+    assert login(c, orgs[1], 'creator')

@@ -107,6 +107,7 @@ def _check_terminology(extraction: ExtractionResult, rules: List[Dict[str, Any]]
     findings: List[Finding] = []
     term_rules = [r for r in rules if r.get("category") == "terminology" or r.get("kind") == "terminology"]
     approved_terms = {(r.get("canonical_term") or r.get("value") or "").casefold() for r in term_rules}
+    approved_terms |= {v.casefold() for r in term_rules for v in (r.get("allowed_variants") or [])}
 
     for block in extraction.blocks:
         for rule in term_rules:
@@ -129,13 +130,15 @@ def _check_terminology(extraction: ExtractionResult, rules: List[Dict[str, Any]]
                     suggested_edit=canonical,
                 ))
 
+            # Exact alternative spellings the guideline explicitly allows (e.g. an all-caps headline).
+            allowed = {canonical, *(rule.get("allowed_variants") or [])}
             if canonical:
                 for match in _make_boundary_regex(canonical, ignore_case=True).finditer(block.text):
-                    if match.group(0) != canonical:
+                    if match.group(0) not in allowed:
                         add(match)
-            for pattern in rule.get("forbidden_patterns", []):
+            for pattern in [*rule.get("forbidden_patterns", []), *(rule.get("forbidden_variants") or [])]:
                 for match in _make_boundary_regex(pattern, ignore_case=True).finditer(block.text):
-                    if match.group(0) != canonical:
+                    if match.group(0) not in allowed:
                         add(match)
 
             # Only an approved, single-word brand name can anchor a likely typo.
@@ -153,6 +156,49 @@ def _check_terminology(extraction: ExtractionResult, rules: List[Dict[str, Any]]
 # ---------------------------------------------------------------------------
 # 2. Fact Verification Engine (T05: Fact Contradictions)
 # ---------------------------------------------------------------------------
+
+_NUMBER = re.compile(r"\d+(?:[.,]\d+)?")
+
+
+def fact_template(approved_value: str) -> Optional[re.Pattern]:
+    """A pattern for the approved phrase with its one number left free, so "$12 per seat" also matches
+    "$10 per seat". Only values with exactly one number and at least one anchoring word qualify,
+    so a bare number or percentage never matches unrelated figures in the copy."""
+    numbers = list(_NUMBER.finditer(approved_value))
+    if len(numbers) != 1:
+        return None
+    number = numbers[0]
+    before, after = approved_value[:number.start()], approved_value[number.end():]
+    if not re.search(r"[^\W\d_]", before + after):
+        return None
+
+    def literal(part: str) -> str:
+        tokens = re.findall(r"[^\W\d_]+|[$€£%]", part)
+        return r"[\s-]*".join(re.escape(t) for t in tokens)
+
+    head, tail = literal(before), literal(after)
+    pattern = (head + r"\s?" if head else "") + r"(\d+(?:[.,]\d+)?)" + (r"[\s-]?" + tail if tail else "")
+    return re.compile(r"(?<![\w.])" + pattern + r"(?!\w)", re.IGNORECASE)
+
+
+def _template_fact_findings(block, rule, approved_val, findings):
+    template = fact_template(approved_val)
+    approved_num = _NUMBER.search(approved_val)
+    if template is None or approved_num is None:
+        return
+    for match in template.finditer(block.text):
+        if Decimal(match.group(1).replace(",", ".")) == Decimal(approved_num.group(0).replace(",", ".")):
+            continue
+        start, end = block.start_char + match.start(), block.start_char + match.end()
+        if any(f.location.get("start_char") is not None and f.location["start_char"] < end and start < f.location["end_char"]
+               for f in findings):
+            continue
+        findings.append(Finding(
+            id=f"find-{uuid.uuid4().hex[:8]}", category="facts_claims", severity="blocker", evidence_status="contradicted",
+            origin="deterministic", location={"block_id": block.id, "start_char": start, "end_char": end},
+            rule_id=rule.get("id"), source_version_id=rule.get("source_version_id"), evidence_quote=match.group(0),
+            rationale=rule.get("rationale", f"Contradicts the approved value '{approved_val}'."), suggested_edit=approved_val))
+
 
 def _check_facts(extraction: ExtractionResult, rules: List[Dict[str, Any]]) -> CheckResult:
     findings: List[Finding] = []
@@ -186,6 +232,10 @@ def _check_facts(extraction: ExtractionResult, rules: List[Dict[str, Any]]) -> C
                         rationale=rule.get("rationale", f"Contradicts approved fact '{approved_val}'."),
                         suggested_edit=approved_val
                     ))
+
+            # Prices, percentages and counts: the approved phrase with a different number.
+            if rule.get("key") != "trial_duration":
+                _template_fact_findings(block, rule, approved_val, findings)
 
             # Specialized check for trial durations if not already caught
             if rule.get("key") == "trial_duration" or "day" in approved_val.lower():

@@ -118,7 +118,10 @@ def test_t04_changed_source_blocks_approval_and_fresh_export(setup,phase):
     new=source(c,item['brand_id'],h,value='30 days')
     assert activate(c,new['id'],h,1).status_code==200
     if phase=='before_approval':assert decide(c,orgs,item,run).status_code==409
-    else:assert current(c,item)['approval_stale'] is True
+    else:
+        # The approval relied on the changed fact, so the campaign goes on hold for a recheck.
+        state=current(c,item)
+        assert state['state']=='recheck_required' and state['recheck']['impact_level']=='confirmed'
     assert c.get('/api/v1/revisions/'+item['revisions'][0]['id']+'/export').status_code==409
 
 

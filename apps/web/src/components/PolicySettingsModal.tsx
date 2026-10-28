@@ -3,6 +3,8 @@ import React from 'react';
 import { getProcessingPolicy, updateProcessingPolicy, ApiResponseError } from '../api/client';
 import type { PolicyOut } from '../api/types';
 import { Alert, Spinner } from './Primitives';
+import { RetentionSettings } from './RetentionSettings';
+import { ProviderStatusCard } from './ProviderStatusCard';
 
 interface PolicySettingsModalProps {
   isOpen: boolean;
@@ -98,6 +100,7 @@ export function PolicySettingsModal({
           </div>
         ) : (
           <form onSubmit={handleSubmit} className="modal-body">
+            <ProviderStatusCard />
             {error && <Alert kind="error">{error}</Alert>}
             {success && <Alert kind="success">Processing policy updated successfully.</Alert>}
 
@@ -126,7 +129,7 @@ export function PolicySettingsModal({
                 </span>
               </label>
               <div style={{ fontSize: '0.8125rem', color: 'var(--text-muted)', marginTop: '4px', marginLeft: '28px' }}>
-                When disabled, only local deterministic checks (terminology, facts, visual, accessibility) execute.
+                When disabled, only the built-in local checks (terminology, facts, visual, accessibility) run.
               </div>
             </div>
 
@@ -177,6 +180,7 @@ export function PolicySettingsModal({
             </div>
           </form>
         )}
+        {!loading && <div className="modal-body" style={{ paddingTop: 0 }}><RetentionSettings /></div>}
       </div>
     </div>
   );

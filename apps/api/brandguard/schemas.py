@@ -13,6 +13,27 @@ class RuleInput(StrictInput):
     key: str = Field(min_length=1, max_length=100)
     value: str = Field(min_length=1, max_length=2000)
     evidence_quote: str = Field(min_length=1, max_length=4000)
+    # Terminology only: exact spellings that are also acceptable, and spellings always flagged.
+    allowed_variants: list[str] | None = Field(default=None, max_length=20)
+    forbidden_variants: list[str] | None = Field(default=None, max_length=20)
+
+    @field_validator('allowed_variants', 'forbidden_variants')
+    @classmethod
+    def clean_variants(cls, value):
+        if value is None:
+            return None
+        cleaned = [v.strip() for v in value]
+        if any(not v or len(v) > 100 for v in cleaned) or len(set(cleaned)) != len(cleaned):
+            raise ValueError('Variants must be distinct, non-blank and at most 100 characters')
+        return cleaned or None
+
+    @model_validator(mode='after')
+    def variants_are_terminology(self):
+        if (self.allowed_variants or self.forbidden_variants) and self.kind != 'terminology':
+            raise ValueError('Variants apply to terminology rules only')
+        if set(self.allowed_variants or []) & set(self.forbidden_variants or []):
+            raise ValueError('A variant cannot be both allowed and forbidden')
+        return self
 
 class SourceInput(StrictInput):
     source_key: str = Field(pattern=r'^[A-Za-z0-9_-]{1,100}$')
@@ -48,6 +69,8 @@ class ActivationInput(StrictInput):
     verified: Literal[True]
     retire_source_ids: list[str] = Field(default_factory=list, max_length=100)
     rationale: str = Field(min_length=10, max_length=2000)
+    # Required when the linked improvement request's comparison found regressions.
+    regression_acknowledgement: str | None = Field(default=None, max_length=2000)
 
 class RevisionInput(StrictInput):
     text: str = Field(min_length=1, max_length=100000)
@@ -63,12 +86,14 @@ class RevisionInput(StrictInput):
         return value.replace('\r\n', '\n').replace('\r', '\n')
 
 class ContentInput(RevisionInput):
+    document_import_id: str | None = Field(default=None, min_length=1, max_length=36)
     brand_id: str = Field(min_length=1, max_length=36)
     title: str = Field(min_length=1, max_length=200)
     reviewer_id: str | None = Field(default=None, min_length=1, max_length=36)
 
 class NewRevisionInput(RevisionInput):
     parent_revision_id: str = Field(min_length=1, max_length=36)
+    document_import_id: str | None = Field(default=None, min_length=1, max_length=36)
 
 class SourceOut(BaseModel):
     model_config = ConfigDict(from_attributes=True)
@@ -100,6 +125,36 @@ class RevisionOut(BaseModel):
     audience: str
     purpose: str
     created_at: datetime
+    asset_id: str | None = None
+    asset_sha256: str | None = None
+    region_map: list[dict] | None = None
+    source_document: dict | None = None
+
+class ImageOut(BaseModel):
+    asset_id: str
+    sha256: str
+    original_sha256: str
+    mime: str
+    width: int
+    height: int
+    intake: dict
+    ocr_status: str | None
+    ocr_result_id: str | None
+
+class RecheckNoticeOut(BaseModel):
+    assignment_id: str
+    change_id: str
+    status: str
+    impact_level: str
+    reasons: list[dict]
+    state_before: str
+    findings_delta: dict | None
+    guideline_title: str
+    from_version: int | None
+    to_version: int
+    changed_rules: int
+    changed_at: datetime
+    routing: str = 'hold'
 
 class ContentOut(BaseModel):
     id: str
@@ -113,6 +168,8 @@ class ContentOut(BaseModel):
     latest_run_id: str | None = None
     state: str
     revisions: list[RevisionOut]
+    recheck: RecheckNoticeOut | None = None
+    image: ImageOut | None = None
 
 class CheckOut(BaseModel):
     category: Literal['terminology','tone','messaging','facts_claims','visual','accessibility']
@@ -240,6 +297,7 @@ class DecisionOut(BaseModel):
     source_epoch: int
     text_hash: str
     decided_at: datetime
+    asset_sha256: str | None = None
 
 class ReviewerOut(BaseModel):
     id: str
@@ -257,6 +315,9 @@ class ExportOut(BaseModel):
     decision: DecisionOut
     evidence_record: dict
     exported_at: datetime
+    image_sha256: str | None = None
+    region_map: list[dict] | None = None
+    source_document: dict | None = None
 
 class ReviewRecordOut(BaseModel):
     run_id: str
@@ -276,6 +337,7 @@ class ContentSummaryOut(BaseModel):
     approval_stale: bool
     state: str
     created_at: datetime
+    recheck_status: str | None = None
 
 class ContentPageOut(BaseModel):
     items: list[ContentSummaryOut]
@@ -315,3 +377,88 @@ class InsightsOut(BaseModel):
     ambiguous_total: int
     ambiguity_definition: str
     rules: list[RuleInsightOut]
+
+class ActivationOut(SourceOut):
+    change_id: str
+    impact_counts: dict
+
+class ImpactEntryOut(BaseModel):
+    item_id: str
+    title: str
+    state: str
+    creator_id: str
+    reviewer_id: str | None
+    revision_id: str
+    prior_run_id: str
+    impact_level: Literal['confirmed','likely','possible']
+    reasons: list[dict]
+    local_delta: dict | None
+    # hold: goes back to a reviewer; keep: keeps its approval unless the recheck finds a difference.
+    routing: Literal['hold','keep'] = 'hold'
+
+class ImpactPreviewOut(BaseModel):
+    source_id: str
+    brand_id: str
+    expected_epoch: int
+    retired_source_ids: list[str]
+    diff: dict
+    counts: dict
+    entries: list[ImpactEntryOut]
+
+class GuidelineChangeSummaryOut(BaseModel):
+    id: str
+    brand_id: str
+    source_key: str
+    from_source_id: str | None
+    to_source_id: str
+    title: str
+    from_version: int | None
+    to_version: int
+    status: str
+    impact_counts: dict
+    resolved: int
+    total: int
+    created_by: str
+    created_at: datetime
+    closed_at: datetime | None
+
+class RecheckAssignmentOut(BaseModel):
+    id: str
+    change_id: str
+    item_id: str
+    title: str
+    item_state: str
+    creator_id: str
+    revision_id: str
+    prior_run_id: str
+    prior_decision_id: str | None
+    state_before: str
+    impact_level: str
+    reasons: list[dict]
+    recheck_run_id: str | None
+    recheck_status: str | None
+    findings_delta: dict | None
+    reviewer_id: str | None
+    status: str
+    resolved_decision_id: str | None
+    superseded_by: str | None
+    # keep: possible-level campaign that keeps its approval unless the recheck finds a difference.
+    routing: str = 'hold'
+    outcome: str | None = None
+    version: int
+    created_at: datetime
+    updated_at: datetime
+    resolved_at: datetime | None
+
+class GuidelineChangeOut(GuidelineChangeSummaryOut):
+    diff: dict
+    assignments: list[RecheckAssignmentOut]
+
+class RecheckAssignInput(StrictInput):
+    assignment_ids: list[str] = Field(min_length=1, max_length=200)
+    reviewer_id: str = Field(min_length=1, max_length=36)
+    expected_versions: dict[str, int]
+
+class RecheckQueueOut(BaseModel):
+    change_id: str
+    queued: list[str]

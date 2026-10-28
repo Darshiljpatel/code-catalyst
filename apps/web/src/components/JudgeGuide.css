@@ -73,3 +73,10 @@ body:has(.draft-action-bar) .judge-guide__panel { top: calc(100% + 12px); bottom
   .judge-guide__body { padding: 0 18px 16px; }
   .judge-guide__footer { padding: 10px 18px; }
 }
+
+.judge-guide__mission { margin: 0 0 1rem; padding: 0.75rem; border: 1px solid rgba(127, 127, 127, 0.25); border-radius: 10px; }
+.judge-guide__mission h4 { margin: 0 0 0.25rem; }
+.judge-guide__mission-steps { margin: 0.5rem 0; padding-left: 0; list-style: none; display: grid; gap: 0.5rem; }
+.judge-guide__mission-steps label { display: flex; gap: 0.5rem; align-items: flex-start; line-height: 1.4; }
+.judge-guide__mission-steps input { margin-top: 0.2rem; flex: none; }
+.judge-guide__mission-link { font-weight: 600; }

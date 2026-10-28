@@ -4,7 +4,7 @@ from contextlib import asynccontextmanager
 from fastapi import FastAPI, Depends
 from fastapi.exceptions import RequestValidationError
 from fastapi.responses import JSONResponse
-from sqlalchemy import create_engine, select, text
+from sqlalchemy import create_engine, select
 from sqlalchemy.orm import Session
 from .core import Settings, Problem, NewBrand, db, identity, manager, passwords, digest
 from .models import Brand
@@ -17,7 +17,7 @@ def create_app(settings=None, provider_config=None):
         from pathlib import Path
         load_dotenv(Path(__file__).resolve().parents[3] / '.env')
         provider_config = provider_config or ProviderConfig.from_env()
-    settings = settings or Settings(os.environ['DATABASE_URL'], os.getenv('PUBLIC_ORIGIN', 'http://localhost:8000'), os.getenv('APP_ENV', 'development'), int(os.getenv('MODEL_DAILY_RUN_LIMIT', '100')))
+    settings = settings or Settings(os.environ['DATABASE_URL'], os.getenv('PUBLIC_ORIGIN', 'http://localhost:8000'), os.getenv('APP_ENV', 'development'), int(os.getenv('MODEL_DAILY_RUN_LIMIT', '100')), os.getenv('TRUST_PROXY_HEADERS', '') == '1')
     engine = create_engine(settings.database_url, pool_pre_ping=True)
     @asynccontextmanager
     async def lifespan(app):
@@ -33,7 +33,8 @@ def create_app(settings=None, provider_config=None):
         response = await call_next(request)
         response.headers['X-Request-ID'] = request.state.request_id
         response.headers['X-Content-Type-Options'] = 'nosniff'
-        response.headers['Cache-Control'] = 'no-store'
+        # API data is never cached; image bytes opt in to private caching explicitly.
+        response.headers.setdefault('Cache-Control', 'no-store')
         return response
 
     @app.exception_handler(Problem)
@@ -65,24 +66,28 @@ def create_app(settings=None, provider_config=None):
         session.commit()
         return dict(id=b.id, name=b.name, source_epoch=b.source_epoch)
 
-    @app.get('/api/v1/health/live')
-    def live():
-        return {'status': 'live', 'phase': 'S5'}
-
-    @app.get('/api/v1/health/ready')
-    def ready(session: Session = Depends(db)):
-        try:
-            revision = session.execute(text('select version_num from alembic_version')).scalar_one()
-            if revision != '0004_workflow':
-                raise ValueError('Unexpected schema')
-        except Exception:
-            raise Problem(503, 'not_ready', 'Database schema is not ready.')
-        return {'status': 'ready', 'scope': 'S5 API/schema only; check worker process separately'}
-
     from .review import router as review_router
     from .policy import router as policy_router
     from .workflow import router as workflow_router
     from .governance import router as governance_router
+    from .health import router as health_router
+    from .rechecks import router as rechecks_router
+    from .requests import router as requests_router
+    from .images import router as images_router
+    from .documents import router as documents_router
+    from .verify import router as verify_router
+    from .retention import router as retention_router
+    from .rule_drafting import router as rule_drafting_router
+    from .demo import router as demo_router
+    app.include_router(demo_router)
+    app.include_router(images_router)
+    app.include_router(documents_router)
+    app.include_router(verify_router)
+    app.include_router(retention_router)
+    app.include_router(rule_drafting_router)
+    app.include_router(requests_router)
+    app.include_router(rechecks_router)
+    app.include_router(health_router)
     app.include_router(governance_router)
     app.include_router(workflow_router)
     app.include_router(policy_router)

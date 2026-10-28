@@ -398,3 +398,17 @@ def test_explicit_variant_and_case_checks_do_not_duplicate_typo_findings():
     rules['rules'][0]['forbidden_patterns'] = ['lumadesk', 'lumadeks']
     results = check(extract(b'lumadesk lumadeks', 'text/plain', {}), {}, rules)
     assert len(next(c for c in results if c.category == 'terminology').findings) == 2
+
+
+def test_terminology_honours_allowed_and_forbidden_variants():
+    from review_engine.extraction import extract
+    from review_engine.deterministic import check
+    text = "LUMADESK is here. Try Lumadesk or Luma Desk today. LumaDesk works."
+    extraction = extract(text.encode("utf-8"), "text/plain", {"max_bytes": 10_000})
+    rule = {"id": "T01", "category": "terminology", "kind": "terminology", "key": "product_name", "value": "LumaDesk",
+            "evidence_quote": "Write LumaDesk.", "source_version_id": "s1"}
+    strict = check(extraction, {}, [{"id": "s1", "rules": [rule]}])[0]
+    assert sorted(f.evidence_quote for f in strict.findings) == ["LUMADESK", "Lumadesk"]
+    clearer = dict(rule, allowed_variants=["LUMADESK"], forbidden_variants=["Luma Desk"])
+    result = check(extraction, {}, [{"id": "s1", "rules": [clearer]}])[0]
+    assert sorted(f.evidence_quote for f in result.findings) == ["Luma Desk", "Lumadesk"]

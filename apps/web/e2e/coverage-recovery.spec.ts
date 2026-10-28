@@ -60,3 +60,29 @@ test('failed or missing coverage never looks like a clean zero-finding review', 
   await expect(notice).toHaveCount(0);
   await expect(page.getByText('No compliance violations detected in completed checks.', { exact: false })).toBeVisible();
 });
+
+test('a rejected AI finding sends only its category to the reviewer as an unverified suggestion', async ({ page }) => {
+  const run: RunOut = {
+    ...FIXTURE_REVIEW_RUN, status: 'incomplete', findings: [],
+    checks: FIXTURE_REVIEW_RUN.checks.map(check => check.category === 'facts_claims'
+      ? { ...check, status: 'needs_manual_review', reason: 'unverified_model_finding' } : { ...check, status: 'complete' }),
+    engine_metadata: { semantic: { unverified_suggestions: [{ category: 'facts_claims', rule_id: 'FACT1', content_quote: '30-day trial',
+      rationale: 'The approved trial length is 14 days.', suggested_edit: null, error_code: 'invalid_quote' }] } },
+  };
+  await page.route('**/api/v1/**', async route => {
+    const path = new URL(route.request().url()).pathname;
+    if (path.endsWith('/me')) return route.fulfill({ json: { ...FIXTURE_ME_CREATOR, membership_id: FIXTURE_CONTENT_ITEM.creator_id } });
+    if (path.endsWith('/processing-policy')) return route.fulfill({ json: FIXTURE_POLICY });
+    if (path.endsWith(`/content/${FIXTURE_CONTENT_ITEM.id}`)) return route.fulfill({ json: { ...FIXTURE_CONTENT_ITEM, latest_run_id: run.id } });
+    if (path.includes('/runs/')) return route.fulfill({ json: run });
+    if (path.endsWith('/review')) return route.fulfill({ json: { evidence: { effective_checks: run.checks } } });
+    return route.fulfill({ json: [] });
+  });
+  await page.goto(`/content/${FIXTURE_CONTENT_ITEM.id}`);
+  const notice = page.getByRole('region', { name: 'Incomplete check coverage' });
+  await expect(notice).toContainText('Unverified AI suggestions');
+  await expect(notice).toContainText('The approved trial length is 14 days.');
+  await expect(notice).toContainText('misquotes the approved rule');
+  const axe = await new AxeBuilder({ page }).include('[aria-label="Incomplete check coverage"]').withTags(['wcag2a', 'wcag2aa', 'wcag21aa']).analyze();
+  expect(axe.violations).toEqual([]);
+});

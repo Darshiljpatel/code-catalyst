@@ -1,0 +1,348 @@
+{
+  "benchmark": "impact_improvement_1",
+  "origin": "local",
+  "synthetic": true,
+  "dataset": "impact_benchmark.json",
+  "dataset_sha256": "23c20cf670a83ca0303acf2b7135ceb0bc48ae87f0c8f093406ccf2f419555e2",
+  "frozen": true,
+  "campaigns": 30,
+  "changes": 5,
+  "scenarios": 150,
+  "campaign_states": {
+    "approved": 17,
+    "on_hold": 21,
+    "total": 30
+  },
+  "metrics": {
+    "listed_vs_reanalysis": {
+      "true_positives": 17,
+      "false_positives": 133,
+      "false_negatives": 0,
+      "true_negatives": 0,
+      "precision": 0.1133,
+      "precision_ci95": [
+        0.072,
+        0.174
+      ],
+      "recall": 1.0,
+      "recall_ci95": [
+        0.8157,
+        1.0
+      ]
+    },
+    "listed_vs_human": {
+      "true_positives": 20,
+      "false_positives": 130,
+      "false_negatives": 0,
+      "true_negatives": 0,
+      "precision": 0.1333,
+      "precision_ci95": [
+        0.088,
+        0.197
+      ],
+      "recall": 1.0,
+      "recall_ci95": [
+        0.8389,
+        1.0
+      ]
+    },
+    "confirmed_or_likely_vs_reanalysis": {
+      "true_positives": 17,
+      "false_positives": 43,
+      "false_negatives": 0,
+      "true_negatives": 90,
+      "precision": 0.2833,
+      "precision_ci95": [
+        0.1851,
+        0.4077
+      ],
+      "recall": 1.0,
+      "recall_ci95": [
+        0.8157,
+        1.0
+      ]
+    },
+    "confirmed_or_likely_vs_human": {
+      "true_positives": 19,
+      "false_positives": 41,
+      "false_negatives": 1,
+      "true_negatives": 89,
+      "precision": 0.3167,
+      "precision_ci95": [
+        0.2131,
+        0.4423
+      ],
+      "recall": 0.95,
+      "recall_ci95": [
+        0.7639,
+        0.9911
+      ]
+    },
+    "confirmed_vs_reanalysis": {
+      "true_positives": 17,
+      "false_positives": 4,
+      "false_negatives": 0,
+      "true_negatives": 129,
+      "precision": 0.8095,
+      "precision_ci95": [
+        0.6,
+        0.9233
+      ],
+      "recall": 1.0,
+      "recall_ci95": [
+        0.8157,
+        1.0
+      ]
+    },
+    "confirmed_vs_human": {
+      "true_positives": 17,
+      "false_positives": 4,
+      "false_negatives": 3,
+      "true_negatives": 126,
+      "precision": 0.8095,
+      "precision_ci95": [
+        0.6,
+        0.9233
+      ],
+      "recall": 0.85,
+      "recall_ci95": [
+        0.6396,
+        0.9476
+      ]
+    },
+    "reanalysis_vs_human": {
+      "true_positives": 17,
+      "false_positives": 0,
+      "false_negatives": 3,
+      "true_negatives": 130,
+      "precision": 1.0,
+      "precision_ci95": [
+        0.8157,
+        1.0
+      ],
+      "recall": 0.85,
+      "recall_ci95": [
+        0.6396,
+        0.9476
+      ]
+    }
+  },
+  "re_reviews": {
+    "brand_wide_invalidation": 85,
+    "shipped_routing": {
+      "rule": "confirmed + likely go back; possible keeps approval unless the recheck differs",
+      "approvals_sent_back": 32,
+      "avoided": 53,
+      "avoided_rate": 0.6235,
+      "avoided_ci95": [
+        0.5173,
+        0.7191
+      ],
+      "escalated_by_recheck": 0,
+      "labelled_approvals_missed": [
+        "C1:IB-23"
+      ]
+    },
+    "previous_routing_every_listed": {
+      "approvals_sent_back": 85,
+      "avoided": 0
+    },
+    "approvals_needing_review_by_label": 7,
+    "if_routed_by_confirmed_level": {
+      "approvals_sent_back": 6,
+      "avoided": 79,
+      "avoided_rate": 0.9294,
+      "avoided_ci95": [
+        0.8544,
+        0.9672
+      ],
+      "labelled_approvals_missed": [
+        "C1:IB-23"
+      ],
+      "note": "Not shipped; for comparison only."
+    }
+  },
+  "per_change": [
+    {
+      "change": "C1",
+      "name": "Trial extended from 14 to 30 days",
+      "listed": 30,
+      "levels": {
+        "confirmed": 5,
+        "likely": 6,
+        "possible": 19
+      },
+      "not_affected": 0,
+      "reanalysis_affected": [
+        "IB-01",
+        "IB-14",
+        "IB-17",
+        "IB-19"
+      ],
+      "human_affected": [
+        "IB-01",
+        "IB-03",
+        "IB-14",
+        "IB-17",
+        "IB-19",
+        "IB-23",
+        "IB-29"
+      ],
+      "missed_by_listing": [],
+      "confirmed_missing_human": [
+        "IB-03",
+        "IB-23",
+        "IB-29"
+      ],
+      "confirmed_not_human": [
+        "IB-18"
+      ],
+      "approvals_reopened_brand_wide": 17,
+      "approvals_sent_back_if_every_listed": 17,
+      "approvals_sent_back": 6,
+      "approvals_kept": 11,
+      "approvals_escalated_by_recheck": 0,
+      "in_review_kept": 2,
+      "approvals_needing_review_by_label": 4,
+      "approvals_sent_back_if_routed_by_confirmed": 3
+    },
+    {
+      "change": "C2",
+      "name": "Seat price raised from $12 to $15",
+      "listed": 30,
+      "levels": {
+        "confirmed": 6,
+        "likely": 2,
+        "possible": 22
+      },
+      "not_affected": 0,
+      "reanalysis_affected": [
+        "IB-02",
+        "IB-14",
+        "IB-15",
+        "IB-19",
+        "IB-29"
+      ],
+      "human_affected": [
+        "IB-02",
+        "IB-14",
+        "IB-15",
+        "IB-19",
+        "IB-29"
+      ],
+      "missed_by_listing": [],
+      "confirmed_missing_human": [],
+      "confirmed_not_human": [
+        "IB-16"
+      ],
+      "approvals_reopened_brand_wide": 17,
+      "approvals_sent_back_if_every_listed": 17,
+      "approvals_sent_back": 4,
+      "approvals_kept": 13,
+      "approvals_escalated_by_recheck": 0,
+      "in_review_kept": 2,
+      "approvals_needing_review_by_label": 2,
+      "approvals_sent_back_if_routed_by_confirmed": 2
+    },
+    {
+      "change": "C3",
+      "name": "All-caps LUMADESK allowed in headlines",
+      "listed": 30,
+      "levels": {
+        "confirmed": 5,
+        "likely": 25,
+        "possible": 0
+      },
+      "not_affected": 0,
+      "reanalysis_affected": [
+        "IB-04",
+        "IB-19",
+        "IB-30"
+      ],
+      "human_affected": [
+        "IB-04",
+        "IB-19",
+        "IB-30"
+      ],
+      "missed_by_listing": [],
+      "confirmed_missing_human": [],
+      "confirmed_not_human": [
+        "IB-13",
+        "IB-22"
+      ],
+      "approvals_reopened_brand_wide": 17,
+      "approvals_sent_back_if_every_listed": 17,
+      "approvals_sent_back": 17,
+      "approvals_kept": 0,
+      "approvals_escalated_by_recheck": 0,
+      "in_review_kept": 0,
+      "approvals_needing_review_by_label": 0,
+      "approvals_sent_back_if_routed_by_confirmed": 0
+    },
+    {
+      "change": "C4",
+      "name": "Annual discount rule retired",
+      "listed": 30,
+      "levels": {
+        "confirmed": 2,
+        "likely": 3,
+        "possible": 25
+      },
+      "not_affected": 0,
+      "reanalysis_affected": [
+        "IB-06",
+        "IB-26"
+      ],
+      "human_affected": [
+        "IB-06",
+        "IB-26"
+      ],
+      "missed_by_listing": [],
+      "confirmed_missing_human": [],
+      "confirmed_not_human": [],
+      "approvals_reopened_brand_wide": 17,
+      "approvals_sent_back_if_every_listed": 17,
+      "approvals_sent_back": 2,
+      "approvals_kept": 15,
+      "approvals_escalated_by_recheck": 0,
+      "in_review_kept": 4,
+      "approvals_needing_review_by_label": 0,
+      "approvals_sent_back_if_routed_by_confirmed": 0
+    },
+    {
+      "change": "C5",
+      "name": "New product-name rule for DeskMap",
+      "listed": 30,
+      "levels": {
+        "confirmed": 3,
+        "likely": 3,
+        "possible": 24
+      },
+      "not_affected": 0,
+      "reanalysis_affected": [
+        "IB-08",
+        "IB-09",
+        "IB-30"
+      ],
+      "human_affected": [
+        "IB-08",
+        "IB-09",
+        "IB-30"
+      ],
+      "missed_by_listing": [],
+      "confirmed_missing_human": [],
+      "confirmed_not_human": [],
+      "approvals_reopened_brand_wide": 17,
+      "approvals_sent_back_if_every_listed": 17,
+      "approvals_sent_back": 3,
+      "approvals_kept": 14,
+      "approvals_escalated_by_recheck": 0,
+      "in_review_kept": 2,
+      "approvals_needing_review_by_label": 1,
+      "approvals_sent_back_if_routed_by_confirmed": 1
+    }
+  ],
+  "gates": {
+    "impact_recall_100": true
+  }
+}

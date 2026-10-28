@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
+import { Link } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import './JudgeGuide.css';
 
@@ -12,11 +13,46 @@ const ROLES = [
 ] as const;
 const DRAFT = 'Lumadesk guarantees 10x productivity. Get your 30-day free trial. Sign up NOW!!!';
 const CORRECTED = 'Try LumaDesk free for 14 days. Start your trial.';
+const MISSIONS_KEY = 'brandguard.judgeMissions';
+// One mission per Round 3 improvement. Every step runs on local checks, so it works without Nebius.
+const MISSIONS = [
+  { id: 'image', title: 'Check an image ad', improvement: 'Image campaigns with OCR', link: { to: '/review/new', label: 'Open a new campaign' }, steps: [
+    { id: 'image-demo', text: 'On sign-in, click Try a private demo. You get your own workspace with five roles; the role switcher sits in the top bar.' },
+    { id: 'image-upload', text: 'As Creator, open a new campaign, choose the image option and click Try the sample ad, then upload it.' },
+    { id: 'image-confirm', text: 'In the text check, the amber line reads “3O-day”. Correct it to “30-day”, confirm the text and run the check.' },
+    { id: 'image-findings', text: 'The trial line is flagged against the approved 14 days, and each finding highlights its box on the image.' },
+  ] },
+  { id: 'rules', title: 'Fix an unclear rule', improvement: 'Guideline improvement requests', link: { to: '/', label: 'Go to campaigns' }, steps: [
+    { id: 'rules-health', text: 'Switch to Manager and open the LumaDesk brand, then Guideline health. The brand-name rule is marked likely unclear, with the disputes that show why.' },
+    { id: 'rules-request', text: 'Create an improvement request, draft the change (for example, allow the all-caps headline) and run the comparison against saved examples.' },
+    { id: 'rules-review', text: 'Read the comparison: fixed disputes, and no regressions such as “Lumadesk” slipping through. Switch to Brand lead to approve; nobody approves their own request.' },
+  ] },
+  { id: 'impact', title: 'Publish a guideline change', improvement: 'Change impact and re-review inbox', link: { to: '/rechecks', label: 'Open the re-review inbox' }, steps: [
+    { id: 'impact-preview', text: 'As Manager, publish the new guideline version. Before you confirm, the preview lists the campaigns that relied on the old rule.' },
+    { id: 'impact-inbox', text: 'Open Re-reviews: each campaign shows the old and new rule side by side and how likely it is to be affected. Rechecks run on their own.' },
+    { id: 'impact-approve', text: 'Switch to Reviewer, re-approve a campaign and watch the change’s progress move. Unaffected campaigns keep their approval.' },
+  ] },
+] as const;
+
+function loadMissionProgress(): string[] {
+  try {
+    const saved: unknown = JSON.parse(localStorage.getItem(MISSIONS_KEY) || '[]');
+    return Array.isArray(saved) ? saved.filter((id): id is string => typeof id === 'string') : [];
+  } catch {
+    return [];
+  }
+}
 
 export function JudgeGuide() {
   const { user, status } = useAuth();
   const [mode, setMode] = useState<'closed' | 'preview' | 'open'>('closed');
-  const [view, setView] = useState<'accounts' | 'walkthrough'>('accounts');
+  const [view, setView] = useState<'accounts' | 'walkthrough' | 'missions'>('accounts');
+  const [done, setDone] = useState<string[]>(loadMissionProgress);
+  const toggleStep = (id: string) => {
+    const next = done.includes(id) ? done.filter(step => step !== id) : [...done, id];
+    setDone(next);
+    try { localStorage.setItem(MISSIONS_KEY, JSON.stringify(next)); } catch { /* Progress is a convenience only. */ }
+  };
   const [roleStep, setRoleStep] = useState(0);
   const role = ROLES[roleStep];
   const [message, setMessage] = useState('');
@@ -68,17 +104,32 @@ export function JudgeGuide() {
     </button>
     {open && <aside className="judge-guide__panel" id="judge-guide-panel" aria-labelledby="judge-guide-title">
       <header className="judge-guide__header">
-        <div><p className="judge-guide__eyebrow">ROUND 2 · HACKATHON</p><h2 id="judge-guide-title">Your judging companion<span>.</span></h2></div>
+        <div><p className="judge-guide__eyebrow">ROUND 3 · FINAL</p><h2 id="judge-guide-title">Your judging companion<span>.</span></h2></div>
         <button type="button" className="judge-guide__close" aria-label="Close judge guide" onClick={() => { setMode('closed'); trigger.current?.focus(); }}>×</button>
       </header>
-      <p className="judge-guide__intro">Try four roles, in order: create a campaign, understand its rules, review it, then control Nebius.</p>
+      <p className="judge-guide__intro">New in Round 3: three short missions, one per improvement. Start a private demo from sign-in, or use the shared test accounts for the four-role walkthrough.</p>
       {status === 'authenticated' && user && <p className="judge-guide__session">Signed in as <strong>{user.role}</strong></p>}
       <div className="judge-guide__switch" aria-label="Guide sections">
         <button type="button" aria-pressed={view === 'accounts'} onClick={() => { setView('accounts'); setMessage(''); }}>Test accounts</button>
         <button type="button" aria-pressed={view === 'walkthrough'} onClick={() => { setView('walkthrough'); setMessage(''); }}>Walkthrough <span aria-hidden="true">↗</span></button>
+        <button type="button" aria-pressed={view === 'missions'} onClick={() => { setView('missions'); setMessage(''); }}>Round 3 missions</button>
       </div>
       <div className="judge-guide__body" ref={body}>
-        {view === 'accounts' ? <>
+        {view === 'missions' ? <>
+          <div className="judge-guide__section-heading"><h3>Three missions</h3><span>{done.length} OF {MISSIONS.reduce((n, m) => n + m.steps.length, 0)} DONE</span></div>
+          <p className="judge-guide__hint">Tick steps as you go; your progress stays in this browser.</p>
+          {MISSIONS.map((mission, index) => <section key={mission.id} className="judge-guide__mission" aria-labelledby={`mission-${mission.id}`}>
+            <h4 id={`mission-${mission.id}`}><span className="judge-guide__chapter-index">0{index + 1}</span> {mission.title}</h4>
+            <p className="judge-guide__hint">{mission.improvement} · {mission.steps.filter(step => done.includes(step.id)).length} of {mission.steps.length} done</p>
+            <ol className="judge-guide__mission-steps">
+              {mission.steps.map(step => <li key={step.id}><label>
+                <input type="checkbox" checked={done.includes(step.id)} onChange={() => toggleStep(step.id)} /> {step.text}
+              </label></li>)}
+            </ol>
+            {status === 'authenticated' && <Link className="judge-guide__mission-link" to={mission.link.to} onClick={() => setMode('closed')}>{mission.link.label} <span aria-hidden="true">→</span></Link>}
+          </section>)}
+          {done.length > 0 && <button type="button" onClick={() => { setDone([]); try { localStorage.removeItem(MISSIONS_KEY); } catch { /* ignore */ } }}>Reset mission progress</button>}
+        </> : view === 'accounts' ? <>
           <div className="judge-guide__section-heading"><h3>{role.label} sign-in</h3><span>HOSTED DEMO</span></div>
           <p className="judge-guide__hint">Choose a role and copy these fields into sign-in. Password and workspace are shared.</p>
           <div className="judge-guide__roles" aria-label="Choose a test role">
@@ -112,7 +163,7 @@ export function JudgeGuide() {
           <ol className="judge-guide__steps">
             <li><span className="judge-guide__step-number" aria-hidden="true">01</span><div><h4>Open the brand’s source of truth</h4><p>Click <strong>Sign out</strong> in the top bar, then sign in as manager. On <strong>Campaigns</strong>, scroll to <strong>Your brand library</strong> and open LumaDesk. Select <strong>Active</strong>, then click <strong>View Rules</strong> on the approved guideline source.</p></div></li>
             <li><span className="judge-guide__step-number" aria-hidden="true">02</span><div><h4>Match each finding to a rule</h4><dl className="judge-guide__rule-explanations"><dt>“Lumadesk” → “LumaDesk”</dt><dd>The terminology rule sets the approved product spelling and capitalization.</dd><dt>“30-day” → “14 days”</dt><dd>The approved fact says the free trial lasts 14 days. The sample contradicts it.</dd><dt>“10x productivity”</dt><dd>The claim policy requires approved evidence for performance claims. Nebius can flag the unsupported promise.</dd><dt>“Sign up NOW!!!”</dt><dd>The tone guidance asks for calm language. Nebius can flag the pressure and suggest a calmer alternative.</dd></dl><p>Read <strong>Evidence Quote</strong> beside each rule. These are literal passages from the source, so judges can trace findings back to the manager’s guidelines.</p></div></li>
-            <li><span className="judge-guide__step-number" aria-hidden="true">03</span><div><h4>Explore how managers author rules</h4><p>Click <strong>＋ Add guideline source</strong> to inspect the source text and rule fields. A manager supplies a key, title, effective date, approved values and exact evidence quotes. Saving creates a draft; <strong>Activate Source</strong> then requires a rationale and explicit verification before <strong>Activate &amp; Advance Epoch</strong>.</p><p>For this walkthrough, inspect the seeded active rules and cancel any unfinished source form. Activating a changed source makes earlier reviews stale and requires a recheck.</p></div></li>
+            <li><span className="judge-guide__step-number" aria-hidden="true">03</span><div><h4>Explore how managers author rules</h4><p>Click <strong>＋ Add guideline source</strong> to inspect the source text and rule fields. A manager supplies a key, title, effective date, approved values and exact evidence quotes. Saving creates a draft; <strong>Activate Source</strong> then requires a rationale and explicit verification before <strong>Activate</strong> publishes it as the new guideline version.</p><p>For this walkthrough, inspect the seeded active rules and cancel any unfinished source form. Activating a changed source makes earlier reviews stale and requires a recheck.</p></div></li>
           </ol>
           </>}
           {roleStep === 2 && <>

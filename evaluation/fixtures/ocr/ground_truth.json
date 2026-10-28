@@ -1,0 +1,919 @@
+{
+  "synthetic": true,
+  "brand": "LumaDesk (fictional)",
+  "generator": "evaluation/ocr_dataset.py",
+  "note": "Original synthetic ad graphics drawn by the generator; not real advertisements or photographs.",
+  "images": [
+    {
+      "id": "ad-01",
+      "file": "ad-01.png",
+      "width": 1200,
+      "height": 628,
+      "tags": [
+        "clean"
+      ],
+      "text": "LumaDesk\nStart your 14-day free trial\nTeam plans from $12 per seat",
+      "lines": [
+        {
+          "text": "LumaDesk",
+          "font": "dejavu-sans-bold",
+          "size_px": 72,
+          "colour": "#111111",
+          "background": "#ffffff",
+          "contrast": 18.88,
+          "box": {
+            "x": 0.08,
+            "y": 0.33758,
+            "w": 0.35167,
+            "h": 0.08917
+          }
+        },
+        {
+          "text": "Start your 14-day free trial",
+          "font": "dejavu-sans",
+          "size_px": 44,
+          "colour": "#111111",
+          "background": "#ffffff",
+          "contrast": 18.88,
+          "box": {
+            "x": 0.08,
+            "y": 0.50318,
+            "w": 0.49083,
+            "h": 0.06688
+          }
+        },
+        {
+          "text": "Team plans from $12 per seat",
+          "font": "dejavu-sans",
+          "size_px": 36,
+          "colour": "#333333",
+          "background": "#ffffff",
+          "contrast": 12.63,
+          "box": {
+            "x": 0.07917,
+            "y": 0.60669,
+            "w": 0.44917,
+            "h": 0.05414
+          }
+        }
+      ]
+    },
+    {
+      "id": "ad-02",
+      "file": "ad-02.png",
+      "width": 1080,
+      "height": 1080,
+      "tags": [
+        "dark_background"
+      ],
+      "text": "Book desks in seconds\nSave 15% with annual plans\nlumadesk.com",
+      "lines": [
+        {
+          "text": "Book desks in seconds",
+          "font": "liberation-sans-bold",
+          "size_px": 70,
+          "colour": "#ffffff",
+          "background": "#14213d",
+          "contrast": 15.97,
+          "box": {
+            "x": 0.07963,
+            "y": 0.40648,
+            "w": 0.72037,
+            "h": 0.04815
+          }
+        },
+        {
+          "text": "Save 15% with annual plans",
+          "font": "liberation-sans",
+          "size_px": 48,
+          "colour": "#fca311",
+          "background": "#14213d",
+          "contrast": 7.9,
+          "box": {
+            "x": 0.07963,
+            "y": 0.5,
+            "w": 0.55833,
+            "h": 0.04167
+          }
+        },
+        {
+          "text": "lumadesk.com",
+          "font": "liberation-sans",
+          "size_px": 34,
+          "colour": "#e5e5e5",
+          "background": "#14213d",
+          "contrast": 12.68,
+          "box": {
+            "x": 0.07963,
+            "y": 0.56389,
+            "w": 0.20278,
+            "h": 0.02315
+          }
+        }
+      ]
+    },
+    {
+      "id": "ad-03",
+      "file": "ad-03.png",
+      "width": 1200,
+      "height": 628,
+      "tags": [
+        "gradient",
+        "wrong_claim"
+      ],
+      "text": "Try LumaDesk free for 30 days\nNo card needed",
+      "lines": [
+        {
+          "text": "Try LumaDesk free for 30 days",
+          "font": "nimbus-sans-bold",
+          "size_px": 60,
+          "colour": "#ffffff",
+          "background": "#ed543e",
+          "contrast": 3.54,
+          "box": {
+            "x": 0.08,
+            "y": 0.38057,
+            "w": 0.72417,
+            "h": 0.09236
+          }
+        },
+        {
+          "text": "No card needed",
+          "font": "nimbus-sans-bold",
+          "size_px": 40,
+          "colour": "#ffffff",
+          "background": "#f7682a",
+          "contrast": 3.01,
+          "box": {
+            "x": 0.08,
+            "y": 0.52548,
+            "w": 0.25083,
+            "h": 0.04777
+          }
+        }
+      ]
+    },
+    {
+      "id": "ad-04",
+      "file": "ad-04.png",
+      "width": 1080,
+      "height": 1080,
+      "tags": [
+        "low_contrast",
+        "forbidden_variant"
+      ],
+      "text": "Luma Desk for hybrid teams\n$12 per seat per month",
+      "lines": [
+        {
+          "text": "Luma Desk for hybrid teams",
+          "font": "liberation-sans-bold",
+          "size_px": 60,
+          "colour": "#d0d0d0",
+          "background": "#ffffff",
+          "contrast": 1.54,
+          "box": {
+            "x": 0.07963,
+            "y": 0.43889,
+            "w": 0.74722,
+            "h": 0.05093
+          }
+        },
+        {
+          "text": "$12 per seat per month",
+          "font": "liberation-sans",
+          "size_px": 44,
+          "colour": "#c8c8c8",
+          "background": "#ffffff",
+          "contrast": 1.67,
+          "box": {
+            "x": 0.07963,
+            "y": 0.51759,
+            "w": 0.4213,
+            "h": 0.03889
+          }
+        }
+      ]
+    },
+    {
+      "id": "ad-05",
+      "file": "ad-05.png",
+      "width": 1200,
+      "height": 628,
+      "tags": [
+        "photo_like"
+      ],
+      "text": "Your office, organised\nFree 14-day trial",
+      "lines": [
+        {
+          "text": "Your office, organised",
+          "font": "ubuntu-bold",
+          "size_px": 64,
+          "colour": "#ffffff",
+          "background": "#508562",
+          "contrast": 4.31,
+          "box": {
+            "x": 0.08,
+            "y": 0.38694,
+            "w": 0.52333,
+            "h": 0.10032
+          }
+        },
+        {
+          "text": "Free 14-day trial",
+          "font": "ubuntu-bold",
+          "size_px": 44,
+          "colour": "#ffe066",
+          "background": "#86ac9f",
+          "contrast": 1.91,
+          "box": {
+            "x": 0.08,
+            "y": 0.53503,
+            "w": 0.265,
+            "h": 0.07006
+          }
+        }
+      ]
+    },
+    {
+      "id": "ad-06",
+      "file": "ad-06.png",
+      "width": 1080,
+      "height": 1080,
+      "tags": [
+        "small_print"
+      ],
+      "text": "Hot desking made simple\nLumaDesk shows who sits where.\nPrices exclude VAT. Annual plans save 15%.",
+      "lines": [
+        {
+          "text": "Hot desking made simple",
+          "font": "dejavu-sans-bold",
+          "size_px": 60,
+          "colour": "#3d2c1e",
+          "background": "#f3e9dc",
+          "contrast": 11.09,
+          "box": {
+            "x": 0.07963,
+            "y": 0.43148,
+            "w": 0.79444,
+            "h": 0.05463
+          }
+        },
+        {
+          "text": "LumaDesk shows who sits where.",
+          "font": "dejavu-sans",
+          "size_px": 36,
+          "colour": "#3d2c1e",
+          "background": "#f3e9dc",
+          "contrast": 11.09,
+          "box": {
+            "x": 0.07963,
+            "y": 0.51204,
+            "w": 0.55926,
+            "h": 0.025
+          }
+        },
+        {
+          "text": "Prices exclude VAT. Annual plans save 15%.",
+          "font": "dejavu-sans",
+          "size_px": 16,
+          "colour": "#5a4636",
+          "background": "#f3e9dc",
+          "contrast": 7.4,
+          "box": {
+            "x": 0.07963,
+            "y": 0.55833,
+            "w": 0.32315,
+            "h": 0.01389
+          }
+        }
+      ]
+    },
+    {
+      "id": "ad-07",
+      "file": "ad-07.png",
+      "width": 1200,
+      "height": 628,
+      "tags": [
+        "serif",
+        "wrong_claim"
+      ],
+      "text": "The calm way to share desks\nOnly $10 per seat",
+      "lines": [
+        {
+          "text": "The calm way to share desks",
+          "font": "liberation-serif",
+          "size_px": 58,
+          "colour": "#222222",
+          "background": "#fffaf0",
+          "contrast": 15.29,
+          "box": {
+            "x": 0.08,
+            "y": 0.39013,
+            "w": 0.55667,
+            "h": 0.0828
+          }
+        },
+        {
+          "text": "Only $10 per seat",
+          "font": "liberation-serif-bold",
+          "size_px": 50,
+          "colour": "#8b0000",
+          "background": "#fffaf0",
+          "contrast": 9.62,
+          "box": {
+            "x": 0.08,
+            "y": 0.52389,
+            "w": 0.31083,
+            "h": 0.07484
+          }
+        }
+      ]
+    },
+    {
+      "id": "ad-08",
+      "file": "ad-08.png",
+      "width": 1080,
+      "height": 1080,
+      "tags": [
+        "monospace",
+        "all_caps",
+        "wrong_claim"
+      ],
+      "text": "LUMADESK\nSAVE 20% TODAY",
+      "lines": [
+        {
+          "text": "LUMADESK",
+          "font": "dejavu-mono",
+          "size_px": 90,
+          "colour": "#b5f44a",
+          "background": "#0b3d2e",
+          "contrast": 9.3,
+          "box": {
+            "x": 0.07963,
+            "y": 0.41111,
+            "w": 0.40185,
+            "h": 0.06296
+          }
+        },
+        {
+          "text": "SAVE 20% TODAY",
+          "font": "dejavu-mono",
+          "size_px": 60,
+          "colour": "#b5f44a",
+          "background": "#0b3d2e",
+          "contrast": 9.3,
+          "box": {
+            "x": 0.07963,
+            "y": 0.53056,
+            "w": 0.46852,
+            "h": 0.04259
+          }
+        }
+      ]
+    },
+    {
+      "id": "ad-09",
+      "file": "ad-09.png",
+      "width": 1200,
+      "height": 628,
+      "tags": [
+        "italic"
+      ],
+      "text": "Meet LumaDesk Rooms\nStart a 14-day trial",
+      "lines": [
+        {
+          "text": "Meet LumaDesk Rooms",
+          "font": "liberation-sans-italic",
+          "size_px": 66,
+          "colour": "#1e3a8a",
+          "background": "#dbeafe",
+          "contrast": 8.49,
+          "box": {
+            "x": 0.08,
+            "y": 0.38535,
+            "w": 0.59,
+            "h": 0.07803
+          }
+        },
+        {
+          "text": "Start a 14-day trial",
+          "font": "liberation-sans-italic",
+          "size_px": 46,
+          "colour": "#1e3a8a",
+          "background": "#dbeafe",
+          "contrast": 8.49,
+          "box": {
+            "x": 0.08,
+            "y": 0.53822,
+            "w": 0.315,
+            "h": 0.06847
+          }
+        }
+      ]
+    },
+    {
+      "id": "ad-10",
+      "file": "ad-10.png",
+      "width": 1080,
+      "height": 1080,
+      "tags": [
+        "condensed"
+      ],
+      "text": "FLASH SALE\nSave 15% on annual plans\nEnds Friday",
+      "lines": [
+        {
+          "text": "FLASH SALE",
+          "font": "liberation-narrow-bold",
+          "size_px": 110,
+          "colour": "#ffffff",
+          "background": "#c1121f",
+          "contrast": 6.22,
+          "box": {
+            "x": 0.07963,
+            "y": 0.36019,
+            "w": 0.52407,
+            "h": 0.07222
+          }
+        },
+        {
+          "text": "Save 15% on annual plans",
+          "font": "liberation-narrow-bold",
+          "size_px": 56,
+          "colour": "#ffffff",
+          "background": "#c1121f",
+          "contrast": 6.22,
+          "box": {
+            "x": 0.07963,
+            "y": 0.50926,
+            "w": 0.53148,
+            "h": 0.04907
+          }
+        },
+        {
+          "text": "Ends Friday",
+          "font": "liberation-narrow-bold",
+          "size_px": 40,
+          "colour": "#fdf0d5",
+          "background": "#c1121f",
+          "contrast": 5.51,
+          "box": {
+            "x": 0.07963,
+            "y": 0.58796,
+            "w": 0.175,
+            "h": 0.03519
+          }
+        }
+      ]
+    },
+    {
+      "id": "ad-11",
+      "file": "ad-11.png",
+      "width": 1200,
+      "height": 628,
+      "tags": [
+        "low_contrast",
+        "dark_background"
+      ],
+      "text": "Night shift? LumaDesk never sleeps\nPlans from $12 per seat",
+      "lines": [
+        {
+          "text": "Night shift? LumaDesk never sleeps",
+          "font": "dejavu-sans-bold",
+          "size_px": 50,
+          "colour": "#4a4a4a",
+          "background": "#222222",
+          "contrast": 1.8,
+          "box": {
+            "x": 0.08,
+            "y": 0.40605,
+            "w": 0.845,
+            "h": 0.07803
+          }
+        },
+        {
+          "text": "Plans from $12 per seat",
+          "font": "dejavu-sans",
+          "size_px": 40,
+          "colour": "#505050",
+          "background": "#222222",
+          "contrast": 1.97,
+          "box": {
+            "x": 0.08,
+            "y": 0.52229,
+            "w": 0.39833,
+            "h": 0.0621
+          }
+        }
+      ]
+    },
+    {
+      "id": "ad-12",
+      "file": "ad-12.png",
+      "width": 1080,
+      "height": 1080,
+      "tags": [
+        "button",
+        "small_print"
+      ],
+      "text": "Desks when you need them\nStart free trial\n14 days free, cancel anytime",
+      "lines": [
+        {
+          "text": "Desks when you need them",
+          "font": "noto-serif-bold",
+          "size_px": 58,
+          "colour": "#14213d",
+          "background": "#ffffff",
+          "contrast": 15.97,
+          "box": {
+            "x": 0.07963,
+            "y": 0.42778,
+            "w": 0.73519,
+            "h": 0.0537
+          }
+        },
+        {
+          "text": "Start free trial",
+          "font": "noto-sans",
+          "size_px": 46,
+          "colour": "#ffffff",
+          "background": "#ff6b35",
+          "contrast": 2.84,
+          "box": {
+            "x": 0.07963,
+            "y": 0.50556,
+            "w": 0.27593,
+            "h": 0.03241
+          }
+        },
+        {
+          "text": "14 days free, cancel anytime",
+          "font": "noto-sans",
+          "size_px": 24,
+          "colour": "#8a8a8a",
+          "background": "#ffffff",
+          "contrast": 3.45,
+          "box": {
+            "x": 0.07963,
+            "y": 0.6037,
+            "w": 0.29444,
+            "h": 0.02222
+          }
+        }
+      ]
+    },
+    {
+      "id": "ad-13",
+      "file": "ad-13.png",
+      "width": 1200,
+      "height": 628,
+      "tags": [
+        "pattern"
+      ],
+      "text": "Desk booking for 500+ teams\nLumaDesk",
+      "lines": [
+        {
+          "text": "Desk booking for 500+ teams",
+          "font": "liberation-sans-bold",
+          "size_px": 58,
+          "colour": "#0f172a",
+          "background": "#e6ecf3",
+          "contrast": 15.01,
+          "box": {
+            "x": 0.08,
+            "y": 0.39331,
+            "w": 0.67,
+            "h": 0.08599
+          }
+        },
+        {
+          "text": "LumaDesk",
+          "font": "liberation-sans-bold",
+          "size_px": 46,
+          "colour": "#0f172a",
+          "background": "#e5ecf3",
+          "contrast": 14.98,
+          "box": {
+            "x": 0.08,
+            "y": 0.52866,
+            "w": 0.19417,
+            "h": 0.05255
+          }
+        }
+      ]
+    },
+    {
+      "id": "ad-14",
+      "file": "ad-14.jpg",
+      "width": 1080,
+      "height": 1080,
+      "tags": [
+        "noisy_background",
+        "jpeg",
+        "wrong_claim"
+      ],
+      "text": "Try it free for 14 days\nThen $15 per seat",
+      "lines": [
+        {
+          "text": "Try it free for 14 days",
+          "font": "dejavu-sans-bold",
+          "size_px": 64,
+          "colour": "#ffffff",
+          "background": "#6b7280",
+          "contrast": 4.83,
+          "box": {
+            "x": 0.07963,
+            "y": 0.42963,
+            "w": 0.7213,
+            "h": 0.05833
+          }
+        },
+        {
+          "text": "Then $15 per seat",
+          "font": "dejavu-sans-bold",
+          "size_px": 52,
+          "colour": "#ffffff",
+          "background": "#6b7280",
+          "contrast": 4.83,
+          "box": {
+            "x": 0.07963,
+            "y": 0.51667,
+            "w": 0.49259,
+            "h": 0.04722
+          }
+        }
+      ]
+    },
+    {
+      "id": "ad-15",
+      "file": "ad-15.png",
+      "width": 1200,
+      "height": 628,
+      "tags": [
+        "gradient",
+        "light_weight"
+      ],
+      "text": "Hybrid work, sorted\nSave 15% yearly with LumaDesk",
+      "lines": [
+        {
+          "text": "Hybrid work, sorted",
+          "font": "ubuntu-light",
+          "size_px": 70,
+          "colour": "#ffd60a",
+          "background": "#571890",
+          "contrast": 7.67,
+          "box": {
+            "x": 0.08,
+            "y": 0.38057,
+            "w": 0.51583,
+            "h": 0.10987
+          }
+        },
+        {
+          "text": "Save 15% yearly with LumaDesk",
+          "font": "ubuntu-light",
+          "size_px": 44,
+          "colour": "#ffd60a",
+          "background": "#601d9c",
+          "contrast": 6.91,
+          "box": {
+            "x": 0.08,
+            "y": 0.5414,
+            "w": 0.52333,
+            "h": 0.07006
+          }
+        }
+      ]
+    },
+    {
+      "id": "ad-16",
+      "file": "ad-16.png",
+      "width": 720,
+      "height": 1280,
+      "tags": [
+        "photo_like",
+        "portrait",
+        "wrong_claim"
+      ],
+      "text": "New: LumaDesk Maps\nFind a free desk fast\nStart your 30-day trial",
+      "lines": [
+        {
+          "text": "New: LumaDesk Maps",
+          "font": "dejavu-sans-bold",
+          "size_px": 52,
+          "colour": "#ffffff",
+          "background": "#458a97",
+          "contrast": 3.94,
+          "box": {
+            "x": 0.08056,
+            "y": 0.42969,
+            "w": 0.89167,
+            "h": 0.03984
+          }
+        },
+        {
+          "text": "Find a free desk fast",
+          "font": "dejavu-sans",
+          "size_px": 40,
+          "colour": "#ffffff",
+          "background": "#388691",
+          "contrast": 4.21,
+          "box": {
+            "x": 0.08056,
+            "y": 0.48984,
+            "w": 0.5625,
+            "h": 0.02344
+          }
+        },
+        {
+          "text": "Start your 30-day trial",
+          "font": "dejavu-sans-bold",
+          "size_px": 40,
+          "colour": "#90e0ef",
+          "background": "#568b98",
+          "contrast": 2.54,
+          "box": {
+            "x": 0.08056,
+            "y": 0.53672,
+            "w": 0.69861,
+            "h": 0.03047
+          }
+        }
+      ]
+    },
+    {
+      "id": "ad-17",
+      "file": "ad-17.png",
+      "width": 1080,
+      "height": 1080,
+      "tags": [
+        "very_low_contrast"
+      ],
+      "text": "Limited offer\nSave 15% with annual billing",
+      "lines": [
+        {
+          "text": "Limited offer",
+          "font": "urw-gothic",
+          "size_px": 64,
+          "colour": "#fff3a0",
+          "background": "#ffffff",
+          "contrast": 1.13,
+          "box": {
+            "x": 0.07963,
+            "y": 0.42315,
+            "w": 0.34722,
+            "h": 0.04444
+          }
+        },
+        {
+          "text": "Save 15% with annual billing",
+          "font": "urw-gothic",
+          "size_px": 48,
+          "colour": "#111111",
+          "background": "#ffffff",
+          "contrast": 18.88,
+          "box": {
+            "x": 0.07963,
+            "y": 0.51111,
+            "w": 0.60556,
+            "h": 0.04352
+          }
+        }
+      ]
+    },
+    {
+      "id": "ad-18",
+      "file": "ad-18.png",
+      "width": 1200,
+      "height": 628,
+      "tags": [
+        "case_variant"
+      ],
+      "text": "Lumadesk for teams\n$12 per seat, billed monthly",
+      "lines": [
+        {
+          "text": "Lumadesk for teams",
+          "font": "noto-sans",
+          "size_px": 64,
+          "colour": "#ffffff",
+          "background": "#0f766e",
+          "contrast": 5.47,
+          "box": {
+            "x": 0.08,
+            "y": 0.40287,
+            "w": 0.5125,
+            "h": 0.07962
+          }
+        },
+        {
+          "text": "$12 per seat, billed monthly",
+          "font": "noto-sans",
+          "size_px": 44,
+          "colour": "#ccfbf1",
+          "background": "#0f766e",
+          "contrast": 4.86,
+          "box": {
+            "x": 0.08,
+            "y": 0.54777,
+            "w": 0.47917,
+            "h": 0.07006
+          }
+        }
+      ]
+    },
+    {
+      "id": "ad-19",
+      "file": "ad-19.png",
+      "width": 1080,
+      "height": 1080,
+      "tags": [
+        "mixed_sizes",
+        "small_print"
+      ],
+      "text": "15%\noff annual plans\nLumaDesk. Terms apply.",
+      "lines": [
+        {
+          "text": "15%",
+          "font": "dejavu-sans-bold",
+          "size_px": 200,
+          "colour": "#bc6c25",
+          "background": "#fefae0",
+          "contrast": 3.76,
+          "box": {
+            "x": 0.07963,
+            "y": 0.35,
+            "w": 0.44352,
+            "h": 0.13981
+          }
+        },
+        {
+          "text": "off annual plans",
+          "font": "dejavu-sans",
+          "size_px": 48,
+          "colour": "#283618",
+          "background": "#fefae0",
+          "contrast": 12.24,
+          "box": {
+            "x": 0.07963,
+            "y": 0.60093,
+            "w": 0.35648,
+            "h": 0.04259
+          }
+        },
+        {
+          "text": "LumaDesk. Terms apply.",
+          "font": "dejavu-sans",
+          "size_px": 18,
+          "colour": "#606c38",
+          "background": "#fefae0",
+          "contrast": 5.4,
+          "box": {
+            "x": 0.07963,
+            "y": 0.66204,
+            "w": 0.20093,
+            "h": 0.01667
+          }
+        }
+      ]
+    },
+    {
+      "id": "ad-20",
+      "file": "ad-20.png",
+      "width": 1200,
+      "height": 628,
+      "tags": [
+        "text_across_gradient"
+      ],
+      "text": "Two weeks free\nthen $12 per seat",
+      "lines": [
+        {
+          "text": "Two weeks free",
+          "font": "dejavu-serif-bold",
+          "size_px": 72,
+          "colour": "#7f7f7f",
+          "background": "#525252",
+          "contrast": 1.95,
+          "box": {
+            "x": 0.08,
+            "y": 0.37739,
+            "w": 0.50833,
+            "h": 0.08917
+          }
+        },
+        {
+          "text": "then $12 per seat",
+          "font": "dejavu-serif-bold",
+          "size_px": 48,
+          "colour": "#9a9a9a",
+          "background": "#464646",
+          "contrast": 3.35,
+          "box": {
+            "x": 0.08,
+            "y": 0.54459,
+            "w": 0.39417,
+            "h": 0.07325
+          }
+        }
+      ]
+    }
+  ]
+}

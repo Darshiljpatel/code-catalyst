@@ -1,6 +1,9 @@
 FROM python:3.14-slim
 WORKDIR /app
 ENV PYTHONPATH=/app/apps/api:/app/packages:/app PYTHONUNBUFFERED=1 PYTHONDONTWRITEBYTECODE=1
+# Local OCR for image campaigns; the version is recorded with every OCR result.
+RUN apt-get update && apt-get install -y --no-install-recommends tesseract-ocr tesseract-ocr-eng \
+    && rm -rf /var/lib/apt/lists/*
 COPY apps/api/requirements.lock /app/requirements.lock
 RUN pip install --no-cache-dir -r requirements.lock
 COPY packages/ ./packages/

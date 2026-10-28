@@ -27,13 +27,32 @@ export interface ApiError {
 export interface LoginRequest {
   email: string;
   password: string;
-  org_id: string;
+  org_id?: string;
 }
 
 export interface LoginResponse {
   csrf_token: string;
   org_id: string;
   role: 'creator' | 'manager' | 'reviewer' | 'admin';
+  label?: string | null;
+  is_demo?: boolean;
+  demo_expires_at?: string | null;
+}
+
+export interface DemoMember {
+  membership_id: string;
+  role: string;
+  label: string;
+  email: string;
+}
+
+export interface SandboxOut {
+  org_id: string;
+  role: string;
+  membership_id: string;
+  csrf_token: string;
+  expires_at: string;
+  members: DemoMember[];
 }
 
 // ---------------------------------------------------------------------------
@@ -45,6 +64,9 @@ export interface MeResponse {
   user_id: string;
   org_id: string;
   role: 'creator' | 'manager' | 'reviewer' | 'admin';
+  label?: string;
+  is_demo?: boolean;
+  demo_expires_at?: string | null;
 }
 
 // ---------------------------------------------------------------------------
@@ -63,16 +85,32 @@ export interface NewBrandRequest {
 }
 
 // ---------------------------------------------------------------------------
-// Health GET /api/v1/health/live, GET /api/v1/health/ready
+// Health GET /api/v1/health/{live,ready,worker,version}
 // ---------------------------------------------------------------------------
 export interface LiveResponse {
   status: 'live';
-  phase: string;
 }
+
+export type WorkerState = 'online' | 'offline' | 'unknown';
 
 export interface ReadyResponse {
   status: 'ready';
-  scope: string;
+  schema_revision: string;
+  worker: WorkerState;
+}
+
+export interface WorkerHealthResponse {
+  status: WorkerState;
+  last_seen_at: string | null;
+  age_seconds: number | null;
+  worker_count: number;
+  offline_after_seconds: number;
+}
+
+export interface VersionResponse {
+  commit_sha: string;
+  api_version: string;
+  environment: string;
 }
 
 // ---------------------------------------------------------------------------
@@ -96,6 +134,8 @@ export type RuleKind =
   | 'alt_text';
 
 export interface RuleInput {
+  allowed_variants?: string[] | null;
+  forbidden_variants?: string[] | null;
   id: string;
   category: RuleCategory;
   kind: RuleKind;
@@ -134,6 +174,7 @@ export interface SourceOut {
 }
 
 export interface ActivationInput {
+  regression_acknowledgement?: string;
   expected_epoch: number;
   verified: true;
   retire_source_ids: string[];
@@ -154,6 +195,7 @@ export interface ContentInput {
   audience: string;
   purpose: string;
   reviewer_id?: string | null;
+  document_import_id?: string | null;
 }
 
 export interface NewRevisionInput {
@@ -162,6 +204,7 @@ export interface NewRevisionInput {
   channel: string;
   audience: string;
   purpose: string;
+  document_import_id?: string | null;
 }
 
 export interface RevisionOut {
@@ -175,6 +218,94 @@ export interface RevisionOut {
   audience: string;
   purpose: string;
   created_at: string;
+  asset_id?: string | null;
+  asset_sha256?: string | null;
+  region_map?: RegionMapEntry[] | null;
+  source_document?: SourceDocument | null;
+}
+
+export interface DocumentBlock { page: number | null; paragraph: number; start: number; end: number }
+
+export interface DocumentImportOut {
+  id: string;
+  filename: string;
+  media_type: string;
+  size_bytes: number;
+  original_sha256: string;
+  text: string;
+  text_hash: string;
+  pages: number | null;
+  blocks: DocumentBlock[];
+  warnings: string[];
+  created_at: string;
+}
+
+export interface SourceDocument {
+  import_id: string;
+  filename: string;
+  media_type: string;
+  original_sha256: string;
+  extracted_text_hash: string;
+  pages: number | null;
+  edited: boolean;
+  blocks: DocumentBlock[] | null;
+  warnings: string[];
+}
+
+// ---------------------------------------------------------------------------
+// Image campaigns (Improvement 2)
+// ---------------------------------------------------------------------------
+export interface NormBox { x: number; y: number; w: number; h: number }
+
+export type RegionOrigin = 'ocr' | 'corrected' | 'added' | 'unreadable';
+
+export interface RegionMapEntry {
+  region_id: string;
+  box: NormBox;
+  ocr_text: string | null;
+  final_text: string;
+  confidence: number | null;
+  origin: RegionOrigin;
+  start: number | null;
+  end: number | null;
+}
+
+export interface ImageInfo {
+  asset_id: string;
+  sha256: string;
+  original_sha256: string;
+  mime: string;
+  width: number;
+  height: number;
+  intake: { channel: string; audience: string; purpose: string };
+  ocr_status: 'queued' | 'running' | 'complete' | 'failed' | null;
+  ocr_result_id: string | null;
+}
+
+export interface OcrLine { id: string; text: string; confidence: number; box: NormBox }
+
+export interface OcrOut {
+  id: string;
+  asset_id: string;
+  status: 'queued' | 'running' | 'complete' | 'failed';
+  engine: string;
+  engine_version: string;
+  params: Record<string, unknown>;
+  lines: OcrLine[];
+  mean_confidence: number | null;
+  error_code: string | null;
+  low_confidence_threshold: number;
+  created_at: string;
+  completed_at: string | null;
+}
+
+export interface RegionInput {
+  region_id: string;
+  box: NormBox;
+  text: string;
+  origin: RegionOrigin;
+  ocr_line_id?: string | null;
+  confirmed?: boolean;
 }
 
 export interface ContentOut {
@@ -189,6 +320,310 @@ export interface ContentOut {
   approval_stale: boolean;
   state: string;
   revisions: RevisionOut[];
+  recheck?: RecheckNotice | null;
+  image?: ImageInfo | null;
+}
+
+// ---------------------------------------------------------------------------
+// Guideline change impact and re-review inbox (Improvement 1)
+// ---------------------------------------------------------------------------
+export type ImpactLevel = 'confirmed' | 'likely' | 'possible';
+export type RecheckStatus = 'open' | 'recheck_queued' | 'awaiting_creator' | 'awaiting_reviewer' | 'resolved' | 'superseded';
+/** hold: back to a reviewer. keep: keeps its approval unless the recheck finds a change. */
+export type RecheckRouting = 'hold' | 'keep';
+
+export interface ImpactReason {
+  code: string;
+  detail: string;
+}
+
+export interface FindingDeltaEntry {
+  rule_id: string;
+  category: string;
+  severity: string;
+  start: number;
+  end: number;
+  quote?: string;
+}
+
+export interface FindingsDelta {
+  added: FindingDeltaEntry[];
+  removed: FindingDeltaEntry[];
+  unchanged: number;
+  new_blockers?: number;
+  complete?: boolean;
+  changed?: boolean;
+}
+
+export interface RecheckNotice {
+  assignment_id: string;
+  change_id: string;
+  status: RecheckStatus;
+  impact_level: ImpactLevel;
+  reasons: ImpactReason[];
+  state_before: string;
+  findings_delta: FindingsDelta | null;
+  guideline_title: string;
+  from_version: number | null;
+  to_version: number;
+  changed_rules: number;
+  changed_at: string;
+  routing?: RecheckRouting;
+}
+
+export interface RuleDiffEntry {
+  rule_id: string;
+  before?: RuleInput;
+  after?: RuleInput;
+  fields?: string[];
+  source_id?: string;
+}
+
+export interface RuleDiff {
+  added: RuleDiffEntry[];
+  removed: RuleDiffEntry[];
+  modified: RuleDiffEntry[];
+  unchanged: number;
+  from_source: { id: string; version: number; title: string; text: string } | null;
+  to_source: { id: string; version: number; title: string; text: string };
+  retired_sources: { id: string; source_key: string; version: number; title: string }[];
+}
+
+export interface ImpactCounts {
+  confirmed: number;
+  likely: number;
+  possible: number;
+  total: number;
+  not_affected: number;
+  /** Approved or in-review campaigns that go back to a reviewer (confirmed and likely). */
+  on_hold: number;
+  /** Possible-level approved or in-review campaigns that keep their approval unless the recheck finds a change. */
+  keep_approval?: number;
+  brand_campaigns: number;
+}
+
+export interface ImpactEntry {
+  item_id: string;
+  title: string;
+  state: string;
+  creator_id: string;
+  reviewer_id: string | null;
+  revision_id: string;
+  prior_run_id: string;
+  impact_level: ImpactLevel;
+  reasons: ImpactReason[];
+  local_delta: FindingsDelta | null;
+  routing?: RecheckRouting;
+}
+
+export interface ImpactPreview {
+  source_id: string;
+  brand_id: string;
+  expected_epoch: number;
+  retired_source_ids: string[];
+  diff: RuleDiff;
+  counts: ImpactCounts;
+  entries: ImpactEntry[];
+}
+
+export interface GuidelineChangeSummary {
+  id: string;
+  brand_id: string;
+  source_key: string;
+  from_source_id: string | null;
+  to_source_id: string;
+  title: string;
+  from_version: number | null;
+  to_version: number;
+  status: 'open' | 'closed';
+  impact_counts: ImpactCounts;
+  resolved: number;
+  total: number;
+  created_by: string;
+  created_at: string;
+  closed_at: string | null;
+}
+
+export interface RecheckAssignment {
+  id: string;
+  change_id: string;
+  item_id: string;
+  title: string;
+  item_state: string;
+  creator_id: string;
+  revision_id: string;
+  prior_run_id: string;
+  prior_decision_id: string | null;
+  state_before: string;
+  impact_level: ImpactLevel;
+  reasons: ImpactReason[];
+  recheck_run_id: string | null;
+  recheck_status: string | null;
+  findings_delta: FindingsDelta | null;
+  reviewer_id: string | null;
+  status: RecheckStatus;
+  resolved_decision_id: string | null;
+  superseded_by: string | null;
+  routing?: RecheckRouting;
+  /** kept_approval or stayed_in_review when the recheck found no change. */
+  outcome?: string | null;
+  version: number;
+  created_at: string;
+  updated_at: string;
+  resolved_at: string | null;
+}
+
+export interface GuidelineChange extends GuidelineChangeSummary {
+  diff: RuleDiff;
+  assignments: RecheckAssignment[];
+}
+
+// ---------------------------------------------------------------------------
+// Guideline improvement requests (Improvement 3)
+// ---------------------------------------------------------------------------
+export interface RuleHealth {
+  source_id: string;
+  source_key: string;
+  source_title: string;
+  rule_id: string;
+  category: string;
+  kind: string;
+  value: string;
+  flagged_items: number;
+  confirmed_items: number;
+  disputed_items: number;
+  ambiguity_reports: number;
+  dispute_rate: number | null;
+  likely_unclear: boolean;
+  open_request_id: string | null;
+}
+
+export interface GuidelineHealth {
+  brand_id: string;
+  window_days: number;
+  unclear_threshold: number;
+  dispute_definition: string;
+  rules: RuleHealth[];
+  open_requests: { id: string; title: string; rule_id: string | null; source_key: string; status: string }[];
+}
+
+export type RequestStatus = 'open' | 'in_review' | 'changes_requested' | 'approved' | 'activated' | 'withdrawn';
+export type ExampleExpectation = 'flag' | 'no_flag' | 'unsure';
+
+export interface RequestExample {
+  id: string;
+  item_id: string | null;
+  revision_id: string | null;
+  finding_id: string | null;
+  kind: 'dispute' | 'ambiguity' | 'manual';
+  excerpt: string;
+  dispute: { actor_id?: string; action?: string; rationale?: string };
+  expected: ExampleExpectation;
+  labelled_by: string | null;
+  redacted_at: string | null;
+}
+
+export interface ComparisonCase {
+  case_id: string;
+  label: string;
+  text: string;
+  expectations: { source_key: string; rule_id: string; expected: 'flag' | 'no_flag' }[];
+  live: FindingDeltaEntry[];
+  proposed: FindingDeltaEntry[];
+  verdict: 'fixed' | 'regressed' | 'unchanged' | 'unstable' | 'changed' | 'not_run';
+}
+
+export interface SideMetrics {
+  true_positives: number;
+  false_positives: number;
+  false_negatives: number;
+  precision: number | null;
+  recall: number | null;
+}
+
+export interface Comparison {
+  id: string;
+  request_id: string;
+  proposed_source_id: string;
+  proposed_hash: string;
+  example_set_id: string;
+  status: string;
+  current: boolean;
+  summary: {
+    counts: Record<string, number>;
+    verdict: string;
+    cases: ComparisonCase[];
+    live_metrics: SideMetrics;
+    proposed_metrics: SideMetrics;
+    ai: { status: string; reason: string };
+  };
+  created_by: string;
+  created_at: string;
+}
+
+export interface RequestReview {
+  id: string;
+  reviewer_id: string;
+  decision: 'approved' | 'changes_requested' | 'rejected';
+  rationale: string;
+  draft_hash: string;
+  comparison_run_id: string | null;
+  current: boolean;
+  created_at: string;
+}
+
+export interface RequestGates {
+  has_draft: boolean;
+  comparison_current: boolean;
+  comparison_run_id: string | null;
+  approval_current: boolean;
+  regressions: number;
+  base_changed: boolean;
+  can_activate: boolean;
+}
+
+export interface GuidelineRequestSummary {
+  id: string;
+  brand_id: string;
+  source_key: string;
+  rule_id: string | null;
+  title: string;
+  status: RequestStatus;
+  created_by: string;
+  assignee_id: string | null;
+  created_at: string;
+  updated_at: string;
+  example_count: number;
+}
+
+export interface GuidelineRequest extends GuidelineRequestSummary {
+  problem: string;
+  base_source_id: string;
+  draft_source_id: string | null;
+  draft_hash: string | null;
+  change_id: string | null;
+  version: number;
+  signals: Record<string, unknown>;
+  examples: RequestExample[];
+  base_source: SourceOut;
+  draft_source: SourceOut | null;
+  diff: RuleDiff | null;
+  comparisons: Comparison[];
+  reviews: RequestReview[];
+  activity: { action: string; actor_id: string; created_at: string; details: Record<string, unknown> }[];
+  gates: RequestGates;
+}
+
+export interface ExampleSet {
+  id: string;
+  brand_id: string;
+  name: string;
+  cases: { id: string; label: string; text: string; expectations: ComparisonCase['expectations']; origin_revision_id: string | null; external_ok: boolean }[];
+}
+
+export interface ActivationOut extends SourceOut {
+  change_id: string;
+  impact_counts: ImpactCounts;
 }
 
 // Compatibility aliases
@@ -408,6 +843,7 @@ export interface ContentSummaryOut {
   approval_stale: boolean;
   state: string;
   created_at: string;
+  recheck_status?: RecheckStatus | null;
 }
 
 export interface ContentPageOut {
@@ -486,3 +922,32 @@ export interface InsightsOut {
 }
 
 export type BrandInsights = InsightsOut;
+
+export interface VerificationCheck { code: string; passed: boolean; message: string }
+
+export interface VerificationOut {
+  verified: boolean;
+  still_current: boolean | null;
+  decision_id: string;
+  content_id: string | null;
+  checks: VerificationCheck[];
+}
+
+export interface RetentionOut { retention_days: number | null; purged_campaigns: number; last_purge_at: string | null }
+
+export interface RuleDraftOut {
+  source_text: string;
+  proposals: RuleInput[];
+  rejected: { index: number; code: string }[];
+  warnings: string[];
+  metadata: Record<string, unknown>;
+}
+
+export interface ProviderStatusOut {
+  model: string;
+  runs_24h: number;
+  errors_24h: number;
+  error_rate_24h: number | null;
+  p95_latency_ms_24h: number | null;
+  last_success_at: string | null;
+}

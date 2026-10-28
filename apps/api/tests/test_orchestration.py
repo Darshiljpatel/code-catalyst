@@ -188,10 +188,19 @@ def test_queued_job_past_deadline_never_sends_content(setup):
     c,engine,_,_,run=prepared(setup)
     from dataclasses import replace
     claim=claim_one(engine)
-    expired=replace(claim,created_at=utcnow()-timedelta(seconds=61))
+    expired=replace(claim,claimed_at=utcnow()-timedelta(seconds=61))
     calls=[]
     checks,findings,metadata=asyncio.run(analyse_claim(engine,expired,reviewer(calls),checker))
     assert not calls and not findings and metadata['error_code']=='deadline_exceeded'
+
+
+def test_deadline_starts_at_claim_not_at_queue_time(setup,monkeypatch):
+    c,engine,_,_,run=prepared(setup)
+    # The worker wakes five minutes after the run was queued.
+    monkeypatch.setattr('brandguard.orchestration.utcnow',lambda:utcnow()+timedelta(minutes=5))
+    calls=[];process_one(engine,reviewer(calls),checker)
+    result=c.get('/api/v1/runs/'+run['id']).json()
+    assert calls and not any(x['reason']=='deadline_exceeded' for x in result['checks'])
 
 
 def test_current_policy_required_again_at_dispatch(setup):
@@ -229,3 +238,20 @@ def test_stale_source_epoch_prevents_external_dispatch(setup):
     login(c,orgs[0],'creator')
     result=c.get('/api/v1/runs/'+run['id']).json()
     assert result['stale'] and result['status']=='incomplete'
+
+
+def test_admin_provider_status_reports_errors_and_latency(setup):
+    c,engine,orgs,item,run=prepared(setup)
+    process_one(engine,reviewer(),checker)
+    h=login(c,orgs[0],'admin')
+    status=c.get('/api/v1/provider-status',headers=h).json()
+    assert status['runs_24h']==1 and status['errors_24h']==0 and status['error_rate_24h']==0
+    assert status['p95_latency_ms_24h'] is not None and status['last_success_at']
+    assert c.get('/api/v1/provider-status',headers=login(c,orgs[0],'manager')).status_code==403
+
+
+def test_second_evaluated_model_is_allowed_but_unevaluated_ones_are_not():
+    from brandguard.semantic import ProviderConfig
+    assert ProviderConfig(model='Qwen/Qwen3-30B-A3B-Instruct-2507').model.endswith('30B-A3B-Instruct-2507')
+    with pytest.raises(ValueError):
+        ProviderConfig(model='Qwen/Qwen3-8B')

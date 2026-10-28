@@ -31,7 +31,9 @@ export function ReviewQueue({ onItemSelect }: ReviewQueueProps) {
     let cancelled = false;
     setLoading(true);
     setError(null);
-    getContentPage({ state: activeTab === 'all' ? undefined : activeTab, q: search, limit, offset })
+    const filter = activeTab === 'recheck_mine' ? { recheck: 'mine' as const }
+      : { state: activeTab === 'all' ? undefined : activeTab };
+    getContentPage({ ...filter, q: search, limit, offset })
       .then(page => {
         if (cancelled) return;
         if (page.total > 0 && offset >= page.total) {
@@ -61,6 +63,8 @@ export function ReviewQueue({ onItemSelect }: ReviewQueueProps) {
         return 'badge--warning';
       case 'changes_requested':
         return 'badge--error';
+      case 'recheck_required':
+        return 'badge--warning';
       default:
         return 'badge--neutral';
     }
@@ -102,6 +106,8 @@ export function ReviewQueue({ onItemSelect }: ReviewQueueProps) {
       <div className="filter-bar" style={{ marginBottom: 'var(--space-4)' }}>
         {[
           { id: 'all', label: 'All Campaigns' },
+          { id: 'recheck_mine', label: 'Rechecks for me' },
+          { id: 'recheck_required', label: 'Recheck required' },
           { id: 'in_review', label: 'In Review' },
           { id: 'changes_requested', label: 'Changes Requested' },
           { id: 'approved', label: 'Approved' },

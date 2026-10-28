@@ -6,7 +6,21 @@ import { BrandMark } from '../components/BrandMark';
 import { ReviewSample } from '../components/ReviewSample';
 
 export function LoginPage() {
-  const { signIn, status, error, clearError } = useAuth();
+  const { signIn, status, error, clearError, startDemo } = useAuth();
+  const [demoState, setDemoState] = React.useState<'idle' | 'creating' | 'failed'>('idle');
+  const [demoError, setDemoError] = React.useState('');
+
+  const tryDemo = async () => {
+    setDemoState('creating');
+    setDemoError('');
+    try {
+      await startDemo('creator');
+      navigate('/', { replace: true });
+    } catch (err) {
+      setDemoState('failed');
+      setDemoError(err instanceof Error ? err.message : 'The demo workspace could not be created.');
+    }
+  };
   const navigate = useNavigate();
 
   const [form, setForm] = React.useState({ email: '', password: '', org_id: '' });
@@ -28,7 +42,7 @@ export function LoginPage() {
     if (submitting) return;
     setSubmitting(true);
     try {
-      await signIn({ email: form.email.trim(), password: form.password, org_id: form.org_id.trim() });
+      await signIn({ email: form.email.trim(), password: form.password, org_id: form.org_id.trim() || undefined });
       navigate('/', { replace: true });
     } catch {
       // error is set in AuthContext
@@ -47,6 +61,19 @@ export function LoginPage() {
           <p className="login-card__subtitle">
             Your next great campaign starts here.<br />Sign in to your workspace to continue.
           </p>
+
+          <div className="demo-cta">
+            <button id="btn-try-demo" type="button" className="btn btn--primary btn--lg" onClick={() => { void tryDemo(); }}
+              disabled={demoState === 'creating'} aria-busy={demoState === 'creating'}>
+              {demoState === 'creating' ? <Spinner size="sm" label="Preparing your private demo…" /> : <>Try a private demo <span aria-hidden="true">→</span></>}
+            </button>
+            <p className="demo-cta__hint">
+              Your own workspace with sample campaigns and five roles (creator, reviewer, manager, brand lead, admin). Switch roles from
+              the top bar. No sign-up; it is deleted after 48 hours.
+            </p>
+            {demoError && <Alert kind="error">{demoError}</Alert>}
+            <div className="demo-cta__divider" role="separator"><span>or sign in</span></div>
+          </div>
 
           {error && (
             <div style={{ marginBottom: 'var(--space-5)' }}>
@@ -96,7 +123,7 @@ export function LoginPage() {
             </div>
 
             <div className="field">
-              <label className="label label--required" htmlFor="login-org-id">
+              <label className="label" htmlFor="login-org-id">
                 Workspace ID
               </label>
               <input
@@ -107,12 +134,11 @@ export function LoginPage() {
                 autoComplete="off"
                 value={form.org_id}
                 onChange={handleChange}
-                required
                 placeholder="Your workspace ID"
-                aria-required="true"
+                aria-describedby="login-org-hint"
               />
-              <span style={{ fontSize: '0.8125rem', color: 'var(--text-muted)' }}>
-                Use the workspace ID provided by your administrator.
+              <span id="login-org-hint" style={{ fontSize: '0.8125rem', color: 'var(--text-muted)' }}>
+                Only needed if your account belongs to more than one workspace.
               </span>
             </div>
 
@@ -120,7 +146,7 @@ export function LoginPage() {
               id="btn-login-submit"
               type="submit"
               className="btn btn--primary"
-              disabled={submitting || !form.email || !form.password || !form.org_id}
+              disabled={submitting || !form.email || !form.password}
               aria-busy={submitting}
             >
               {submitting ? <Spinner size="sm" label="Signing in…" /> : <>Sign in <span aria-hidden="true">↗</span></>}

@@ -73,3 +73,58 @@ def test_duplicate_predictions_cannot_reuse_a_label():
     records, _, _ = match_findings([label], [predicted, predicted], 'Lumadesk', [])
     metrics = compute_metrics(records)
     assert metrics['true_positives'] == 1 and metrics['false_positives'] == 1
+
+
+def test_benchmark_v2_is_frozen_split_by_template_and_meets_held_out_gates():
+    import json
+    from collections import Counter
+    from evaluation.benchmark_v2 import run, wilson, DATASET
+    cases = json.loads(DATASET.read_text())
+    assert len(cases) == 60 and Counter(c['split'] for c in cases) == {'dev': 20, 'test': 40}
+    assert len({c['brand'] for c in cases}) == 3 and len({c['format'] for c in cases}) == 6
+    for case in cases:
+        for label in case['expected_findings']:
+            assert label['quote'] in case['text']
+    result = run()
+    assert result['frozen'], 'benchmark_v2.json changed: freeze a new dataset version instead'
+    assert all(result['gates'].values())
+    assert result['per_split']['test']['cases'] == 40
+
+
+def test_wilson_interval():
+    from evaluation.benchmark_v2 import wilson
+    low, high = wilson(40, 40)
+    assert high == 1.0 and 0.9 < low < 0.92
+    assert wilson(0, 0) == (None, None)
+    low, high = wilson(5, 10)
+    assert low < 0.5 < high
+
+
+def test_comparison_runner_catches_every_seeded_regression_and_none_on_the_control():
+    from evaluation.comparison_benchmark import run
+    result = run()
+    assert result['seeded_regressions'] >= 20 and result['caught'] == result['seeded_regressions']
+    assert result['false_alarms'] == 0
+    control = next(s for s in result['seeds'] if s['seed'].startswith('control'))
+    assert control['seeded_regressions'] == 0 and not control['false_alarms']
+
+
+def test_impact_benchmark_is_frozen_lists_every_changed_campaign_and_reports_re_reviews():
+    from evaluation.impact_benchmark import run
+    result = run()
+    assert result['frozen'], 'impact_benchmark.json changed: freeze a new dataset version instead'
+    assert (result['campaigns'], result['changes'], result['scenarios']) == (30, 5, 150)
+    # Target from the masterplan: every campaign whose findings change is listed for a recheck.
+    assert result['metrics']['listed_vs_reanalysis']['recall'] == 1.0 and result['gates']['impact_recall_100']
+    for change in result['per_change']:
+        assert not change['missed_by_listing']
+        assert change['listed'] + change['not_affected'] == result['campaigns']
+    rr = result['re_reviews']
+    assert rr['brand_wide_invalidation'] == 5 * result['campaign_states']['approved']
+    assert rr['shipped_routing']['approvals_sent_back'] + rr['shipped_routing']['avoided'] == rr['brand_wide_invalidation']
+    assert rr['if_routed_by_confirmed_level']['approvals_sent_back'] <= rr['shipped_routing']['approvals_sent_back']
+    # Shipped routing: every approval whose recheck changes findings still goes back to a reviewer.
+    shipped = rr['shipped_routing']
+    assert shipped['avoided'] > 0 and shipped['approvals_sent_back'] <= rr['previous_routing_every_listed']['approvals_sent_back']
+    for change in result['per_change']:
+        assert change['approvals_sent_back'] + change['approvals_kept'] == change['approvals_sent_back_if_every_listed']
