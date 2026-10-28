@@ -281,6 +281,8 @@ class FindingResolution(Base):
     rationale: Mapped[str] = mapped_column(Text)
     source_version_ids: Mapped[list] = mapped_column(JSON)
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True))
+    # Set when a recheck with unchanged findings carried this resolution to the new run.
+    carried_from_id: Mapped[str | None] = mapped_column(String(36))
 
 class ManualCheck(Base):
     __tablename__ = 'manual_checks'
@@ -299,6 +301,7 @@ class ManualCheck(Base):
     rationale: Mapped[str] = mapped_column(Text)
     source_version_ids: Mapped[list] = mapped_column(JSON)
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True))
+    carried_from_id: Mapped[str | None] = mapped_column(String(36))
 
 class Decision(Base):
     __tablename__ = 'decisions'
@@ -320,6 +323,8 @@ class Decision(Base):
     evidence_record: Mapped[dict] = mapped_column(JSON)
     decided_at: Mapped[datetime] = mapped_column(DateTime(timezone=True))
     asset_sha256: Mapped[str | None] = mapped_column(String(64))
+    # An approval kept through a guideline-change recheck with unchanged findings.
+    carried_from_decision_id: Mapped[str | None] = mapped_column(String(36))
 
 class WorkerHeartbeat(Base):
     """One row per worker process; readiness and the offline banner read the freshest row."""
@@ -363,6 +368,7 @@ class RecheckAssignment(Base):
         ForeignKeyConstraint(['org_id', 'reviewer_id'], ['memberships.org_id', 'memberships.id']),
         CheckConstraint("impact_level IN ('confirmed','likely','possible')"),
         CheckConstraint("status IN ('open','recheck_queued','awaiting_creator','awaiting_reviewer','resolved','superseded')"),
+        CheckConstraint("routing IN ('hold','keep')", name='ck_recheck_assignments_routing'),
     )
     id: Mapped[str] = mapped_column(String(36), primary_key=True, default=uid)
     org_id: Mapped[str] = mapped_column(String(36), index=True)
@@ -380,6 +386,9 @@ class RecheckAssignment(Base):
     status: Mapped[str] = mapped_column(String(30), default='open')
     resolved_decision_id: Mapped[str | None] = mapped_column(String(36))
     superseded_by: Mapped[str | None] = mapped_column(String(36))
+    # keep: a possible-level campaign keeps its approval unless the recheck finds a difference.
+    routing: Mapped[str] = mapped_column(String(20), default='hold', server_default='hold')
+    outcome: Mapped[str | None] = mapped_column(String(30))
     version: Mapped[int] = mapped_column(Integer, default=1)
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True))
     updated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True))

@@ -43,7 +43,7 @@ def assignment_out(assignment, item, run_status):
         state_before=assignment.state_before, impact_level=assignment.impact_level, reasons=assignment.reasons,
         recheck_run_id=assignment.recheck_run_id, recheck_status=run_status, findings_delta=assignment.findings_delta,
         reviewer_id=assignment.reviewer_id, status=assignment.status, resolved_decision_id=assignment.resolved_decision_id,
-        superseded_by=assignment.superseded_by, version=assignment.version, created_at=assignment.created_at,
+        superseded_by=assignment.superseded_by, routing=assignment.routing, outcome=assignment.outcome, version=assignment.version, created_at=assignment.created_at,
         updated_at=assignment.updated_at, resolved_at=assignment.resolved_at)
 
 

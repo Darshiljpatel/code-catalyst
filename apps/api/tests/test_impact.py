@@ -4,7 +4,7 @@ from sqlalchemy.orm import Session
 from test_identity import setup, login
 from test_review import activate, CONTEXT
 from test_orchestration import reviewer, checker
-from test_workflow import ready, submit, decide, current, REASON
+from test_workflow import ready, submit, decide, current, assign, REASON
 from brandguard.engine_bridge import check_text
 from brandguard.orchestration import process_one, EngineResult
 from brandguard.models import ReviewRun, RecheckAssignment, GuidelineChange, Membership
@@ -105,13 +105,17 @@ def test_reapproval_after_recheck_closes_the_change_and_export_names_both_versio
     mh = login(c, orgs[0])
     old_source = run['source_snapshot'][0]
     new = c.post(f"/api/v1/brands/{item['brand_id']}/sources", json=dict(source_key=old_source['source_key'],
-        title='Trial terms', text='The trial lasts 30 days. Use calm language.', valid_from=old_source['valid_from'],
+        title='Trial terms', text='The trial lasts 30 days. Use calm language. Write LumaDesk.', valid_from=old_source['valid_from'],
         rules=[dict(id='F01', category='facts_claims', kind='fact', key='trial_duration', value='30 days',
                     evidence_quote='The trial lasts 30 days.'),
                dict(id='G01', category='tone', kind='guidance', key='tone', value='Use calm language.',
-                    evidence_quote='Use calm language.')]), headers=mh).json()
+                    evidence_quote='Use calm language.'),
+               dict(id='T01', category='terminology', kind='terminology', key='product_name', value='LumaDesk',
+                    evidence_quote='Write LumaDesk.')]), headers=mh).json()
     preview = c.get(f"/api/v1/sources/{new['id']}/impact-preview", headers=mh).json()
-    assert preview['counts']['on_hold'] == 1
+    # The copy names the product the changed guideline now covers: likely, so it goes back to the reviewer.
+    assert preview['entries'][0]['impact_level'] == 'likely' and preview['entries'][0]['routing'] == 'hold'
+    assert preview['counts']['on_hold'] == 1 and preview['counts']['keep_approval'] == 0
     change_id = activate(c, new['id'], mh, 1).json()['change_id']
     held = current(c, item)
     assert held['state'] == 'recheck_required' and held['recheck']['change_id'] == change_id
@@ -157,10 +161,14 @@ def test_new_blockers_send_the_recheck_to_the_creator(setup):
         return EngineResult(base.checks, [dict(category='facts_claims', severity='blocker', evidence_status='contradicted',
             source_version_id=src['id'], rule_id='F01', evidence_quote=src['rules'][0]['evidence_quote'], start=0,
             end=len(inp.text), content_quote=inp.text, rationale='Synthetic blocker fixture.', suggested_edit=None)])
+    assert current(c, item)['state'] == 'approved' and current(c, item)['recheck']['routing'] == 'keep'
     process_one(engine, reviewer(), blocking)
     state = current(c, item)
     assert state['state'] == 'needs_changes' and state['recheck']['status'] == 'awaiting_creator'
     assert state['recheck']['findings_delta']['new_blockers'] == 1
+    # A possible-level campaign whose recheck finds something new is escalated to confirmed.
+    assert state['recheck']['impact_level'] == 'confirmed' and state['recheck']['routing'] == 'hold'
+    assert state['recheck']['reasons'][-1]['code'] == 'recheck_findings_changed'
     ch = login(c, orgs[0], 'creator')
     assert [i['id'] for i in c.get('/api/v1/content?recheck=mine', headers=ch).json()['items']] == [item['id']]
     assert c.get(f'/api/v1/guideline-changes/{change_id}', headers=login(c, orgs[0])).json()['status'] == 'open'
@@ -208,7 +216,174 @@ def test_a_second_change_supersedes_the_open_recheck(setup):
     assert newer['status'] == 'open' and newer['assignments'][0]['state_before'] == 'approved'
     assert newer['assignments'][0]['prior_decision_id'] is not None
     drain(engine, engine_checker=checker)
-    assert current(c, item)['state'] == 'in_review' and current(c, item)['recheck']['change_id'] == second
+    # Unchanged findings: the approval is kept, bound to the newest recheck only.
+    assert current(c, item)['state'] == 'approved' and current(c, item)['recheck'] is None
+    newer = c.get(f'/api/v1/guideline-changes/{second}', headers=mh).json()
+    assert newer['status'] == 'closed' and newer['assignments'][0]['outcome'] == 'kept_approval'
     # Two managers activating against the same epoch: the loser gets a conflict.
     stale = c.post(f"/api/v1/brands/{item['brand_id']}/sources", json=body, headers=mh).json()
     assert activate(c, stale['id'], mh, 1).status_code == 409
+
+
+def same_key(run, rules=None, text=None):
+    s = run['source_snapshot'][0]
+    return dict(source_key=s['source_key'], title=s['title'], text=text or s['text'], valid_from=s['valid_from'],
+                rules=rules or s['rules'])
+
+
+def longer_trial(run):
+    """Change the trial rule: the copy "Try LumaDesk." never mentions the trial, so the impact is possible."""
+    rules = [dict(r, value='30 days', evidence_quote='The trial lasts 30 days.') if r['id'] == 'F01' else r
+             for r in run['source_snapshot'][0]['rules']]
+    return same_key(run, rules, 'The trial lasts 30 days. Use calm language.')
+
+
+def extra_tone_rule(run):
+    """Add a tone rule the copy does not touch; tone was checked automatically, not by the reviewer."""
+    rules = run['source_snapshot'][0]['rules'] + [dict(id='G02', category='tone', kind='guidance', key='exclamation_marks',
+        value='Avoid exclamation marks.', evidence_quote='Avoid exclamation marks.')]
+    return same_key(run, rules, run['source_snapshot'][0]['text'] + ' Avoid exclamation marks.')
+
+
+def test_possible_campaign_keeps_its_approval_bound_to_the_recheck(setup):
+    c, engine, orgs, item, run, rid = ready(setup)
+    submit(c, orgs, item, run, rid)
+    first = decide(c, orgs, item, run).json()
+    first_record = c.get(f"/api/v1/revisions/{item['revisions'][0]['id']}/export").json()
+    mh = login(c, orgs[0])
+    new = c.post(f"/api/v1/brands/{item['brand_id']}/sources", json=longer_trial(run), headers=mh).json()
+    preview = c.get(f"/api/v1/sources/{new['id']}/impact-preview", headers=mh).json()
+    assert [(e["impact_level"], e["routing"]) for e in preview["entries"]] == [("possible", "keep")], preview["entries"][0]["reasons"]
+    assert preview['counts']['on_hold'] == 0 and preview['counts']['keep_approval'] == 1
+    change_id = activate(c, new['id'], mh, 1).json()['change_id']
+    kept = current(c, item)
+    assert kept['state'] == 'approved' and kept['recheck']['routing'] == 'keep'
+    rev = item['revisions'][0]['id']
+    # The approval is bound to the old guideline versions until the recheck confirms it.
+    assert c.get(f'/api/v1/revisions/{rev}/export').json()['code'] == 'analysis_pending'
+    drain(engine, engine_checker=checker)
+    state = current(c, item)
+    assert state['state'] == 'approved' and state['recheck'] is None
+    change = c.get(f'/api/v1/guideline-changes/{change_id}', headers=mh).json()
+    entry = change['assignments'][0]
+    assert change['status'] == 'closed' and entry['status'] == 'resolved' and entry['outcome'] == 'kept_approval'
+    assert entry['impact_level'] == 'possible' and entry['findings_delta']['added'] == [] and entry['resolved_decision_id']
+    # Nobody is asked to look at it.
+    rh = login(c, orgs[0], 'reviewer')
+    assert c.get('/api/v1/content?recheck=mine', headers=rh).json()['items'] == []
+    exported = c.get(f'/api/v1/revisions/{rev}/export')
+    assert exported.status_code == 200, exported.text
+    body = exported.json()
+    assert body['decision']['id'] == entry['resolved_decision_id'] != first['id']
+    record = body['evidence_record']
+    assert [s['id'] for s in record['source_snapshot']] == [new['id']]
+    assert record['approval_kept']['carried_from_decision_id'] == first['id']
+    assert record['recheck_of'][0]['to_source_id'] == new['id']
+    with Session(engine) as db:
+        from brandguard.models import AuditEvent, Decision
+        event = db.scalar(select(AuditEvent).where(AuditEvent.action == 'recheck.approval_kept'))
+        assert event.details['item_id'] == item['id'] and event.details['source_ids'] == [new['id']]
+        assert db.get(Decision, entry['resolved_decision_id']).carried_from_decision_id == first['id']
+        recheck = db.scalar(select(ReviewRun).where(ReviewRun.trigger == 'guideline_change'))
+        assert db.get(Decision, entry['resolved_decision_id']).run_id == recheck.id
+    # The older record verifies but is no longer the current approval.
+    mh = login(c, orgs[0])
+    verdict = c.post('/api/v1/verify/approval-record', json=first_record, headers=mh).json()
+    assert verdict['verified'] and verdict['still_current'] is False
+    verdict = c.post('/api/v1/verify/approval-record', json=body, headers=mh).json()
+    assert verdict['verified'] and verdict['still_current']
+
+
+def test_possible_campaign_in_review_stays_with_its_reviewer(setup):
+    c, engine, orgs, item, run, rid = ready(setup)
+    assert submit(c, orgs, item, run, rid).status_code == 200
+    mh = login(c, orgs[0])
+    new = c.post(f"/api/v1/brands/{item['brand_id']}/sources", json=longer_trial(run), headers=mh).json()
+    change_id = activate(c, new['id'], mh, 1).json()['change_id']
+    assert current(c, item)['state'] == 'in_review'
+    drain(engine, engine_checker=checker)
+    assert current(c, item)['state'] == 'in_review' and current(c, item)['recheck'] is None
+    entry = c.get(f'/api/v1/guideline-changes/{change_id}', headers=mh).json()['assignments'][0]
+    assert entry['outcome'] == 'stayed_in_review' and entry['status'] == 'resolved'
+    # The reviewer decides on the recheck, which used the new guideline version.
+    with Session(engine) as db:
+        recheck = db.scalar(select(ReviewRun).where(ReviewRun.trigger == 'guideline_change'))
+        recheck_id, epoch = recheck.id, recheck.source_epoch
+    r = c.post(f"/api/v1/revisions/{item['revisions'][0]['id']}/decisions", json=dict(
+        expected_item_version=current(c, item)['workflow_version'], expected_run_id=recheck_id,
+        expected_source_epoch=epoch, kind='approved', rationale=REASON), headers=login(c, orgs[0], 'reviewer'))
+    assert r.status_code == 201, r.text
+
+
+def test_failed_recheck_of_a_possible_campaign_goes_to_the_reviewer(setup):
+    c, engine, orgs, item, run, rid = ready(setup)
+    submit(c, orgs, item, run, rid); decide(c, orgs, item, run)
+    mh = login(c, orgs[0])
+    new = c.post(f"/api/v1/brands/{item['brand_id']}/sources", json=longer_trial(run), headers=mh).json()
+    activate(c, new['id'], mh, 1)
+
+    async def broken(inp):
+        raise RuntimeError('engine down')
+    process_one(engine, reviewer(), broken)
+    state = current(c, item)
+    assert state['state'] == 'in_review' and state['recheck']['status'] == 'awaiting_reviewer'
+    assert state['recheck']['impact_level'] == 'possible' and state['recheck']['reasons'][-1]['code'] == 'recheck_failed'
+    assert c.get(f"/api/v1/revisions/{item['revisions'][0]['id']}/export").status_code == 409
+
+
+def manual_approval(c, orgs, item, run, rid):
+    assign(c, orgs, item, rid)
+    h = login(c, orgs[0], 'reviewer')
+    result = c.get('/api/v1/runs/' + run['id']).json()
+    source_id = result['source_snapshot'][0]['id']
+    manual = []
+    for check in result['checks']:
+        if check['status'] in ('complete', 'not_applicable'):
+            continue
+        category = check['category']
+        manual.append(category)
+        r = c.post('/api/v1/runs/' + run['id'] + '/manual-checks', json=dict(
+            expected_item_version=current(c, item)['workflow_version'], category=category,
+            outcome='complete' if category == 'facts_claims' else 'not_applicable', rationale=REASON,
+            source_version_ids=[source_id] if category == 'facts_claims' else []), headers=h)
+        assert r.status_code == 201, r.text
+    assert submit(c, orgs, item, run, rid).status_code == 200
+    assert decide(c, orgs, item, run).status_code == 201
+    return manual
+
+
+def test_kept_approval_carries_manual_checks_only_for_untouched_categories(setup):
+    c, engine, orgs, item, run, rid = ready(setup, incomplete=True)
+    manual = manual_approval(c, orgs, item, run, rid)
+    assert 'facts_claims' in manual and 'tone' not in manual
+    mh = login(c, orgs[0])
+    new = c.post(f"/api/v1/brands/{item['brand_id']}/sources", json=extra_tone_rule(run), headers=mh).json()
+    entry = c.get(f"/api/v1/sources/{new['id']}/impact-preview", headers=mh).json()['entries'][0]
+    assert entry['routing'] == 'keep', (entry['impact_level'], entry['reasons'])
+    activate(c, new['id'], mh, 1)
+    drain(engine, engine_checker=None)
+    # Only a tone rule was added, so the reviewer's facts check still stands, citing the new version.
+    assert current(c, item)['state'] == 'approved'
+    record = c.get(f"/api/v1/revisions/{item['revisions'][0]['id']}/export").json()['evidence_record']
+    facts = next(m for m in record['manual_checks'] if m['category'] == 'facts_claims')
+    assert facts['source_version_ids'] == [new['id']]
+    assert any(x['origin'] == 'human' for x in record['effective_checks'])
+
+
+def test_kept_approval_needs_the_reviewer_when_a_manual_check_covered_the_changed_rule(setup):
+    c, engine, orgs, item, run, rid = ready(setup, incomplete=True)
+    manual_approval(c, orgs, item, run, rid)
+    mh = login(c, orgs[0])
+    # The trial rule changes and the copy does not mention it: possible, but the reviewer's
+    # facts check was made against the old wording.
+    new = c.post(f"/api/v1/brands/{item['brand_id']}/sources", json=longer_trial(run), headers=mh).json()
+    preview = c.get(f"/api/v1/sources/{new['id']}/impact-preview", headers=mh).json()
+    assert preview['entries'][0]['routing'] == 'keep'
+    activate(c, new['id'], mh, 1)
+    drain(engine, engine_checker=None)
+    state = current(c, item)
+    assert state['state'] == 'in_review' and state['recheck']['status'] == 'awaiting_reviewer'
+    assert state['recheck']['reasons'][-1]['code'] == 'recheck_needs_reviewer'
+    with Session(engine) as db:
+        from brandguard.models import ManualCheck
+        assert all(m.category != 'facts_claims' for m in db.scalars(select(ManualCheck).where(ManualCheck.carried_from_id.is_not(None))))

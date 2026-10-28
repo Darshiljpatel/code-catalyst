@@ -76,7 +76,11 @@ def verify_record(body: RecordInput, member=Depends(identity), session: Session 
     # Still current: the campaign was not reopened by a later revision or a guideline change.
     reopened = session.scalar(select(RecheckAssignment.id).where(RecheckAssignment.org_id == member.org_id,
         RecheckAssignment.item_id == item.id, RecheckAssignment.status.in_(OPEN_STATUSES)).limit(1))
-    still_current = verified and item.state == 'approved' and revision.number == item.current_revision and reopened is None
+    # A later decision (a re-approval, or an approval kept through a guideline recheck) replaces this one.
+    latest = session.scalar(select(Decision.id).where(Decision.org_id == member.org_id, Decision.revision_id == revision.id)
+        .order_by(Decision.decided_at.desc(), Decision.id.desc()).limit(1))
+    still_current = (verified and item.state == 'approved' and revision.number == item.current_revision and reopened is None
+                     and latest == decision.id)
     audit(session, member, 'approval_record.verified', decision.id, verified=verified, still_current=still_current)
     session.commit()
     return VerificationOut(verified=verified, still_current=still_current, decision_id=decision.id, content_id=item.id, checks=checks)

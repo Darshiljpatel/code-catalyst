@@ -110,7 +110,7 @@ def recheck_notice(session, item):
         findings_delta=assignment.findings_delta, guideline_title=diff['to_source']['title'],
         from_version=diff['from_source']['version'] if diff['from_source'] else None,
         to_version=diff['to_source']['version'], changed_rules=len(diff['added'])+len(diff['removed'])+len(diff['modified']),
-        changed_at=change.created_at)
+        changed_at=change.created_at, routing=assignment.routing)
 
 def run_out(session, member, run, revision, item):
     brand = brand_for(session, member, item.brand_id)

@@ -154,6 +154,7 @@ class RecheckNoticeOut(BaseModel):
     to_version: int
     changed_rules: int
     changed_at: datetime
+    routing: str = 'hold'
 
 class ContentOut(BaseModel):
     id: str
@@ -392,6 +393,8 @@ class ImpactEntryOut(BaseModel):
     impact_level: Literal['confirmed','likely','possible']
     reasons: list[dict]
     local_delta: dict | None
+    # hold: goes back to a reviewer; keep: keeps its approval unless the recheck finds a difference.
+    routing: Literal['hold','keep'] = 'hold'
 
 class ImpactPreviewOut(BaseModel):
     source_id: str
@@ -439,6 +442,9 @@ class RecheckAssignmentOut(BaseModel):
     status: str
     resolved_decision_id: str | None
     superseded_by: str | None
+    # keep: possible-level campaign that keeps its approval unless the recheck finds a difference.
+    routing: str = 'hold'
+    outcome: str | None = None
     version: int
     created_at: datetime
     updated_at: datetime

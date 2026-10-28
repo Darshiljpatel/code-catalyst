@@ -4595,6 +4595,15 @@
               }
             ],
             "title": "Local Delta"
+          },
+          "routing": {
+            "type": "string",
+            "enum": [
+              "hold",
+              "keep"
+            ],
+            "title": "Routing",
+            "default": "hold"
           }
         },
         "type": "object",
@@ -5331,6 +5340,22 @@
             ],
             "title": "Superseded By"
           },
+          "routing": {
+            "type": "string",
+            "title": "Routing",
+            "default": "hold"
+          },
+          "outcome": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Outcome"
+          },
           "version": {
             "type": "integer",
             "title": "Version"
@@ -5455,6 +5480,11 @@
             "type": "string",
             "format": "date-time",
             "title": "Changed At"
+          },
+          "routing": {
+            "type": "string",
+            "title": "Routing",
+            "default": "hold"
           }
         },
         "type": "object",

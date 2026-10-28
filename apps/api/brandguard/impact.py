@@ -9,8 +9,8 @@ from collections import defaultdict
 from datetime import datetime, timezone
 from sqlalchemy import select, func
 from .evaluation import evaluate_many, compare
-from .models import (ContentItem, ContentRevision, ReviewRun, RunSource, Finding, Decision, Job,
-                     GuidelineChange, RecheckAssignment, ProcessingPolicy, AuditEvent)
+from .models import (ContentItem, ContentRevision, ReviewRun, RunSource, Finding, Decision, Job, Brand, Membership,
+                     GuidelineChange, RecheckAssignment, ProcessingPolicy, AuditEvent, FindingResolution, ManualCheck)
 from .schemas import SourceOut
 
 RULE_FIELDS = ('category', 'kind', 'key', 'value', 'evidence_quote', 'allowed_variants', 'forbidden_variants')
@@ -116,6 +116,12 @@ def latest_runs(session, org_id, brand_id):
     return rows
 
 
+def routing(level, state, new_sources):
+    """Only confirmed and likely campaigns leave approval or review. A possible campaign keeps its
+    state while it is rechecked, and goes to a reviewer only if the recheck finds a difference."""
+    return 'keep' if level == 'possible' and state in ON_HOLD_STATES and new_sources else 'hold'
+
+
 def compute_impact(session, org_id, brand, source, retired_sources, new_sources):
     """Dry-run impact of activating `source`. Used by the preview and by activation itself,
     so the preview count always equals the inbox count."""
@@ -185,13 +191,14 @@ def compute_impact(session, org_id, brand, source, retired_sources, new_sources)
             level = 'possible'
         entries.append(dict(item_id=item.id, title=item.title, state=item.state, creator_id=item.creator_id,
             reviewer_id=item.reviewer_id, revision_id=revision.id, prior_run_id=run.id, impact_level=level,
-            reasons=reasons, local_delta=delta))
+            reasons=reasons, local_delta=delta, routing=routing(level, item.state, new_sources)))
     entries.sort(key=lambda e: (LEVEL_ORDER[e['impact_level']], e['title'].casefold(), e['item_id']))
     counts = dict(confirmed=0, likely=0, possible=0)
     for entry in entries:
         counts[entry['impact_level']] += 1
     counts.update(total=len(entries), not_affected=not_affected,
-                  on_hold=sum(1 for e in entries if e['state'] in ON_HOLD_STATES),
+                  on_hold=sum(1 for e in entries if e['state'] in ON_HOLD_STATES and e['routing'] == 'hold'),
+                  keep_approval=sum(1 for e in entries if e['routing'] == 'keep'),
                   brand_campaigns=session.scalar(select(func.count()).select_from(ContentItem).where(
                       ContentItem.org_id == org_id, ContentItem.brand_id == brand.id)))
     return dict(diff=diff, counts=counts, entries=entries)
@@ -275,9 +282,10 @@ def record_change(session, member, brand, source, retired_sources, impact, budge
             revision_id=entry['revision_id'], prior_run_id=entry['prior_run_id'], prior_decision_id=prior_decision,
             state_before=state_before, impact_level=entry['impact_level'], reasons=entry['reasons'],
             reviewer_id=item.reviewer_id, status='open', version=1, created_at=at, updated_at=at,
-            findings_delta=entry['local_delta'])
+            findings_delta=entry['local_delta'], routing=routing(entry['impact_level'], item.state, new_sources))
         session.add(assignment); session.flush()
-        item.state = 'recheck_required'
+        if assignment.routing == 'hold':
+            item.state = 'recheck_required'
         item.workflow_version += 1
         if new_sources:
             revision = session.get(ContentRevision, entry['revision_id'])
@@ -312,10 +320,98 @@ def recheck_delta(prior_findings, prior_run, new_findings, new_run):
                 new_blockers=sum(1 for f in added if f['severity'] == 'blocker'))
 
 
+def carry_review_work(db, assignment, run, prior_run, item, at):
+    """Copy the reviewer's work from the approved run to a recheck with unchanged findings:
+    resolutions of identical findings, and manual checks for categories the change did not touch.
+    Source references are moved to the same guideline key in the new snapshot."""
+    change = db.get(GuidelineChange, assignment.change_id)
+    touched = {r['category'] for r in changed_rules(change.diff)[1]}
+    old_keys = {s['id']: s['source_key'] for s in prior_run.source_snapshot}
+    new_ids = {s['source_key']: s['id'] for s in run.source_snapshot}
+    new_keys = {s['id']: s['source_key'] for s in run.source_snapshot}
+
+    def remap(ids):
+        return [new_ids[old_keys[i]] for i in ids if old_keys.get(i) in new_ids]
+
+    db.flush()
+    new_findings = {finding_signature(dict(source_version_id=f.source_version_id, rule_id=f.rule_id, category=f.category,
+        severity=f.severity, location=f.location), new_keys): f for f in db.scalars(select(Finding).where(Finding.run_id == run.id))}
+    for old in db.scalars(select(Finding).where(Finding.run_id == prior_run.id)):
+        target = new_findings.get(finding_signature(dict(source_version_id=old.source_version_id, rule_id=old.rule_id,
+            category=old.category, severity=old.severity, location=old.location), old_keys))
+        entries = list(db.scalars(select(FindingResolution).where(FindingResolution.finding_id == old.id).order_by(
+            FindingResolution.created_at, FindingResolution.id)))
+        if target is None or not entries:
+            continue
+        for entry in entries:
+            db.add(FindingResolution(org_id=item.org_id, finding_id=target.id, actor_id=entry.actor_id, action=entry.action,
+                rationale=entry.rationale, source_version_ids=remap(entry.source_version_ids), created_at=at,
+                carried_from_id=entry.id))
+        target.resolution = old.resolution
+    automated = {c['category']: c['status'] for c in run.checks}
+    for check in db.scalars(select(ManualCheck).where(ManualCheck.run_id == prior_run.id,
+            ManualCheck.reviewer_id == item.reviewer_id)):
+        if automated.get(check.category) in ('complete', 'not_applicable') or check.category in touched:
+            # A human check of a category the change touched was made against the old wording.
+            continue
+        ids = remap(check.source_version_ids)
+        if check.outcome == 'complete' and not ids:
+            continue
+        db.add(ManualCheck(org_id=item.org_id, run_id=run.id, reviewer_id=check.reviewer_id, category=check.category,
+            outcome=check.outcome, rationale=check.rationale, source_version_ids=ids, created_at=at, carried_from_id=check.id))
+    db.flush()
+    return change
+
+
+def keep_approval(db, assignment, run, prior_run, item, at):
+    """Bind the earlier approval to the recheck run, so export keeps checking that the approval
+    matches the current guideline versions. Returns False when a reviewer has to look again."""
+    from types import SimpleNamespace
+    from .core import Problem
+    from .workflow import require_checks, require_blockers, evidence_record
+    savepoint = db.begin_nested()
+    change = carry_review_work(db, assignment, run, prior_run, item, at)
+    revision = db.get(ContentRevision, run.revision_id)
+    scope = SimpleNamespace(org_id=item.org_id)
+    if assignment.state_before == 'in_review':
+        savepoint.commit()
+        item.state, assignment.outcome = 'in_review', 'stayed_in_review'
+        return True
+    decision = db.get(Decision, assignment.prior_decision_id) if assignment.prior_decision_id else None
+    reviewer = db.get(Membership, item.reviewer_id) if item.reviewer_id else None
+    creator = db.get(Membership, item.creator_id)
+    try:
+        if not (decision and decision.kind == 'approved' and decision.run_id == prior_run.id
+                and decision.reviewer_id == item.reviewer_id and reviewer and reviewer.role == 'reviewer'
+                and reviewer.user_id != creator.user_id and decision.text_hash == revision.text_hash
+                and decision.asset_sha256 == revision.asset_sha256):
+            raise Problem(409, 'approval_not_carried', 'The earlier approval cannot be carried forward.')
+        require_checks(db, scope, run, item)
+        require_blockers(db, scope, run, item)
+    except Problem:
+        savepoint.rollback()
+        return False
+    savepoint.commit()
+    evidence = evidence_record(db, scope, revision, item, run)
+    evidence['recheck_of'] = [dict(change_id=change.id, prior_decision_id=decision.id,
+                                   from_source_id=change.from_source_id, to_source_id=change.to_source_id)]
+    evidence['approval_kept'] = dict(carried_from_decision_id=decision.id, prior_run_id=prior_run.id,
+        prior_source_ids=sorted(s['id'] for s in prior_run.source_snapshot),
+        note='Rechecked against the new guideline versions with unchanged findings; the earlier approval was kept.')
+    kept = Decision(org_id=item.org_id, revision_id=revision.id, run_id=run.id, reviewer_id=decision.reviewer_id,
+        kind='approved', rationale=decision.rationale, source_epoch=db.get(Brand, item.brand_id).source_epoch,
+        text_hash=decision.text_hash, evidence_record=evidence, decided_at=at, asset_sha256=decision.asset_sha256,
+        carried_from_decision_id=decision.id)
+    db.add(kept); db.flush()
+    item.state, assignment.outcome, assignment.resolved_decision_id = 'approved', 'kept_approval', kept.id
+    return True
+
+
 def finish_recheck(db, run, item, findings, complete, at):
     """Route a finished guideline-change recheck. Called from orchestration.finish_claim.
-    New blockers go to the creator; otherwise campaigns that were approved or in review go
-    straight back to their reviewer, because the text did not change."""
+    A kept (possible-level) campaign keeps its approval when the findings are unchanged;
+    a difference escalates it to confirmed. New blockers go to the creator; otherwise campaigns
+    that were approved or in review go back to their reviewer, because the text did not change."""
     assignment = db.scalar(select(RecheckAssignment).where(RecheckAssignment.recheck_run_id == run.id).with_for_update())
     if assignment is None or assignment.status != 'recheck_queued':
         return None
@@ -326,6 +422,30 @@ def finish_recheck(db, run, item, findings, complete, at):
     assignment.findings_delta = delta
     assignment.updated_at = at
     assignment.version += 1
+    if assignment.routing == 'keep':
+        if all(c['status'] == 'failed' for c in run.checks):
+            # A failed recheck shows nothing either way, so a reviewer looks again.
+            assignment.routing = 'hold'
+            assignment.reasons = assignment.reasons + [dict(code='recheck_failed',
+                detail='The recheck did not finish, so the earlier approval could not be confirmed.')]
+        elif delta['added'] or delta['removed']:
+            assignment.impact_level, assignment.routing = 'confirmed', 'hold'
+            assignment.reasons = assignment.reasons + [dict(code='recheck_findings_changed',
+                detail=f"The recheck gave {len(delta['added'])} new and {len(delta['removed'])} cleared findings under the new rules.")]
+        elif keep_approval(db, assignment, run, prior_run, item, at):
+            assignment.status, assignment.resolved_at = 'resolved', at
+            db.add(AuditEvent(org_id=item.org_id, actor_id=db.get(GuidelineChange, assignment.change_id).created_by,
+                action='recheck.approval_kept' if assignment.outcome == 'kept_approval' else 'recheck.review_kept',
+                object_id=assignment.id, details=dict(item_id=item.id, change_id=assignment.change_id, recheck_run_id=run.id,
+                    prior_run_id=prior_run.id, prior_decision_id=assignment.prior_decision_id,
+                    decision_id=assignment.resolved_decision_id, findings_unchanged=delta['unchanged'],
+                    source_ids=sorted(s['id'] for s in run.source_snapshot)), created_at=at))
+            close_if_done(db, assignment.change_id, at)
+            return None
+        else:
+            assignment.routing = 'hold'
+            assignment.reasons = assignment.reasons + [dict(code='recheck_needs_reviewer',
+                detail='Findings are unchanged, but some checks need a reviewer again under the new guideline versions.')]
     if delta['new_blockers']:
         item.state, assignment.status = 'needs_changes', 'awaiting_creator'
     elif assignment.state_before in ON_HOLD_STATES and item.reviewer_id:
