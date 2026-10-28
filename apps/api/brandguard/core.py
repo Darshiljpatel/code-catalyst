@@ -45,7 +45,8 @@ class Problem(Exception):
 class Login(BaseModel):
     email: str = Field(min_length=3, max_length=254)
     password: str = Field(min_length=1, max_length=256)
-    org_id: str = Field(min_length=1, max_length=36)
+    # Optional when the account belongs to exactly one workspace.
+    org_id: str | None = Field(default=None, min_length=1, max_length=36)
 
 class NewBrand(BaseModel):
     name: str = Field(min_length=1, max_length=200)

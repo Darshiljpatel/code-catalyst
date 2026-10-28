@@ -143,3 +143,17 @@ def test_forwarded_header_ignored_without_trust(setup):
             assert fail(c, 'spoof@example.test', f'192.0.2.{n}') == 401
         assert fail(c, 'spoof@example.test', '192.0.2.99') == 429
     app.state.engine.dispose()
+
+
+def test_workspace_is_resolved_from_the_email_when_the_account_has_one(setup):
+    c, engine, orgs, _ = setup
+    r = c.post('/api/v1/sessions', json=dict(email='creator@example.test', password='correct-password'), headers={'origin': 'https://testserver'})
+    assert r.status_code == 200 and r.json()['org_id'] == orgs[0]
+    bad = c.post('/api/v1/sessions', json=dict(email='creator@example.test', password='wrong'), headers={'origin': 'https://testserver'})
+    assert bad.status_code == 401 and bad.json()['code'] == 'invalid_credentials'
+    with Session(engine) as db:
+        user = db.scalar(select(User).where(User.email == 'creator@example.test'))
+        db.add(Membership(user_id=user.id, org_id=orgs[1], role='creator')); db.commit()
+    r = c.post('/api/v1/sessions', json=dict(email='creator@example.test', password='correct-password'), headers={'origin': 'https://testserver'})
+    assert r.status_code == 422 and r.json()['code'] == 'workspace_required'
+    assert login(c, orgs[1], 'creator')

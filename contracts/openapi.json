@@ -4734,17 +4734,23 @@
             "title": "Password"
           },
           "org_id": {
-            "type": "string",
-            "maxLength": 36,
-            "minLength": 1,
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 36,
+                "minLength": 1
+              },
+              {
+                "type": "null"
+              }
+            ],
             "title": "Org Id"
           }
         },
         "type": "object",
         "required": [
           "email",
-          "password",
-          "org_id"
+          "password"
         ],
         "title": "Login"
       },

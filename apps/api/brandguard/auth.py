@@ -42,7 +42,16 @@ def login(body: Login, request: Request, response: Response, session: Session = 
         valid = passwords.verify(body.password, user.password_hash if user else DUMMY_HASH)
     except Exception:
         valid = False
-    member = session.scalar(select(Membership).where(Membership.user_id == user.id, Membership.org_id == body.org_id)) if user and valid else None
+    member = None
+    if user and valid:
+        if body.org_id:
+            member = session.scalar(select(Membership).where(Membership.user_id == user.id, Membership.org_id == body.org_id))
+        else:
+            memberships = list(session.scalars(select(Membership).where(Membership.user_id == user.id).limit(2)))
+            if len(memberships) > 1:
+                session.commit()
+                raise Problem(422, 'workspace_required', 'This account belongs to more than one workspace. Enter the workspace ID.')
+            member = memberships[0] if memberships else None
     if member is None:
         # A throttle is protection against repeated failed authentication, not
         # against people successfully moving between test roles. Counting every
