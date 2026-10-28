@@ -19,6 +19,7 @@ import type {
   ImpactPreview,
 } from '../api/types';
 import { ImpactBadge } from '../components/ImpactBadge';
+import { RuleDraftAssist } from '../components/RuleDraftAssist';
 import { useAuth } from '../context/AuthContext';
 import { Alert, Spinner, EmptyState } from '../components/Primitives';
 import { BrandInsightsModal } from '../components/BrandInsightsModal';
@@ -486,6 +487,12 @@ function AddSourceModal({
         <form onSubmit={handleSubmit} className="modal-body">
           {error && <Alert kind="error">{error}</Alert>}
           <fieldset disabled={submitting} className="source-dialog-fields">
+          <RuleDraftAssist brandId={brandId} onDrafted={(draft, filename) => {
+            setText(draft.source_text);
+            setRules(draft.proposals);
+            setSourceKey('brand_book');
+            setTitle(filename.replace(/\.(pdf|docx)$/i, ''));
+          }} />
 
           <div className="form-row" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 'var(--space-4)' }}>
             <div className="form-group">

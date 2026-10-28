@@ -86,3 +86,30 @@ test('source creation preserves whitespace around literal rule evidence', async 
   await page.getByRole('button', { name: 'Create Source Draft' }).click();
   await expect.poll(() => submitted).toBe(text);
 });
+
+test('a manager can start a source from an AI draft of a brand book and edit it before saving', async ({ page }) => {
+  await page.route('**/api/v1/**', route => {
+    const path = new URL(route.request().url()).pathname;
+    if (path.endsWith('/me')) return route.fulfill({ json: { membership_id: 'manager', role: 'manager' } });
+    if (path.endsWith(`/brands/${FIXTURE_BRAND.id}`)) return route.fulfill({ json: FIXTURE_BRAND });
+    if (path.endsWith('/rule-drafts/status')) return route.fulfill({ json: { enabled: true } });
+    if (path.endsWith('/imports/document')) return route.fulfill({ status: 201, json: { id: 'imp-1', filename: 'LumaDesk brand book.pdf', text: 'x', blocks: [], warnings: [] } });
+    if (path.endsWith('/rule-drafts')) return route.fulfill({ json: { source_text: 'Write LumaDesk with a capital D. The free trial lasts 14 days.',
+      proposals: [{ id: 'D01', category: 'terminology', kind: 'terminology', key: 'product_name', value: 'LumaDesk', evidence_quote: 'Write LumaDesk with a capital D.' }],
+      rejected: [{ index: 1, code: 'quote_not_in_brand_book' }], warnings: [], metadata: {} } });
+    return route.fulfill({ json: [] });
+  });
+  await page.goto(`/brands/${FIXTURE_BRAND.id}`);
+  await page.locator('#btn-add-source').click();
+  const dialog = page.getByRole('dialog', { name: 'Add Brand Guideline Source Draft' });
+  const assist = dialog.getByRole('group', { name: 'Start from a brand book (AI draft)' });
+  await assist.getByLabel('Brand book (PDF or .docx)').setInputFiles({ name: 'LumaDesk brand book.pdf', mimeType: 'application/pdf', buffer: Buffer.from('%PDF-1.4') });
+  const draft = assist.getByRole('button', { name: 'Draft rules' });
+  await expect(draft).toBeDisabled();
+  await assist.getByLabel('I agree to send this brand book’s text to Nebius.').check();
+  await draft.click();
+  await expect(assist.getByRole('status')).toContainText('1 draft rule added below; 1 suggestion was dropped');
+  await expect(dialog.getByLabel('Rule 1 category')).toHaveValue('terminology');
+  const axe = await new AxeBuilder({ page }).include('.rule-draft-assist').withTags(['wcag2a', 'wcag2aa', 'wcag21aa']).analyze();
+  expect(axe.violations).toEqual([]);
+});

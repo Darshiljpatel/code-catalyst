@@ -65,6 +65,7 @@ import type {
   DocumentImportOut,
   VerificationOut,
   RetentionOut,
+  RuleDraftOut,
   VersionResponse,
 } from './types';
 import { retryStarted, retryFinished } from './serverStatus';
@@ -655,4 +656,16 @@ export async function importScannedPage(file: File): Promise<File> {
   }
   if (!isJson(res)) throw unavailable(res.status);
   throw new ApiResponseError(res.status, await res.json() as ApiError);
+}
+
+// ---------------------------------------------------------------------------
+// AI rule drafting from a brand book (server flag RULE_DRAFTING_ENABLED)
+// ---------------------------------------------------------------------------
+
+export async function getRuleDraftingStatus(): Promise<{ enabled: boolean }> {
+  return request<{ enabled: boolean }>('GET', '/rule-drafts/status');
+}
+
+export async function draftRules(brandId: string, documentImportId: string): Promise<RuleDraftOut> {
+  return request<RuleDraftOut>('POST', `/brands/${brandId}/rule-drafts`, { document_import_id: documentImportId, external_processing_consent: true });
 }

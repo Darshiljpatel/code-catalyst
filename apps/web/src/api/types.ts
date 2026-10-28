@@ -923,3 +923,11 @@ export interface VerificationOut {
 }
 
 export interface RetentionOut { retention_days: number | null; purged_campaigns: number; last_purge_at: string | null }
+
+export interface RuleDraftOut {
+  source_text: string;
+  proposals: RuleInput[];
+  rejected: { index: number; code: string }[];
+  warnings: string[];
+  metadata: Record<string, unknown>;
+}
