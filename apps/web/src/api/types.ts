@@ -27,7 +27,7 @@ export interface ApiError {
 export interface LoginRequest {
   email: string;
   password: string;
-  org_id: string;
+  org_id?: string;
 }
 
 export interface LoginResponse {

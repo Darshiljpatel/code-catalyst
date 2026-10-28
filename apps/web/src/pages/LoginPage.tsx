@@ -42,7 +42,7 @@ export function LoginPage() {
     if (submitting) return;
     setSubmitting(true);
     try {
-      await signIn({ email: form.email.trim(), password: form.password, org_id: form.org_id.trim() });
+      await signIn({ email: form.email.trim(), password: form.password, org_id: form.org_id.trim() || undefined });
       navigate('/', { replace: true });
     } catch {
       // error is set in AuthContext
@@ -123,7 +123,7 @@ export function LoginPage() {
             </div>
 
             <div className="field">
-              <label className="label label--required" htmlFor="login-org-id">
+              <label className="label" htmlFor="login-org-id">
                 Workspace ID
               </label>
               <input
@@ -134,12 +134,11 @@ export function LoginPage() {
                 autoComplete="off"
                 value={form.org_id}
                 onChange={handleChange}
-                required
                 placeholder="Your workspace ID"
-                aria-required="true"
+                aria-describedby="login-org-hint"
               />
-              <span style={{ fontSize: '0.8125rem', color: 'var(--text-muted)' }}>
-                Use the workspace ID provided by your administrator.
+              <span id="login-org-hint" style={{ fontSize: '0.8125rem', color: 'var(--text-muted)' }}>
+                Only needed if your account belongs to more than one workspace.
               </span>
             </div>
 
@@ -147,7 +146,7 @@ export function LoginPage() {
               id="btn-login-submit"
               type="submit"
               className="btn btn--primary"
-              disabled={submitting || !form.email || !form.password || !form.org_id}
+              disabled={submitting || !form.email || !form.password}
               aria-busy={submitting}
             >
               {submitting ? <Spinner size="sm" label="Signing in…" /> : <>Sign in <span aria-hidden="true">↗</span></>}
