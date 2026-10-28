@@ -1,0 +1,479 @@
+{
+ "version": 1,
+ "brand": "LumaDesk (fictional)",
+ "note": "Campaigns and labels written by the overnight agent before the first run; labels say which guideline changes alter the correct review outcome of each campaign.",
+ "sources": [
+  {
+   "source_key": "brand_guide",
+   "title": "LumaDesk brand guide",
+   "text": "Write LumaDesk as one word with a capital D.",
+   "rules": [
+    {
+     "id": "T01",
+     "category": "terminology",
+     "kind": "terminology",
+     "key": "brand_name",
+     "value": "LumaDesk",
+     "evidence_quote": "Write LumaDesk as one word with a capital D.",
+     "forbidden_variants": [
+      "Luma Desk"
+     ]
+    }
+   ]
+  },
+  {
+   "source_key": "pricing_sheet",
+   "title": "LumaDesk pricing sheet",
+   "text": "The free trial lasts 14 days. Team plans cost $12 per seat per month. Annual plans save 15%.",
+   "rules": [
+    {
+     "id": "F01",
+     "category": "facts_claims",
+     "kind": "fact",
+     "key": "trial_duration",
+     "value": "14 days",
+     "evidence_quote": "The free trial lasts 14 days."
+    },
+    {
+     "id": "F02",
+     "category": "facts_claims",
+     "kind": "fact",
+     "key": "seat_price",
+     "value": "$12 per seat",
+     "evidence_quote": "Team plans cost $12 per seat per month."
+    },
+    {
+     "id": "F03",
+     "category": "facts_claims",
+     "kind": "fact",
+     "key": "annual_discount",
+     "value": "save 15%",
+     "evidence_quote": "Annual plans save 15%."
+    }
+   ]
+  }
+ ],
+ "changes": [
+  {
+   "id": "C1",
+   "name": "Trial extended from 14 to 30 days",
+   "source_key": "pricing_sheet",
+   "op": "modify",
+   "rule_id": "F01",
+   "value": "30 days",
+   "quote": "The free trial lasts 30 days."
+  },
+  {
+   "id": "C2",
+   "name": "Seat price raised from $12 to $15",
+   "source_key": "pricing_sheet",
+   "op": "modify",
+   "rule_id": "F02",
+   "value": "$15 per seat",
+   "quote": "Team plans cost $15 per seat per month."
+  },
+  {
+   "id": "C3",
+   "name": "All-caps LUMADESK allowed in headlines",
+   "source_key": "brand_guide",
+   "op": "modify",
+   "rule_id": "T01",
+   "allowed_variants": [
+    "LUMADESK"
+   ],
+   "quote": null
+  },
+  {
+   "id": "C4",
+   "name": "Annual discount rule retired",
+   "source_key": "pricing_sheet",
+   "op": "remove",
+   "rule_id": "F03"
+  },
+  {
+   "id": "C5",
+   "name": "New product-name rule for DeskMap",
+   "source_key": "brand_guide",
+   "op": "add",
+   "rule": {
+    "id": "T02",
+    "category": "terminology",
+    "kind": "terminology",
+    "key": "product_name",
+    "value": "DeskMap",
+    "evidence_quote": "Write DeskMap as one word with a capital M.",
+    "forbidden_variants": [
+     "Desk Map"
+    ]
+   },
+   "text_append": " Write DeskMap as one word with a capital M."
+  }
+ ],
+ "campaigns": [
+  {
+   "id": "IB-01",
+   "text": "Book a desk in seconds with LumaDesk. Start your 14-day free trial today.",
+   "context": {
+    "channel": "email",
+    "audience": "Customers",
+    "purpose": "Promotion"
+   },
+   "state": "approved",
+   "human_affected_by": [
+    "C1"
+   ]
+  },
+  {
+   "id": "IB-02",
+   "text": "LumaDesk Team is $12 per seat per month. Cancel anytime.",
+   "context": {
+    "channel": "landing page",
+    "audience": "Customers",
+    "purpose": "Promotion"
+   },
+   "state": "approved",
+   "human_affected_by": [
+    "C2"
+   ]
+  },
+  {
+   "id": "IB-03",
+   "text": "Try LumaDesk free for 30 days.",
+   "context": {
+    "channel": "social",
+    "audience": "Customers",
+    "purpose": "Promotion"
+   },
+   "state": "needs_changes",
+   "human_affected_by": [
+    "C1"
+   ]
+  },
+  {
+   "id": "IB-04",
+   "text": "LUMADESK. Book smarter.",
+   "context": {
+    "channel": "display banner",
+    "audience": "Customers",
+    "purpose": "Promotion"
+   },
+   "state": "in_review",
+   "human_affected_by": [
+    "C3"
+   ]
+  },
+  {
+   "id": "IB-05",
+   "text": "Save 15% on annual LumaDesk plans this month.",
+   "context": {
+    "channel": "email",
+    "audience": "Customers",
+    "purpose": "Promotion"
+   },
+   "state": "approved",
+   "human_affected_by": []
+  },
+  {
+   "id": "IB-06",
+   "text": "Save 20% on LumaDesk Team plans.",
+   "context": {
+    "channel": "social",
+    "audience": "Customers",
+    "purpose": "Promotion"
+   },
+   "state": "needs_changes",
+   "human_affected_by": [
+    "C4"
+   ]
+  },
+  {
+   "id": "IB-07",
+   "text": "Plan the office week with LumaDesk and DeskMap.",
+   "context": {
+    "channel": "social",
+    "audience": "Customers",
+    "purpose": "Promotion"
+   },
+   "state": "approved",
+   "human_affected_by": []
+  },
+  {
+   "id": "IB-08",
+   "text": "Find a free spot fast with the Deskmap view in LumaDesk.",
+   "context": {
+    "channel": "push notification",
+    "audience": "Customers",
+    "purpose": "Promotion"
+   },
+   "state": "approved",
+   "human_affected_by": [
+    "C5"
+   ]
+  },
+  {
+   "id": "IB-09",
+   "text": "Desk Map shows who is in today. Only in LumaDesk.",
+   "context": {
+    "channel": "display banner",
+    "audience": "Customers",
+    "purpose": "Promotion"
+   },
+   "state": "in_review",
+   "human_affected_by": [
+    "C5"
+   ]
+  },
+  {
+   "id": "IB-10",
+   "text": "Hot desks, sorted. LumaDesk is the calm way to plan the office week.",
+   "context": {
+    "channel": "social",
+    "audience": "Customers",
+    "purpose": "Promotion"
+   },
+   "state": "approved",
+   "human_affected_by": []
+  },
+  {
+   "id": "IB-11",
+   "text": "Your LumaDesk trial ends in 3 days. Keep your bookings.",
+   "context": {
+    "channel": "push notification",
+    "audience": "Customers",
+    "purpose": "Promotion"
+   },
+   "state": "approved",
+   "human_affected_by": []
+  },
+  {
+   "id": "IB-12",
+   "text": "LumaDesk: 2 desks left on floor 3 for Thursday.",
+   "context": {
+    "channel": "push notification",
+    "audience": "Customers",
+    "purpose": "Promotion"
+   },
+   "state": "approved",
+   "human_affected_by": []
+  },
+  {
+   "id": "IB-13",
+   "text": "Lumadesk reminder: check in to your desk by 10:00.",
+   "context": {
+    "channel": "push notification",
+    "audience": "Customers",
+    "purpose": "Promotion"
+   },
+   "state": "needs_changes",
+   "human_affected_by": []
+  },
+  {
+   "id": "IB-14",
+   "text": "Welcome to LumaDesk! Your 14-day free trial starts now, and Team plans are $12 per seat.",
+   "context": {
+    "channel": "email",
+    "audience": "Customers",
+    "purpose": "Promotion"
+   },
+   "state": "approved",
+   "human_affected_by": [
+    "C1",
+    "C2"
+   ]
+  },
+  {
+   "id": "IB-15",
+   "text": "LumaDesk Team $15 per seat. Start free.",
+   "context": {
+    "channel": "display banner",
+    "audience": "Customers",
+    "purpose": "Promotion"
+   },
+   "state": "needs_changes",
+   "human_affected_by": [
+    "C2"
+   ]
+  },
+  {
+   "id": "IB-16",
+   "text": "Upgrade to LumaDesk Team for just $9 per seat per month.",
+   "context": {
+    "channel": "email",
+    "audience": "Customers",
+    "purpose": "Promotion"
+   },
+   "state": "needs_changes",
+   "human_affected_by": []
+  },
+  {
+   "id": "IB-17",
+   "text": "LumaDesk works with your calendar. Free trial for 14 days.",
+   "context": {
+    "channel": "landing page",
+    "audience": "Customers",
+    "purpose": "Promotion"
+   },
+   "state": "approved",
+   "human_affected_by": [
+    "C1"
+   ]
+  },
+  {
+   "id": "IB-18",
+   "text": "Teams love LumaDesk. Try it free: the trial lasts 21 days.",
+   "context": {
+    "channel": "social",
+    "audience": "Customers",
+    "purpose": "Promotion"
+   },
+   "state": "needs_changes",
+   "human_affected_by": []
+  },
+  {
+   "id": "IB-19",
+   "text": "LUMADESK TEAM: $12 PER SEAT. 14-DAY FREE TRIAL.",
+   "context": {
+    "channel": "display banner",
+    "audience": "Customers",
+    "purpose": "Promotion"
+   },
+   "state": "in_review",
+   "human_affected_by": [
+    "C1",
+    "C2",
+    "C3"
+   ]
+  },
+  {
+   "id": "IB-20",
+   "text": "Save 15% when you switch your team to LumaDesk before June.",
+   "context": {
+    "channel": "email",
+    "audience": "Customers",
+    "purpose": "Promotion"
+   },
+   "state": "approved",
+   "human_affected_by": []
+  },
+  {
+   "id": "IB-21",
+   "text": "The LumaDesk app now shows DeskMap on mobile.",
+   "context": {
+    "channel": "push notification",
+    "audience": "Customers",
+    "purpose": "Promotion"
+   },
+   "state": "approved",
+   "human_affected_by": []
+  },
+  {
+   "id": "IB-22",
+   "text": "Luma Desk is here. Book your desk from any phone.",
+   "context": {
+    "channel": "sms",
+    "audience": "Customers",
+    "purpose": "Promotion"
+   },
+   "state": "needs_changes",
+   "human_affected_by": []
+  },
+  {
+   "id": "IB-23",
+   "text": "Two weeks free on LumaDesk. No card needed.",
+   "context": {
+    "channel": "sms",
+    "audience": "Customers",
+    "purpose": "Promotion"
+   },
+   "state": "approved",
+   "human_affected_by": [
+    "C1"
+   ]
+  },
+  {
+   "id": "IB-24",
+   "text": "LumaDesk onboarding takes 30 days on average. We are here to help.",
+   "context": {
+    "channel": "sms",
+    "audience": "Customers",
+    "purpose": "Promotion"
+   },
+   "state": "approved",
+   "human_affected_by": []
+  },
+  {
+   "id": "IB-25",
+   "text": "Refunds within 14 days on every LumaDesk plan.",
+   "context": {
+    "channel": "landing page",
+    "audience": "Customers",
+    "purpose": "Promotion"
+   },
+   "state": "approved",
+   "human_affected_by": []
+  },
+  {
+   "id": "IB-26",
+   "text": "LumaDesk for nonprofits: save 30% for the first year.",
+   "context": {
+    "channel": "email",
+    "audience": "Customers",
+    "purpose": "Promotion"
+   },
+   "state": "needs_changes",
+   "human_affected_by": [
+    "C4"
+   ]
+  },
+  {
+   "id": "IB-27",
+   "text": "Meet LumaDesk Insights, the weekly report for office managers.",
+   "context": {
+    "channel": "email",
+    "audience": "Customers",
+    "purpose": "Promotion"
+   },
+   "state": "approved",
+   "human_affected_by": []
+  },
+  {
+   "id": "IB-28",
+   "text": "Reserve parking and desks together in LumaDesk.",
+   "context": {
+    "channel": "social",
+    "audience": "Customers",
+    "purpose": "Promotion"
+   },
+   "state": "approved",
+   "human_affected_by": []
+  },
+  {
+   "id": "IB-29",
+   "text": "Start a 14-day LumaDesk trial and see DeskMap in action. Teams pay $12 per seat.",
+   "context": {
+    "channel": "landing page",
+    "audience": "Customers",
+    "purpose": "Promotion"
+   },
+   "state": "in_review",
+   "human_affected_by": [
+    "C1",
+    "C2"
+   ]
+  },
+  {
+   "id": "IB-30",
+   "text": "Say hello to LUMADESK and the new deskmap layout.",
+   "context": {
+    "channel": "social",
+    "audience": "Customers",
+    "purpose": "Promotion"
+   },
+   "state": "needs_changes",
+   "human_affected_by": [
+    "C3",
+    "C5"
+   ]
+  }
+ ]
+}

@@ -107,3 +107,19 @@ def test_comparison_runner_catches_every_seeded_regression_and_none_on_the_contr
     assert result['false_alarms'] == 0
     control = next(s for s in result['seeds'] if s['seed'].startswith('control'))
     assert control['seeded_regressions'] == 0 and not control['false_alarms']
+
+
+def test_impact_benchmark_is_frozen_lists_every_changed_campaign_and_reports_re_reviews():
+    from evaluation.impact_benchmark import run
+    result = run()
+    assert result['frozen'], 'impact_benchmark.json changed: freeze a new dataset version instead'
+    assert (result['campaigns'], result['changes'], result['scenarios']) == (30, 5, 150)
+    # Target from the masterplan: every campaign whose findings change is listed for a recheck.
+    assert result['metrics']['listed_vs_reanalysis']['recall'] == 1.0 and result['gates']['impact_recall_100']
+    for change in result['per_change']:
+        assert not change['missed_by_listing']
+        assert change['listed'] + change['not_affected'] == result['campaigns']
+    rr = result['re_reviews']
+    assert rr['brand_wide_invalidation'] == 5 * result['campaign_states']['approved']
+    assert rr['shipped_routing']['approvals_sent_back'] + rr['shipped_routing']['avoided'] == rr['brand_wide_invalidation']
+    assert rr['if_routed_by_confirmed_level']['approvals_sent_back'] <= rr['shipped_routing']['approvals_sent_back']
