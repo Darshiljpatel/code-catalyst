@@ -1,4 +1,6 @@
 import io
+import shutil
+import pytest
 from PIL import Image
 from sqlalchemy import select
 from sqlalchemy.orm import Session
@@ -255,3 +257,46 @@ def test_contrast_and_palette_checks_cite_rules_and_light_up_regions():
     # Without colour rules the image categories stay a manual look.
     plain = ReviewInput(text, dict(CONTEXT, media='image', text_regions=regions), [dict(source, rules=[])])
     assert not asyncio.run(check_text(plain)).findings
+
+
+def test_ocr_lines_keep_words_together_when_a_later_word_sits_higher():
+    from brandguard.imaging import group_lines
+
+    def word(text, x, y, w, h=0.06):
+        return dict(text=text, confidence=0.9, box=dict(x=x, y=y, w=w, h=h))
+    # "Desk" (capital D) tops out a pixel above "Luma"; both must stay on one line, in reading order.
+    words = [word('Desk', 0.22, 0.300, 0.1), word('Luma', 0.10, 0.302, 0.1), word('teams', 0.34, 0.304, 0.12),
+             word('$12', 0.10, 0.40, 0.05), word('per', 0.16, 0.398, 0.05), word('seat', 0.22, 0.401, 0.06),
+             # A separate block level with the first line, far to the right, stays its own line.
+             word('NEW', 0.85, 0.301, 0.08)]
+    assert [l['text'] for l in group_lines(words)] == ['Luma Desk teams', 'NEW', '$12 per seat']
+
+
+@pytest.mark.skipif(shutil.which('tesseract') is None, reason='Tesseract is not installed')
+def test_image_campaign_through_real_tesseract_links_the_claim_to_its_region(setup):
+    from pathlib import Path
+    from brandguard.imaging import TesseractEngine
+    c, engine, orgs, _ = setup
+    mh = login(c, orgs[0])
+    bid = c.post('/api/v1/brands', json={'name': 'LumaDesk'}, headers=mh).json()['id']
+    s = c.post(f'/api/v1/brands/{bid}/sources', json=guide('30 days'), headers=mh).json()
+    assert activate(c, s['id'], mh).status_code == 200
+    # Synthetic benchmark graphic: "LumaDesk / Start your 14-day free trial / Team plans from $12 per seat".
+    data = (Path(__file__).resolve().parents[3] / 'evaluation/fixtures/ocr/ad-01.png').read_bytes()
+    r, h = upload(c, orgs, bid, data)
+    assert r.status_code == 202, r.text
+    item = r.json()
+    assert process_ocr_one(engine, TesseractEngine())
+    ocr = c.get(f"/api/v1/assets/{item['image']['asset_id']}/ocr", headers=h).json()
+    assert ocr['status'] == 'complete' and ocr['engine'] == 'tesseract', ocr
+    assert [l['text'] for l in ocr['lines']] == ['LumaDesk', 'Start your 14-day free trial', 'Team plans from $12 per seat']
+    regions = [dict(region_id=l['id'], box=l['box'], text=l['text'], origin='ocr', ocr_line_id=l['id'], confirmed=True)
+               for l in ocr['lines']]
+    r = c.post(f"/api/v1/content/{item['id']}/image-revisions", json=dict(parent_revision_id=None, regions=regions, **CONTEXT), headers=h)
+    assert r.status_code == 201, r.text
+    revision = r.json()['revisions'][0]
+    run = c.post(f"/api/v1/revisions/{revision['id']}/analysis", headers={**h, 'Idempotency-Key': 'real-ocr'}).json()
+    process_one(engine, reviewer(), check_text)
+    findings = c.get(f"/api/v1/runs/{run['id']}", headers=h).json()['findings']
+    trial = next(f for f in findings if f['rule_id'] == 'F01')
+    assert trial['location']['regions'] == [ocr['lines'][1]['id']]

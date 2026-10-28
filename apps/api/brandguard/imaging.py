@@ -182,8 +182,12 @@ def group_lines(words):
         centre = word['box']['y'] + word['box']['h'] / 2
         target = None
         for line in lines:
-            top, bottom = line['box']['y'], line['box']['y'] + line['box']['h']
-            if top <= centre <= bottom and word['box']['x'] >= line['box']['x'] - 0.02:
+            box = line['box']
+            # A word joins a line it sits level with, on either side, unless a wide gap separates
+            # them (a separate block of text). Words are visited top-down, so a word left of a
+            # slightly higher word must still join its line.
+            gap = max(box['x'] - (word['box']['x'] + word['box']['w']), word['box']['x'] - (box['x'] + box['w']), 0.0)
+            if box['y'] <= centre <= box['y'] + box['h'] and gap <= 3 * max(box['h'], word['box']['h']):
                 target = line
                 break
         if target is None:
