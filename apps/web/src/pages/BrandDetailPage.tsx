@@ -790,16 +790,18 @@ function ActivateSourceModal({
                 <div className="impact-preview__headline">
                   {preview.counts.total === 0
                     ? 'No reviewed campaign used the version this replaces.'
-                    : `${preview.counts.total} campaign${preview.counts.total === 1 ? '' : 's'} used this guideline; ${preview.counts.on_hold} approved or in-review campaign${preview.counts.on_hold === 1 ? '' : 's'} will go on hold.`}
+                    : `${preview.counts.total} campaign${preview.counts.total === 1 ? '' : 's'} used this guideline: ${preview.counts.on_hold} will need re-review, ${preview.counts.keep_approval ?? 0} will keep approval.`}
                 </div>
                 <div style={{ fontSize: '0.8125rem', color: 'var(--text-secondary)', marginTop: '4px' }}>
                   {preview.counts.confirmed} confirmed · {preview.counts.likely} likely · {preview.counts.possible} possible · {preview.counts.not_affected} not affected.
-                  {' '}Each affected campaign is rechecked automatically against the new rules.
+                  {' '}Each affected campaign is rechecked automatically against the new rules. Approved or in-review campaigns
+                  {' '}at the possible level keep their approval unless the recheck finds a change; then they go back to the reviewer.
+                  {' '}Confirmed and likely ones go back to the reviewer.
                 </div>
                 {preview.entries.length > 0 && (
                   <ul className="impact-preview__list">
                     {preview.entries.slice(0, 8).map(entry => (
-                      <li key={entry.item_id}><ImpactBadge level={entry.impact_level} /> {entry.title} <span style={{ color: 'var(--text-secondary)' }}>({entry.state.replace(/_/g, ' ')})</span></li>
+                      <li key={entry.item_id}><ImpactBadge level={entry.impact_level} /> {entry.title} <span style={{ color: 'var(--text-secondary)' }}>({entry.state.replace(/_/g, ' ')}{entry.routing === 'keep' ? ', keeps approval if unchanged' : ''})</span></li>
                     ))}
                     {preview.entries.length > 8 && <li>…and {preview.entries.length - 8} more</li>}
                   </ul>

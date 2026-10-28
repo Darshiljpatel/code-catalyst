@@ -29,6 +29,23 @@ export function RecheckBanner({ notice, viewer }: { notice: RecheckNotice; viewe
   const delta = notice.findings_delta;
   const finished = notice.status === 'awaiting_creator' || notice.status === 'awaiting_reviewer';
   const version = notice.from_version ? `version ${notice.from_version} to ${notice.to_version}` : `a new version ${notice.to_version}`;
+  if (notice.routing === 'keep') {
+    const what = notice.state_before === 'approved' ? 'approval' : 'place in review';
+    return (
+      <section className="recheck-banner" aria-labelledby="recheck-banner-title">
+        <h2 id="recheck-banner-title">Rechecking: “{notice.guideline_title}” changed</h2>
+        <p>
+          A manager updated this guideline from {version} on {new Date(notice.changed_at).toLocaleString()}. Nothing in this
+          campaign points at the changed rules, so it keeps its {what} while BrandGuard rechecks it against the new version.
+          It goes back to the reviewer only if the recheck finds a change.
+          {notice.state_before === 'approved' ? ' Export is paused until the recheck finishes.' : ''}
+        </p>
+        <p><strong>Why it is listed:</strong> {notice.reasons.map(r => r.detail).join(' ')}</p>
+        <p><strong>Next step:</strong> Nothing to do.</p>
+        {viewer === 'manager' && <Link className="text-link" to={`/rechecks/${notice.change_id}`}>Open in the re-review inbox →</Link>}
+      </section>
+    );
+  }
   return (
     <section className="recheck-banner" aria-labelledby="recheck-banner-title">
       <h2 id="recheck-banner-title">Recheck required: “{notice.guideline_title}” changed</h2>

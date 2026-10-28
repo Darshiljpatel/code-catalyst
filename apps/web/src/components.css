@@ -332,7 +332,8 @@
 .recheck-table-card__head { display: flex; flex-wrap: wrap; justify-content: space-between; gap: var(--space-3); align-items: center; }
 .recheck-bulk { display: flex; flex-wrap: wrap; gap: var(--space-2); align-items: center; margin: var(--space-3) 0; }
 .recheck-reasons { margin: 0; padding-left: 1.1em; }
-.recheck-table__done { opacity: 0.7; }
+/* Finished rows are tinted, not faded, so their text keeps full contrast. */
+.recheck-table__done > td { background: rgba(255, 255, 255, 0.025); }
 .table-scroll { overflow-x: auto; }
 .nav-count { display: inline-block; min-width: 1.25rem; padding: 0 6px; margin-left: 4px; border-radius: 999px; background: var(--accent); color: #1a1a1a; font-size: 0.75rem; font-weight: 700; text-align: center; }
 .recheck-banner { margin: var(--space-4) 0; padding: var(--space-4); border-radius: var(--radius-md); border: 1px solid var(--color-warning); background: var(--color-warning-muted); }

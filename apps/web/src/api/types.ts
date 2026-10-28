@@ -329,6 +329,8 @@ export interface ContentOut {
 // ---------------------------------------------------------------------------
 export type ImpactLevel = 'confirmed' | 'likely' | 'possible';
 export type RecheckStatus = 'open' | 'recheck_queued' | 'awaiting_creator' | 'awaiting_reviewer' | 'resolved' | 'superseded';
+/** hold: back to a reviewer. keep: keeps its approval unless the recheck finds a change. */
+export type RecheckRouting = 'hold' | 'keep';
 
 export interface ImpactReason {
   code: string;
@@ -366,6 +368,7 @@ export interface RecheckNotice {
   to_version: number;
   changed_rules: number;
   changed_at: string;
+  routing?: RecheckRouting;
 }
 
 export interface RuleDiffEntry {
@@ -392,7 +395,10 @@ export interface ImpactCounts {
   possible: number;
   total: number;
   not_affected: number;
+  /** Approved or in-review campaigns that go back to a reviewer (confirmed and likely). */
   on_hold: number;
+  /** Possible-level approved or in-review campaigns that keep their approval unless the recheck finds a change. */
+  keep_approval?: number;
   brand_campaigns: number;
 }
 
@@ -407,6 +413,7 @@ export interface ImpactEntry {
   impact_level: ImpactLevel;
   reasons: ImpactReason[];
   local_delta: FindingsDelta | null;
+  routing?: RecheckRouting;
 }
 
 export interface ImpactPreview {
@@ -457,6 +464,9 @@ export interface RecheckAssignment {
   status: RecheckStatus;
   resolved_decision_id: string | null;
   superseded_by: string | null;
+  routing?: RecheckRouting;
+  /** kept_approval or stayed_in_review when the recheck found no change. */
+  outcome?: string | null;
   version: number;
   created_at: string;
   updated_at: string;

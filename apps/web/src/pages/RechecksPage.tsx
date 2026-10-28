@@ -40,6 +40,17 @@ const STATUS_LABEL: Record<RecheckStatus, string> = {
   superseded: 'Replaced by a newer change',
 };
 
+const OUTCOME_LABEL: Record<string, string> = {
+  kept_approval: 'Kept approval: no change found',
+  stayed_in_review: 'Stayed in review: no change found',
+};
+
+function statusLabel(a: RecheckAssignment) {
+  if (a.status === 'resolved' && a.outcome && OUTCOME_LABEL[a.outcome]) return OUTCOME_LABEL[a.outcome];
+  if (a.routing === 'keep' && (a.status === 'open' || a.status === 'recheck_queued')) return 'Rechecking · keeps approval if unchanged';
+  return STATUS_LABEL[a.status];
+}
+
 function Progress({ resolved, total }: { resolved: number; total: number }) {
   const percent = total === 0 ? 100 : Math.round((resolved / total) * 100);
   return (
@@ -133,6 +144,9 @@ function ChangeList() {
                 <ImpactBadge level="likely" /> {change.impact_counts.likely}
                 <ImpactBadge level="possible" /> {change.impact_counts.possible}
                 <span className="recheck-change-card__avoided">{change.impact_counts.not_affected} not affected</span>
+                {(change.impact_counts.keep_approval ?? 0) > 0 && (
+                  <span className="recheck-change-card__avoided">{change.impact_counts.keep_approval} could keep approval</span>
+                )}
               </div>
               <Progress resolved={change.resolved} total={change.total} />
             </li>
@@ -243,6 +257,7 @@ function ChangeDetail({ changeId }: { changeId: string }) {
   const visible = change.assignments.filter(a => level === 'all' || a.impact_level === level);
   const selectable = visible.filter(a => openRows.includes(a));
   const allSelected = selectable.length > 0 && selectable.every(a => selected.includes(a.id));
+  const kept = change.assignments.filter(a => a.outcome === 'kept_approval' || a.outcome === 'stayed_in_review').length;
   const reviewerEmail = (id: string | null) => reviewers.find(r => r.id === id)?.email || (id ? 'Assigned' : 'Unassigned');
 
   const toggle = (id: string) => setSelected(prev => prev.includes(id) ? prev.filter(x => x !== id) : [...prev, id]);
@@ -285,6 +300,8 @@ function ChangeDetail({ changeId }: { changeId: string }) {
       <p className="rechecks-page__lede">
         Published {new Date(change.created_at).toLocaleString()}. {change.total} campaign{change.total === 1 ? '' : 's'} relied on the
         previous version; {change.impact_counts.not_affected} did not rely on it and are untouched.
+        {' '}{change.impact_counts.on_hold} needed re-review; {change.impact_counts.keep_approval ?? 0} could keep approval
+        {kept > 0 ? ` and ${kept} kept it after a recheck found no change` : ''}.
       </p>
       <Progress resolved={change.resolved} total={change.total} />
       {error && <Alert kind="error">{error}</Alert>}
@@ -353,7 +370,7 @@ function ChangeDetail({ changeId }: { changeId: string }) {
                     <td>{reviewerEmail(a.reviewer_id)}</td>
                     <td>
                       <span className={`badge ${a.status === 'resolved' ? 'badge--success' : a.status === 'awaiting_creator' ? 'badge--blocker' : 'badge--warning'}`}>
-                        {STATUS_LABEL[a.status]}
+                        {statusLabel(a)}
                       </span>
                     </td>
                   </tr>
