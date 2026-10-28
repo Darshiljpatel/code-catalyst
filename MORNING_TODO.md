@@ -25,3 +25,32 @@ only uvicorn. It no longer runs migrations, the seed or a background worker on s
 ### 3. Uptime monitors
 - UptimeRobot / Better Stack: monitor `GET /api/v1/health/ready` (expect 200) and
   `GET /api/v1/health/worker` (keyword `"online"`), every 5 minutes, alerting the team.
+
+### 4. Synthetic journey (backlog row 15)
+- In GitHub → Settings → Secrets and variables → Actions → **Variables**, add `BRANDGUARD_URL` = the public
+  Vercel URL (e.g. `https://<app>.vercel.app`). `.github/workflows/synthetic.yml` then runs every 30 minutes and
+  fails (emailing watchers) if a private demo can't be created and checked. Until it's set the job is skipped.
+- Load test before freeze: `python scripts/load_test.py https://<app>.vercel.app --users 10 --minutes 10`.
+  Demo creation is capped at 10 per network address per hour, so 25 users from one machine needs a staging
+  deploy with `PER_ADDRESS_PER_HOUR` raised, or several machines. Locally, sandbox creation is the slow write
+  (~4 s each, ~11 s p95 with 5 at once) — watch it on the starter instance.
+
+### 5. Security headers (row 14)
+- `vercel.json` now sends a strict CSP. All 78 Playwright tests pass under it locally, but open the deployed
+  site once and check the browser console for CSP violations (Google Fonts are allowed).
+- After judging, rotate the Nebius key on Render.
+- Dependabot (`.github/dependabot.yml`) and `.github/workflows/audit.yml` (pip-audit + npm audit) start on the next push;
+  `pip-audit --strict` may flag something the first time — triage then.
+
+### 6. Tesseract / OCR
+- Tesseract is not installed on the dev machine, so OCR ran only with a fake engine in tests. The worker image
+  installs it. Upload the sample ad once on staging and confirm the OCR boxes appear.
+
+## Things to review by a human
+- **Benchmark v2 labels** (`evaluation/fixtures/benchmark_v2.json`, 60 campaigns) were written by the overnight
+  agent from the guideline intent, not by the team. Review the labels (the plan says "labels by all") before
+  quoting numbers; if you change any, re-freeze the SHA in `evaluation/benchmark_v2.py`. It measures the
+  local engine package; the AI side needs a live key. OCR, impact and comparison benchmarks were not built.
+- Retention (row 24) is off until an admin sets a period in Processing policy. It deletes campaigns with no activity
+  for that many days (except ones in analysis/review) and writes `retention.purged` audit events that restore re-applies.
+  Guideline-request examples keep their own text copies and are not purged yet.
