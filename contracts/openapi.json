@@ -431,6 +431,60 @@
         }
       }
     },
+    "/api/v1/retention": {
+      "get": {
+        "summary": "Get Retention",
+        "operationId": "get_retention_api_v1_retention_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RetentionOut"
+                }
+              }
+            }
+          }
+        }
+      },
+      "put": {
+        "summary": "Set Retention",
+        "operationId": "set_retention_api_v1_retention_put",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/RetentionInput"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RetentionOut"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/v1/brands/{brand_id}/guideline-health": {
       "get": {
         "summary": "Guideline Health",
@@ -5824,6 +5878,73 @@
           "created_at"
         ],
         "title": "ResolutionOut"
+      },
+      "RetentionInput": {
+        "properties": {
+          "retention_days": {
+            "anyOf": [
+              {
+                "type": "integer",
+                "maximum": 3650.0,
+                "minimum": 30.0
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Retention Days"
+          },
+          "rationale": {
+            "type": "string",
+            "maxLength": 1000,
+            "minLength": 10,
+            "title": "Rationale"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "rationale"
+        ],
+        "title": "RetentionInput"
+      },
+      "RetentionOut": {
+        "properties": {
+          "retention_days": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Retention Days"
+          },
+          "purged_campaigns": {
+            "type": "integer",
+            "title": "Purged Campaigns"
+          },
+          "last_purge_at": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Last Purge At"
+          }
+        },
+        "type": "object",
+        "required": [
+          "retention_days",
+          "purged_campaigns",
+          "last_purge_at"
+        ],
+        "title": "RetentionOut"
       },
       "ReviewInput": {
         "properties": {

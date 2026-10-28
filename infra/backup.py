@@ -158,6 +158,10 @@ def extract_tombstones(db_records: Dict[str, List[Dict[str, Any]]]) -> List[Dict
                     "deleted_at": event.get("created_at"),
                     "reason": reason,
                 })
+            # Retention purges list every deleted row (revisions, runs, findings, images) in the ledger.
+            if isinstance(details, dict) and isinstance(details.get("deleted_ids"), list):
+                tombstones.extend({"target_id": str(row_id), "deleted_at": event.get("created_at"), "reason": reason}
+                                  for row_id in details["deleted_ids"])
     return tombstones
 
 

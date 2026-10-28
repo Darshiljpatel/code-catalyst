@@ -69,6 +69,7 @@ def run_worker_loop(engine, reviewer, checker, poll_interval: float = 1.0, once:
 
     worker_id, started_at, last_beat = worker_identity(), utcnow(), 0.0
     from brandguard.demo import purge_expired
+    from brandguard.retention import purge_expired_content
     last_purge = 0.0
     ocr_engine = TesseractEngine() if os.environ.get('OCR_ENABLED', '1') != '0' else None
 
@@ -89,6 +90,12 @@ def run_worker_loop(engine, reviewer, checker, poll_interval: float = 1.0, once:
                     logger.info("Purged %d expired demo workspace(s).", purged)
             except Exception as e:
                 logger.warning("Demo purge failed: %s", type(e).__name__)
+            try:
+                removed = purge_expired_content(engine)
+                if removed:
+                    logger.info("Retention purge removed %d campaign(s).", removed)
+            except Exception as e:
+                logger.warning("Retention purge failed: %s", type(e).__name__)
         try:
             processed = process_one(engine, reviewer, checker=checker)
             if ocr_engine is not None:

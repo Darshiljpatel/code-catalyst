@@ -20,6 +20,9 @@ class Organisation(Base):
     created_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
     created_ip_hash: Mapped[str | None] = mapped_column(String(64), index=True)
     daily_run_limit: Mapped[int | None] = mapped_column(Integer)
+    # Campaigns with no activity for this many days are purged hourly; None keeps them. Set by an admin.
+    retention_days: Mapped[int | None] = mapped_column(Integer)
+    retention_set_by: Mapped[str | None] = mapped_column(String(36))
 
 class User(Base):
     __tablename__ = 'users'
