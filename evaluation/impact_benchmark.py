@@ -11,7 +11,10 @@ Two ground truths are reported side by side:
   before the first run. They include cases the local engine cannot read (for example "two weeks free").
 
 Re-reviews avoided compares approvals sent back to a person with brand-wide invalidation (every approval in
-the brand reopened, the old epoch behaviour). Local checks only; AI findings need a live key.
+the brand reopened, the old epoch behaviour). Shipped routing: confirmed and likely approvals go back to a
+reviewer; possible ones keep their approval unless their recheck gives different findings (then they are
+escalated). Locally the recheck is the same re-analysis as the ground truth above. Local checks only; AI
+findings need a live key.
 Usage: python -m evaluation.impact_benchmark
 """
 import hashlib
@@ -114,7 +117,7 @@ def run(dataset=DATASET):
     originals = {key: source_version(spec, 1) for key, spec in specs.items()}
     engine = create_engine('sqlite://')
     Base.metadata.create_all(engine)
-    pairs = dict(listed=set(), confirmed_or_likely=set(), confirmed=set(), reanalysis=set(), human=set())
+    pairs = dict(listed=set(), confirmed_or_likely=set(), confirmed=set(), reanalysis=set(), human=set(), routed=set())
     per_change, universe = [], set()
     approved = {c['id'] for c in campaigns if c['state'] == 'approved'}
     on_hold = {c['id'] for c in campaigns if c['state'] in ON_HOLD_STATES}
@@ -127,11 +130,16 @@ def run(dataset=DATASET):
             new = snapshot([s for k, s in originals.items() if k != change['source_key']] + [new_source])
             impact = compute_impact(session, ORG, brand, new_source, retired, new)
             levels = {e['title']: e['impact_level'] for e in impact['entries']}
+            held = {e['title'] for e in impact['entries'] if e['routing'] == 'hold'}
+            kept = {e['title'] for e in impact['entries'] if e['routing'] == 'keep'}
             after = evaluate_many([dict(text=c['text'], context=c['context']) for c in campaigns], new)
             truth = {c['id'] for c, b, a in zip(campaigns, before, after) if compare(b, a, old, new)['changed']}
             human = {c['id'] for c in campaigns if change['id'] in c['human_affected_by']}
             tiers = {tier: {i for i, level in levels.items() if level in accepted} for tier, accepted in TIERS.items()}
             ids = {c['id'] for c in campaigns}
+            # A kept campaign whose recheck finds a difference is escalated to confirmed and goes back too.
+            routed = held | (kept & truth)
+            pairs['routed'] |= {(change['id'], i) for i in routed}
             for name, chosen in (*tiers.items(), ('reanalysis', truth), ('human', human)):
                 pairs[name] |= {(change['id'], i) for i in chosen}
             universe |= {(change['id'], i) for i in ids}
@@ -140,7 +148,10 @@ def run(dataset=DATASET):
                 not_affected=impact['counts']['not_affected'], reanalysis_affected=sorted(truth), human_affected=sorted(human),
                 missed_by_listing=sorted(truth - tiers['listed']), confirmed_missing_human=sorted(human - tiers['confirmed']),
                 confirmed_not_human=sorted(tiers['confirmed'] - human),
-                approvals_reopened_brand_wide=len(approved), approvals_sent_back=len(approved & tiers['listed']),
+                approvals_reopened_brand_wide=len(approved), approvals_sent_back_if_every_listed=len(approved & tiers['listed']),
+                approvals_sent_back=len(approved & routed), approvals_kept=len(approved & (kept - truth)),
+                approvals_escalated_by_recheck=len(approved & kept & truth),
+                in_review_kept=len((on_hold - approved) & (kept - truth)),
                 approvals_needing_review_by_label=len(approved & human),
                 approvals_sent_back_if_routed_by_confirmed=len(approved & tiers['confirmed'])))
     measured = {f'{tier}_vs_{truth}': scores(pairs[tier], pairs[truth], universe)
@@ -148,9 +159,11 @@ def run(dataset=DATASET):
     measured['reanalysis_vs_human'] = scores(pairs['reanalysis'], pairs['human'], universe)
     brand_wide = sum(c['approvals_reopened_brand_wide'] for c in per_change)
     sent_back = sum(c['approvals_sent_back'] for c in per_change)
+    every_listed = sum(c['approvals_sent_back_if_every_listed'] for c in per_change)
     gated = sum(c['approvals_sent_back_if_routed_by_confirmed'] for c in per_change)
     needed = sum(c['approvals_needing_review_by_label'] for c in per_change)
     approved_pairs = {(ch['id'], i) for ch in data['changes'] for i in approved}
+    shipped_missed = sorted(f'{c}:{i}' for c, i in (pairs['human'] & approved_pairs) - pairs['routed'])
     gated_missed = sorted(f'{c}:{i}' for c, i in (pairs['human'] & approved_pairs) - pairs['confirmed'])
     return dict(benchmark='impact_improvement_1', origin='local', synthetic=True, dataset=str(Path(dataset).name),
         dataset_sha256=hashlib.sha256(raw).hexdigest(), frozen=hashlib.sha256(raw).hexdigest() == DATASET_SHA256,
@@ -159,12 +172,16 @@ def run(dataset=DATASET):
         metrics=measured,
         re_reviews=dict(
             brand_wide_invalidation=brand_wide,
-            shipped_routing=dict(approvals_sent_back=sent_back, avoided=brand_wide - sent_back,
-                                 avoided_rate=round((brand_wide - sent_back) / brand_wide, 4), avoided_ci95=wilson(brand_wide - sent_back, brand_wide)),
+            shipped_routing=dict(rule='confirmed + likely go back; possible keeps approval unless the recheck differs',
+                approvals_sent_back=sent_back, avoided=brand_wide - sent_back,
+                avoided_rate=round((brand_wide - sent_back) / brand_wide, 4), avoided_ci95=wilson(brand_wide - sent_back, brand_wide),
+                escalated_by_recheck=sum(c['approvals_escalated_by_recheck'] for c in per_change),
+                labelled_approvals_missed=shipped_missed),
+            previous_routing_every_listed=dict(approvals_sent_back=every_listed, avoided=brand_wide - every_listed),
             approvals_needing_review_by_label=needed,
             if_routed_by_confirmed_level=dict(approvals_sent_back=gated, avoided=brand_wide - gated,
                 avoided_rate=round((brand_wide - gated) / brand_wide, 4), avoided_ci95=wilson(brand_wide - gated, brand_wide),
-                labelled_approvals_missed=gated_missed, note='Not shipped: today every listed approval returns to a person.')),
+                labelled_approvals_missed=gated_missed, note='Not shipped; for comparison only.')),
         per_change=per_change,
         gates=dict(impact_recall_100=measured['listed_vs_reanalysis']['recall'] == 1.0))
 
@@ -181,8 +198,11 @@ def main():
             print(f"  {tier:<20} vs {truth:<10}: recall {s['recall']} {s['recall_ci95']}, precision {s['precision']} {s['precision_ci95']}")
     shipped, gated = rr['shipped_routing'], rr['if_routed_by_confirmed_level']
     print(f"  Re-reviews: brand-wide {rr['brand_wide_invalidation']}, shipped routing {shipped['approvals_sent_back']} "
-          f"(avoided {shipped['avoided']}), if routed by confirmed {gated['approvals_sent_back']} (avoided {gated['avoided']}, "
-          f"{len(gated['labelled_approvals_missed'])} labelled approvals missed); labels say {rr['approvals_needing_review_by_label']} needed.")
+          f"(avoided {shipped['avoided']} {shipped['avoided_ci95']}, {shipped['escalated_by_recheck']} escalated by the recheck, "
+          f"{len(shipped['labelled_approvals_missed'])} labelled approvals missed: {shipped['labelled_approvals_missed']}); "
+          f"every listed {rr['previous_routing_every_listed']['approvals_sent_back']}; if routed by confirmed only "
+          f"{gated['approvals_sent_back']} ({len(gated['labelled_approvals_missed'])} missed); "
+          f"labels say {rr['approvals_needing_review_by_label']} needed.")
     print(f'Written to {RESULTS}')
     return 0 if result['frozen'] and all(result['gates'].values()) else 1
 

@@ -130,13 +130,22 @@
   "re_reviews": {
     "brand_wide_invalidation": 85,
     "shipped_routing": {
-      "approvals_sent_back": 85,
-      "avoided": 0,
-      "avoided_rate": 0.0,
+      "rule": "confirmed + likely go back; possible keeps approval unless the recheck differs",
+      "approvals_sent_back": 32,
+      "avoided": 53,
+      "avoided_rate": 0.6235,
       "avoided_ci95": [
-        0.0,
-        0.0432
+        0.5173,
+        0.7191
+      ],
+      "escalated_by_recheck": 0,
+      "labelled_approvals_missed": [
+        "C1:IB-23"
       ]
+    },
+    "previous_routing_every_listed": {
+      "approvals_sent_back": 85,
+      "avoided": 0
     },
     "approvals_needing_review_by_label": 7,
     "if_routed_by_confirmed_level": {
@@ -150,7 +159,7 @@
       "labelled_approvals_missed": [
         "C1:IB-23"
       ],
-      "note": "Not shipped: today every listed approval returns to a person."
+      "note": "Not shipped; for comparison only."
     }
   },
   "per_change": [
@@ -189,7 +198,11 @@
         "IB-18"
       ],
       "approvals_reopened_brand_wide": 17,
-      "approvals_sent_back": 17,
+      "approvals_sent_back_if_every_listed": 17,
+      "approvals_sent_back": 6,
+      "approvals_kept": 11,
+      "approvals_escalated_by_recheck": 0,
+      "in_review_kept": 2,
       "approvals_needing_review_by_label": 4,
       "approvals_sent_back_if_routed_by_confirmed": 3
     },
@@ -223,7 +236,11 @@
         "IB-16"
       ],
       "approvals_reopened_brand_wide": 17,
-      "approvals_sent_back": 17,
+      "approvals_sent_back_if_every_listed": 17,
+      "approvals_sent_back": 4,
+      "approvals_kept": 13,
+      "approvals_escalated_by_recheck": 0,
+      "in_review_kept": 2,
       "approvals_needing_review_by_label": 2,
       "approvals_sent_back_if_routed_by_confirmed": 2
     },
@@ -254,7 +271,11 @@
         "IB-22"
       ],
       "approvals_reopened_brand_wide": 17,
+      "approvals_sent_back_if_every_listed": 17,
       "approvals_sent_back": 17,
+      "approvals_kept": 0,
+      "approvals_escalated_by_recheck": 0,
+      "in_review_kept": 0,
       "approvals_needing_review_by_label": 0,
       "approvals_sent_back_if_routed_by_confirmed": 0
     },
@@ -280,7 +301,11 @@
       "confirmed_missing_human": [],
       "confirmed_not_human": [],
       "approvals_reopened_brand_wide": 17,
-      "approvals_sent_back": 17,
+      "approvals_sent_back_if_every_listed": 17,
+      "approvals_sent_back": 2,
+      "approvals_kept": 15,
+      "approvals_escalated_by_recheck": 0,
+      "in_review_kept": 4,
       "approvals_needing_review_by_label": 0,
       "approvals_sent_back_if_routed_by_confirmed": 0
     },
@@ -308,7 +333,11 @@
       "confirmed_missing_human": [],
       "confirmed_not_human": [],
       "approvals_reopened_brand_wide": 17,
-      "approvals_sent_back": 17,
+      "approvals_sent_back_if_every_listed": 17,
+      "approvals_sent_back": 3,
+      "approvals_kept": 14,
+      "approvals_escalated_by_recheck": 0,
+      "in_review_kept": 2,
       "approvals_needing_review_by_label": 1,
       "approvals_sent_back_if_routed_by_confirmed": 1
     }

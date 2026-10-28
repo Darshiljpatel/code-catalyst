@@ -123,3 +123,8 @@ def test_impact_benchmark_is_frozen_lists_every_changed_campaign_and_reports_re_
     assert rr['brand_wide_invalidation'] == 5 * result['campaign_states']['approved']
     assert rr['shipped_routing']['approvals_sent_back'] + rr['shipped_routing']['avoided'] == rr['brand_wide_invalidation']
     assert rr['if_routed_by_confirmed_level']['approvals_sent_back'] <= rr['shipped_routing']['approvals_sent_back']
+    # Shipped routing: every approval whose recheck changes findings still goes back to a reviewer.
+    shipped = rr['shipped_routing']
+    assert shipped['avoided'] > 0 and shipped['approvals_sent_back'] <= rr['previous_routing_every_listed']['approvals_sent_back']
+    for change in result['per_change']:
+        assert change['approvals_sent_back'] + change['approvals_kept'] == change['approvals_sent_back_if_every_listed']
