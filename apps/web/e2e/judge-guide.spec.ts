@@ -142,3 +142,24 @@ test('walkthrough leads creator → manager → reviewer → admin with matching
   await expect(guide.getByRole('button', { name: 'Step 3: Reviewer' })).toHaveAttribute('aria-pressed', 'true');
   await expect(page).toHaveURL(/\/login$/); // Reading the guide never changes the account or page.
 });
+
+test('Round 3 missions cover each improvement and remember progress in this browser', async ({ page }) => {
+  await page.goto('/login');
+  await page.getByRole('button', { name: 'Judge guide', exact: true }).click();
+  const guide = page.getByRole('complementary', { name: 'Your judging companion.' });
+  await guide.getByRole('button', { name: 'Round 3 missions' }).click();
+  for (const title of ['Check an image ad', 'Fix an unclear rule', 'Publish a guideline change']) {
+    await expect(guide.getByRole('region', { name: title })).toBeVisible();
+  }
+  await expect(guide).toContainText('0 OF 10 DONE');
+  await guide.getByRole('checkbox', { name: /Try a private demo/ }).check();
+  await expect(guide).toContainText('1 OF 10 DONE');
+  const axe = await new AxeBuilder({ page }).include('#judge-guide-panel').withTags(['wcag2a', 'wcag2aa', 'wcag21aa']).analyze();
+  expect(axe.violations).toEqual([]);
+  await page.reload();
+  await page.getByRole('button', { name: 'Judge guide', exact: true }).click();
+  await guide.getByRole('button', { name: 'Round 3 missions' }).click();
+  await expect(guide.getByRole('checkbox', { name: /Try a private demo/ })).toBeChecked();
+  await guide.getByRole('button', { name: 'Reset mission progress' }).click();
+  await expect(guide).toContainText('0 OF 10 DONE');
+});
