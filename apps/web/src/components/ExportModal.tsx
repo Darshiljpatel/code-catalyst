@@ -112,7 +112,7 @@ function RevisionExport({ revisionId, onClose }: ExportModalProps) {
               <div style={{ display: 'flex', gap: 'var(--space-4)', fontSize: '0.75rem', color: 'var(--text-secondary)', marginTop: '6px', flexWrap: 'wrap' }}>
                 <div>Decision: <strong style={{ color: 'var(--color-success)' }}>{exportData.decision.kind.toUpperCase()}</strong></div>
                 <div>Approver: <code>{exportData.decision.reviewer_id}</code></div>
-                <div>Source Epoch: <strong>#{exportData.decision.source_epoch}</strong></div>
+                <div>Guideline version: <strong>#{exportData.decision.source_epoch}</strong></div>
                 <div>Date: {new Date(exportData.exported_at).toLocaleString()}</div>
               </div>
             </div>

@@ -91,7 +91,7 @@ async def upload_image(brand_id: str = Form(min_length=1, max_length=36), title:
                        purpose: str = Form(min_length=1, max_length=500), reviewer_id: str | None = Form(default=None, max_length=36),
                        file: UploadFile = File(...), member=Depends(identity), session: Session = Depends(db)):
     if member.role != 'creator':
-        raise Problem(403, 'forbidden', 'A creator identity is required.')
+        raise Problem(403, 'forbidden', 'Only a creator can do this. Switch to the creator role or sign in as a creator.')
     if not title.strip():
         raise Problem(422, 'invalid_fields', 'A campaign title is required.')
     brand_for(session, member, brand_id)

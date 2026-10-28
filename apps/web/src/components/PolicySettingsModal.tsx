@@ -126,7 +126,7 @@ export function PolicySettingsModal({
                 </span>
               </label>
               <div style={{ fontSize: '0.8125rem', color: 'var(--text-muted)', marginTop: '4px', marginLeft: '28px' }}>
-                When disabled, only local deterministic checks (terminology, facts, visual, accessibility) execute.
+                When disabled, only the built-in local checks (terminology, facts, visual, accessibility) run.
               </div>
             </div>
 

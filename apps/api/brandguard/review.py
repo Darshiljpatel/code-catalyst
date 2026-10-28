@@ -212,7 +212,7 @@ def activate_source(source_id: str, body: ActivationInput, request: Request, mem
 @router.post('/content', status_code=201, response_model=ContentOut)
 def create_content(body: ContentInput, member=Depends(identity), session: Session=Depends(db)):
     if member.role != 'creator':
-        raise Problem(403, 'forbidden', 'A creator identity is required.')
+        raise Problem(403, 'forbidden', 'Only a creator can do this. Switch to the creator role or sign in as a creator.')
     brand_for(session, member, body.brand_id)
     quota.enforce(session, member, 'revisions')
     if body.reviewer_id is not None:

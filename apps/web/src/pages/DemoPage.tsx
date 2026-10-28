@@ -35,7 +35,7 @@ export function DemoPage() {
         <h1 style={{ marginBottom: 'var(--space-2)' }}>LumaDesk campaign review</h1>
         <p style={{ color: 'var(--text-secondary)' }}>
           Brand: <strong>{FIXTURE_BRAND.name}</strong> (fictional) ·
-          Source epoch: {FIXTURE_BRAND.source_epoch}
+          Guideline version: {FIXTURE_BRAND.source_epoch}
         </p>
       </div>
 

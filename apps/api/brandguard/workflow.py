@@ -122,7 +122,7 @@ def require_blockers(session,member,run,item):
 
 def source_references(run,ids):
     if len(set(ids))!=len(ids) or not set(ids).issubset({s['id'] for s in run.source_snapshot}):
-        raise Problem(422,'invalid_evidence','Evidence must reference this review source snapshot.')
+        raise Problem(422,'invalid_evidence','Cite one of the guideline sources this check used.')
 
 
 def evidence_record(session,member,revision,item,run):

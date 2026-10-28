@@ -262,7 +262,7 @@ export function NewReviewPage() {
             >
               {brands.map(b => (
                 <option key={b.id} value={b.id}>
-                  {b.name} (Source Epoch {b.source_epoch})
+                  {b.name} (guideline version {b.source_epoch})
                 </option>
               ))}
             </select>

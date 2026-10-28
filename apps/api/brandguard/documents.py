@@ -137,7 +137,7 @@ def safe_filename(name):
 @router.post('/imports/document', status_code=201, response_model=DocumentImportOut)
 async def import_document(file: UploadFile = File(...), member=Depends(identity), session: Session = Depends(db)):
     if member.role != 'creator':
-        raise Problem(403, 'forbidden', 'A creator identity is required.')
+        raise Problem(403, 'forbidden', 'Only a creator can do this. Switch to the creator role or sign in as a creator.')
     quota.enforce(session, member, 'uploads')
     data = await file.read(MAX_DOCUMENT_BYTES + 1)
     try:
