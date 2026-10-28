@@ -522,6 +522,24 @@
         }
       }
     },
+    "/api/v1/rule-drafts/status": {
+      "get": {
+        "summary": "Drafting Status",
+        "operationId": "drafting_status_api_v1_rule_drafts_status_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DraftingStatus"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/v1/brands/{brand_id}/rule-drafts": {
       "post": {
         "summary": "Create Rule Drafts",
@@ -3825,6 +3843,19 @@
           "metadata"
         ],
         "title": "DraftOut"
+      },
+      "DraftingStatus": {
+        "properties": {
+          "enabled": {
+            "type": "boolean",
+            "title": "Enabled"
+          }
+        },
+        "type": "object",
+        "required": [
+          "enabled"
+        ],
+        "title": "DraftingStatus"
       },
       "ExampleLabel": {
         "properties": {

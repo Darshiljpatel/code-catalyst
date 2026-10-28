@@ -21,7 +21,9 @@ def test_manager_drafts_rules_from_a_brand_book_and_only_quoted_rules_survive(se
     assert imported.status_code == 201, imported.text
     body = dict(document_import_id=imported.json()['id'], external_processing_consent=True)
     assert c.post(f'/api/v1/brands/{bid}/rule-drafts', json=body, headers=mh).status_code == 404  # flag off
+    assert c.get('/api/v1/rule-drafts/status', headers=mh).json() == {'enabled': False}
     monkeypatch.setenv('RULE_DRAFTING_ENABLED', '1')
+    assert c.get('/api/v1/rule-drafts/status', headers=mh).json() == {'enabled': True}
     assert c.post(f'/api/v1/brands/{bid}/rule-drafts', json=body, headers=mh).json()['code'] == 'external_processing_disabled'
     assert policy(c, orgs).status_code == 200
     mh = login(c, orgs[0])

@@ -112,6 +112,15 @@ async def draft_rules(text, config, transport=None, *, remaining_seconds=50):
     return excerpt, proposals, rejected, warnings, metadata
 
 
+class DraftingStatus(BaseModel):
+    enabled: bool
+
+
+@router.get('/rule-drafts/status', response_model=DraftingStatus)
+def drafting_status(member=Depends(identity)):
+    return DraftingStatus(enabled=enabled())
+
+
 @router.post('/brands/{brand_id}/rule-drafts', response_model=DraftOut)
 async def create_rule_drafts(brand_id: str, body: DraftInput, request: Request, member=Depends(identity), session: Session = Depends(db)):
     if not enabled():
