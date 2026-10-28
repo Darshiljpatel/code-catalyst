@@ -73,3 +73,28 @@ def test_duplicate_predictions_cannot_reuse_a_label():
     records, _, _ = match_findings([label], [predicted, predicted], 'Lumadesk', [])
     metrics = compute_metrics(records)
     assert metrics['true_positives'] == 1 and metrics['false_positives'] == 1
+
+
+def test_benchmark_v2_is_frozen_split_by_template_and_meets_held_out_gates():
+    import json
+    from collections import Counter
+    from evaluation.benchmark_v2 import run, wilson, DATASET
+    cases = json.loads(DATASET.read_text())
+    assert len(cases) == 60 and Counter(c['split'] for c in cases) == {'dev': 20, 'test': 40}
+    assert len({c['brand'] for c in cases}) == 3 and len({c['format'] for c in cases}) == 6
+    for case in cases:
+        for label in case['expected_findings']:
+            assert label['quote'] in case['text']
+    result = run()
+    assert result['frozen'], 'benchmark_v2.json changed: freeze a new dataset version instead'
+    assert all(result['gates'].values())
+    assert result['per_split']['test']['cases'] == 40
+
+
+def test_wilson_interval():
+    from evaluation.benchmark_v2 import wilson
+    low, high = wilson(40, 40)
+    assert high == 1.0 and 0.9 < low < 0.92
+    assert wilson(0, 0) == (None, None)
+    low, high = wilson(5, 10)
+    assert low < 0.5 < high

@@ -1,0 +1,190 @@
+{
+  "benchmark": "text_review_v2",
+  "origin": "local",
+  "dataset": "benchmark_v2.json",
+  "dataset_sha256": "c832e2ae77a84f464b518e1848e5e52db0ec7545712b51b1ffce72380332ac0e",
+  "frozen": true,
+  "total_cases": 60,
+  "overall": {
+    "precision": 1.0,
+    "recall": 0.9444,
+    "f1": 0.9714,
+    "citation_resolution_rate": 1.0,
+    "true_positives": 34,
+    "false_positives": 0,
+    "false_negatives": 2,
+    "true_negatives": 0,
+    "total_evaluations": 36,
+    "precision_ci95": [
+      0.8985,
+      1.0
+    ],
+    "recall_ci95": [
+      0.8186,
+      0.9846
+    ]
+  },
+  "per_split": {
+    "dev": {
+      "precision": 1.0,
+      "recall": 0.8571,
+      "f1": 0.9231,
+      "citation_resolution_rate": 1.0,
+      "true_positives": 12,
+      "false_positives": 0,
+      "false_negatives": 2,
+      "true_negatives": 0,
+      "total_evaluations": 14,
+      "precision_ci95": [
+        0.7575,
+        1.0
+      ],
+      "recall_ci95": [
+        0.6006,
+        0.9599
+      ],
+      "cases": 20,
+      "cases_with_violations": 10,
+      "false_clean_cases": [],
+      "false_clean_rate": 0.0,
+      "clean_cases": 10,
+      "clean_cases_with_false_alarms": []
+    },
+    "test": {
+      "precision": 1.0,
+      "recall": 1.0,
+      "f1": 1.0,
+      "citation_resolution_rate": 1.0,
+      "true_positives": 22,
+      "false_positives": 0,
+      "false_negatives": 0,
+      "true_negatives": 0,
+      "total_evaluations": 22,
+      "precision_ci95": [
+        0.8513,
+        1.0
+      ],
+      "recall_ci95": [
+        0.8513,
+        1.0
+      ],
+      "cases": 40,
+      "cases_with_violations": 21,
+      "false_clean_cases": [],
+      "false_clean_rate": 0.0,
+      "clean_cases": 19,
+      "clean_cases_with_false_alarms": []
+    }
+  },
+  "per_category": {
+    "terminology": {
+      "precision": 1.0,
+      "recall": 1.0,
+      "f1": 1.0,
+      "citation_resolution_rate": 1.0,
+      "true_positives": 15,
+      "false_positives": 0,
+      "false_negatives": 0,
+      "true_negatives": 0,
+      "total_evaluations": 15,
+      "precision_ci95": [
+        0.7961,
+        1.0
+      ],
+      "recall_ci95": [
+        0.7961,
+        1.0
+      ]
+    },
+    "facts_claims": {
+      "precision": 1.0,
+      "recall": 0.9048,
+      "f1": 0.95,
+      "citation_resolution_rate": 1.0,
+      "true_positives": 19,
+      "false_positives": 0,
+      "false_negatives": 2,
+      "true_negatives": 0,
+      "total_evaluations": 21,
+      "precision_ci95": [
+        0.8318,
+        1.0
+      ],
+      "recall_ci95": [
+        0.7109,
+        0.9735
+      ]
+    }
+  },
+  "per_format": {
+    "email": {
+      "labels": 5,
+      "missed": 0,
+      "false_alarms": 0
+    },
+    "social": {
+      "labels": 10,
+      "missed": 2,
+      "false_alarms": 0
+    },
+    "landing": {
+      "labels": 8,
+      "missed": 0,
+      "false_alarms": 0
+    },
+    "push": {
+      "labels": 3,
+      "missed": 0,
+      "false_alarms": 0
+    },
+    "sms": {
+      "labels": 4,
+      "missed": 0,
+      "false_alarms": 0
+    },
+    "banner": {
+      "labels": 6,
+      "missed": 0,
+      "false_alarms": 0
+    }
+  },
+  "latency": {
+    "p50_ms": 0.06,
+    "p95_ms": 0.14,
+    "min_ms": 0.04,
+    "max_ms": 0.99,
+    "mean_ms": 0.09
+  },
+  "disagreements": [
+    {
+      "case_id": "V2-03",
+      "missed_expected": [
+        {
+          "category": "facts_claims",
+          "rule_id": "LD-F01",
+          "quote": "30 days",
+          "evidence_status": "contradicted",
+          "source_version_id": "src-v2-luma"
+        }
+      ],
+      "unexpected_findings": []
+    },
+    {
+      "case_id": "V2-15",
+      "missed_expected": [
+        {
+          "category": "facts_claims",
+          "rule_id": "SC-F01",
+          "quote": "save 20%",
+          "evidence_status": "contradicted",
+          "source_version_id": "src-v2-salt"
+        }
+      ],
+      "unexpected_findings": []
+    }
+  ],
+  "gates": {
+    "held_out_local_precision_at_least_0_95": true,
+    "no_false_clean_on_held_out": true
+  }
+}

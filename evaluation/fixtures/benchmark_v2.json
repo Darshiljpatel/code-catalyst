@@ -1,0 +1,3879 @@
+[
+ {
+  "id": "V2-01",
+  "split": "dev",
+  "template": "v2-dev-lumadesk-email",
+  "brand": "LumaDesk",
+  "format": "email",
+  "text": "Book a desk in seconds with LumaDesk. Start your 14-day free trial today.",
+  "context": {
+   "channel": "email",
+   "audience": "Customers"
+  },
+  "sources": [
+   {
+    "id": "src-v2-luma",
+    "title": "LumaDesk brand and product guide",
+    "text": "Write LumaDesk as one word with a capital D. The free trial lasts 14 days. Team plans cost $12 per seat per month.",
+    "rules": [
+     {
+      "id": "LD-T01",
+      "category": "terminology",
+      "kind": "terminology",
+      "key": "brand_name",
+      "value": "LumaDesk",
+      "canonical_term": "LumaDesk",
+      "forbidden_patterns": [
+       "Luma Desk"
+      ],
+      "evidence_quote": "Write LumaDesk as one word with a capital D."
+     },
+     {
+      "id": "LD-F01",
+      "category": "facts_claims",
+      "kind": "fact",
+      "key": "trial_duration",
+      "value": "14 days",
+      "approved_value": "14 days",
+      "evidence_quote": "The free trial lasts 14 days."
+     },
+     {
+      "id": "LD-F02",
+      "category": "facts_claims",
+      "kind": "fact",
+      "key": "seat_price",
+      "value": "$12 per seat",
+      "approved_value": "$12 per seat",
+      "contradicted_values": [
+       "$10 per seat",
+       "$15 per seat",
+       "$9 per seat"
+      ],
+      "evidence_quote": "Team plans cost $12 per seat per month."
+     }
+    ]
+   }
+  ],
+  "expected_violations": 0,
+  "expected_findings": []
+ },
+ {
+  "id": "V2-02",
+  "split": "dev",
+  "template": "v2-dev-lumadesk-email",
+  "brand": "LumaDesk",
+  "format": "email",
+  "text": "Lumadesk makes hybrid weeks calmer. Start your 14-day free trial.",
+  "context": {
+   "channel": "email",
+   "audience": "Customers"
+  },
+  "sources": [
+   {
+    "id": "src-v2-luma",
+    "title": "LumaDesk brand and product guide",
+    "text": "Write LumaDesk as one word with a capital D. The free trial lasts 14 days. Team plans cost $12 per seat per month.",
+    "rules": [
+     {
+      "id": "LD-T01",
+      "category": "terminology",
+      "kind": "terminology",
+      "key": "brand_name",
+      "value": "LumaDesk",
+      "canonical_term": "LumaDesk",
+      "forbidden_patterns": [
+       "Luma Desk"
+      ],
+      "evidence_quote": "Write LumaDesk as one word with a capital D."
+     },
+     {
+      "id": "LD-F01",
+      "category": "facts_claims",
+      "kind": "fact",
+      "key": "trial_duration",
+      "value": "14 days",
+      "approved_value": "14 days",
+      "evidence_quote": "The free trial lasts 14 days."
+     },
+     {
+      "id": "LD-F02",
+      "category": "facts_claims",
+      "kind": "fact",
+      "key": "seat_price",
+      "value": "$12 per seat",
+      "approved_value": "$12 per seat",
+      "contradicted_values": [
+       "$10 per seat",
+       "$15 per seat",
+       "$9 per seat"
+      ],
+      "evidence_quote": "Team plans cost $12 per seat per month."
+     }
+    ]
+   }
+  ],
+  "expected_violations": 1,
+  "expected_findings": [
+   {
+    "category": "terminology",
+    "rule_id": "LD-T01",
+    "quote": "Lumadesk",
+    "evidence_status": "supported_violation",
+    "source_version_id": "src-v2-luma"
+   }
+  ]
+ },
+ {
+  "id": "V2-03",
+  "split": "dev",
+  "template": "v2-dev-lumadesk-social",
+  "brand": "LumaDesk",
+  "format": "social",
+  "text": "Try Luma Desk free for 30 days and never fight over a desk again.",
+  "context": {
+   "channel": "social",
+   "audience": "Customers"
+  },
+  "sources": [
+   {
+    "id": "src-v2-luma",
+    "title": "LumaDesk brand and product guide",
+    "text": "Write LumaDesk as one word with a capital D. The free trial lasts 14 days. Team plans cost $12 per seat per month.",
+    "rules": [
+     {
+      "id": "LD-T01",
+      "category": "terminology",
+      "kind": "terminology",
+      "key": "brand_name",
+      "value": "LumaDesk",
+      "canonical_term": "LumaDesk",
+      "forbidden_patterns": [
+       "Luma Desk"
+      ],
+      "evidence_quote": "Write LumaDesk as one word with a capital D."
+     },
+     {
+      "id": "LD-F01",
+      "category": "facts_claims",
+      "kind": "fact",
+      "key": "trial_duration",
+      "value": "14 days",
+      "approved_value": "14 days",
+      "evidence_quote": "The free trial lasts 14 days."
+     },
+     {
+      "id": "LD-F02",
+      "category": "facts_claims",
+      "kind": "fact",
+      "key": "seat_price",
+      "value": "$12 per seat",
+      "approved_value": "$12 per seat",
+      "contradicted_values": [
+       "$10 per seat",
+       "$15 per seat",
+       "$9 per seat"
+      ],
+      "evidence_quote": "Team plans cost $12 per seat per month."
+     }
+    ]
+   }
+  ],
+  "expected_violations": 2,
+  "expected_findings": [
+   {
+    "category": "terminology",
+    "rule_id": "LD-T01",
+    "quote": "Luma Desk",
+    "evidence_status": "supported_violation",
+    "source_version_id": "src-v2-luma"
+   },
+   {
+    "category": "facts_claims",
+    "rule_id": "LD-F01",
+    "quote": "30 days",
+    "evidence_status": "contradicted",
+    "source_version_id": "src-v2-luma"
+   }
+  ]
+ },
+ {
+  "id": "V2-04",
+  "split": "dev",
+  "template": "v2-dev-lumadesk-landing",
+  "brand": "LumaDesk",
+  "format": "landing",
+  "text": "LumaDesk Team costs $10 per seat per month. Start a 30-day free trial.",
+  "context": {
+   "channel": "landing page",
+   "audience": "Customers"
+  },
+  "sources": [
+   {
+    "id": "src-v2-luma",
+    "title": "LumaDesk brand and product guide",
+    "text": "Write LumaDesk as one word with a capital D. The free trial lasts 14 days. Team plans cost $12 per seat per month.",
+    "rules": [
+     {
+      "id": "LD-T01",
+      "category": "terminology",
+      "kind": "terminology",
+      "key": "brand_name",
+      "value": "LumaDesk",
+      "canonical_term": "LumaDesk",
+      "forbidden_patterns": [
+       "Luma Desk"
+      ],
+      "evidence_quote": "Write LumaDesk as one word with a capital D."
+     },
+     {
+      "id": "LD-F01",
+      "category": "facts_claims",
+      "kind": "fact",
+      "key": "trial_duration",
+      "value": "14 days",
+      "approved_value": "14 days",
+      "evidence_quote": "The free trial lasts 14 days."
+     },
+     {
+      "id": "LD-F02",
+      "category": "facts_claims",
+      "kind": "fact",
+      "key": "seat_price",
+      "value": "$12 per seat",
+      "approved_value": "$12 per seat",
+      "contradicted_values": [
+       "$10 per seat",
+       "$15 per seat",
+       "$9 per seat"
+      ],
+      "evidence_quote": "Team plans cost $12 per seat per month."
+     }
+    ]
+   }
+  ],
+  "expected_violations": 2,
+  "expected_findings": [
+   {
+    "category": "facts_claims",
+    "rule_id": "LD-F02",
+    "quote": "$10 per seat",
+    "evidence_status": "contradicted",
+    "source_version_id": "src-v2-luma"
+   },
+   {
+    "category": "facts_claims",
+    "rule_id": "LD-F01",
+    "quote": "30-day",
+    "evidence_status": "contradicted",
+    "source_version_id": "src-v2-luma"
+   }
+  ]
+ },
+ {
+  "id": "V2-05",
+  "split": "dev",
+  "template": "v2-dev-lumadesk-push",
+  "brand": "LumaDesk",
+  "format": "push",
+  "text": "Your LumaDesk trial ends in 3 days. Keep your bookings.",
+  "context": {
+   "channel": "push notification",
+   "audience": "Customers"
+  },
+  "sources": [
+   {
+    "id": "src-v2-luma",
+    "title": "LumaDesk brand and product guide",
+    "text": "Write LumaDesk as one word with a capital D. The free trial lasts 14 days. Team plans cost $12 per seat per month.",
+    "rules": [
+     {
+      "id": "LD-T01",
+      "category": "terminology",
+      "kind": "terminology",
+      "key": "brand_name",
+      "value": "LumaDesk",
+      "canonical_term": "LumaDesk",
+      "forbidden_patterns": [
+       "Luma Desk"
+      ],
+      "evidence_quote": "Write LumaDesk as one word with a capital D."
+     },
+     {
+      "id": "LD-F01",
+      "category": "facts_claims",
+      "kind": "fact",
+      "key": "trial_duration",
+      "value": "14 days",
+      "approved_value": "14 days",
+      "evidence_quote": "The free trial lasts 14 days."
+     },
+     {
+      "id": "LD-F02",
+      "category": "facts_claims",
+      "kind": "fact",
+      "key": "seat_price",
+      "value": "$12 per seat",
+      "approved_value": "$12 per seat",
+      "contradicted_values": [
+       "$10 per seat",
+       "$15 per seat",
+       "$9 per seat"
+      ],
+      "evidence_quote": "Team plans cost $12 per seat per month."
+     }
+    ]
+   }
+  ],
+  "expected_violations": 0,
+  "expected_findings": []
+ },
+ {
+  "id": "V2-06",
+  "split": "dev",
+  "template": "v2-dev-lumadesk-sms",
+  "brand": "LumaDesk",
+  "format": "sms",
+  "text": "LumaDesk: refunds within 30 days, no questions asked.",
+  "context": {
+   "channel": "sms",
+   "audience": "Customers"
+  },
+  "sources": [
+   {
+    "id": "src-v2-luma",
+    "title": "LumaDesk brand and product guide",
+    "text": "Write LumaDesk as one word with a capital D. The free trial lasts 14 days. Team plans cost $12 per seat per month.",
+    "rules": [
+     {
+      "id": "LD-T01",
+      "category": "terminology",
+      "kind": "terminology",
+      "key": "brand_name",
+      "value": "LumaDesk",
+      "canonical_term": "LumaDesk",
+      "forbidden_patterns": [
+       "Luma Desk"
+      ],
+      "evidence_quote": "Write LumaDesk as one word with a capital D."
+     },
+     {
+      "id": "LD-F01",
+      "category": "facts_claims",
+      "kind": "fact",
+      "key": "trial_duration",
+      "value": "14 days",
+      "approved_value": "14 days",
+      "evidence_quote": "The free trial lasts 14 days."
+     },
+     {
+      "id": "LD-F02",
+      "category": "facts_claims",
+      "kind": "fact",
+      "key": "seat_price",
+      "value": "$12 per seat",
+      "approved_value": "$12 per seat",
+      "contradicted_values": [
+       "$10 per seat",
+       "$15 per seat",
+       "$9 per seat"
+      ],
+      "evidence_quote": "Team plans cost $12 per seat per month."
+     }
+    ]
+   }
+  ],
+  "expected_violations": 0,
+  "expected_findings": []
+ },
+ {
+  "id": "V2-07",
+  "split": "dev",
+  "template": "v2-dev-lumadesk-banner",
+  "brand": "LumaDesk",
+  "format": "banner",
+  "text": "LumaDesk. $12 per seat. 14-day free trial.",
+  "context": {
+   "channel": "display banner",
+   "audience": "Customers"
+  },
+  "sources": [
+   {
+    "id": "src-v2-luma",
+    "title": "LumaDesk brand and product guide",
+    "text": "Write LumaDesk as one word with a capital D. The free trial lasts 14 days. Team plans cost $12 per seat per month.",
+    "rules": [
+     {
+      "id": "LD-T01",
+      "category": "terminology",
+      "kind": "terminology",
+      "key": "brand_name",
+      "value": "LumaDesk",
+      "canonical_term": "LumaDesk",
+      "forbidden_patterns": [
+       "Luma Desk"
+      ],
+      "evidence_quote": "Write LumaDesk as one word with a capital D."
+     },
+     {
+      "id": "LD-F01",
+      "category": "facts_claims",
+      "kind": "fact",
+      "key": "trial_duration",
+      "value": "14 days",
+      "approved_value": "14 days",
+      "evidence_quote": "The free trial lasts 14 days."
+     },
+     {
+      "id": "LD-F02",
+      "category": "facts_claims",
+      "kind": "fact",
+      "key": "seat_price",
+      "value": "$12 per seat",
+      "approved_value": "$12 per seat",
+      "contradicted_values": [
+       "$10 per seat",
+       "$15 per seat",
+       "$9 per seat"
+      ],
+      "evidence_quote": "Team plans cost $12 per seat per month."
+     }
+    ]
+   }
+  ],
+  "expected_violations": 0,
+  "expected_findings": []
+ },
+ {
+  "id": "V2-08",
+  "split": "dev",
+  "template": "v2-dev-northwind-email",
+  "brand": "Northwind",
+  "format": "email",
+  "text": "Northwind frames come with a 5-year warranty. Ride further.",
+  "context": {
+   "channel": "email",
+   "audience": "Customers"
+  },
+  "sources": [
+   {
+    "id": "src-v2-north",
+    "title": "Northwind Bikes style sheet",
+    "text": "Our name is Northwind. Every frame has a 5-year warranty. Shipping is free on orders over $50.",
+    "rules": [
+     {
+      "id": "NW-T01",
+      "category": "terminology",
+      "kind": "terminology",
+      "key": "brand_name",
+      "value": "Northwind",
+      "canonical_term": "Northwind",
+      "forbidden_patterns": [
+       "North Wind",
+       "NorthWind"
+      ],
+      "evidence_quote": "Our name is Northwind."
+     },
+     {
+      "id": "NW-F01",
+      "category": "facts_claims",
+      "kind": "fact",
+      "key": "warranty",
+      "value": "5-year warranty",
+      "approved_value": "5-year warranty",
+      "contradicted_values": [
+       "lifetime warranty",
+       "10-year warranty",
+       "3-year warranty"
+      ],
+      "evidence_quote": "Every frame has a 5-year warranty."
+     },
+     {
+      "id": "NW-F02",
+      "category": "facts_claims",
+      "kind": "fact",
+      "key": "shipping",
+      "value": "free on orders over $50",
+      "approved_value": "free on orders over $50",
+      "contradicted_values": [
+       "free shipping on all orders",
+       "free shipping on every order"
+      ],
+      "evidence_quote": "Shipping is free on orders over $50."
+     }
+    ]
+   }
+  ],
+  "expected_violations": 0,
+  "expected_findings": []
+ },
+ {
+  "id": "V2-09",
+  "split": "dev",
+  "template": "v2-dev-northwind-social",
+  "brand": "Northwind",
+  "format": "social",
+  "text": "North Wind gravel bikes now with a lifetime warranty!",
+  "context": {
+   "channel": "social",
+   "audience": "Customers"
+  },
+  "sources": [
+   {
+    "id": "src-v2-north",
+    "title": "Northwind Bikes style sheet",
+    "text": "Our name is Northwind. Every frame has a 5-year warranty. Shipping is free on orders over $50.",
+    "rules": [
+     {
+      "id": "NW-T01",
+      "category": "terminology",
+      "kind": "terminology",
+      "key": "brand_name",
+      "value": "Northwind",
+      "canonical_term": "Northwind",
+      "forbidden_patterns": [
+       "North Wind",
+       "NorthWind"
+      ],
+      "evidence_quote": "Our name is Northwind."
+     },
+     {
+      "id": "NW-F01",
+      "category": "facts_claims",
+      "kind": "fact",
+      "key": "warranty",
+      "value": "5-year warranty",
+      "approved_value": "5-year warranty",
+      "contradicted_values": [
+       "lifetime warranty",
+       "10-year warranty",
+       "3-year warranty"
+      ],
+      "evidence_quote": "Every frame has a 5-year warranty."
+     },
+     {
+      "id": "NW-F02",
+      "category": "facts_claims",
+      "kind": "fact",
+      "key": "shipping",
+      "value": "free on orders over $50",
+      "approved_value": "free on orders over $50",
+      "contradicted_values": [
+       "free shipping on all orders",
+       "free shipping on every order"
+      ],
+      "evidence_quote": "Shipping is free on orders over $50."
+     }
+    ]
+   }
+  ],
+  "expected_violations": 2,
+  "expected_findings": [
+   {
+    "category": "terminology",
+    "rule_id": "NW-T01",
+    "quote": "North Wind",
+    "evidence_status": "supported_violation",
+    "source_version_id": "src-v2-north"
+   },
+   {
+    "category": "facts_claims",
+    "rule_id": "NW-F01",
+    "quote": "lifetime warranty",
+    "evidence_status": "contradicted",
+    "source_version_id": "src-v2-north"
+   }
+  ]
+ },
+ {
+  "id": "V2-10",
+  "split": "dev",
+  "template": "v2-dev-northwind-landing",
+  "brand": "Northwind",
+  "format": "landing",
+  "text": "Free shipping on all orders this week only at Northwind.",
+  "context": {
+   "channel": "landing page",
+   "audience": "Customers"
+  },
+  "sources": [
+   {
+    "id": "src-v2-north",
+    "title": "Northwind Bikes style sheet",
+    "text": "Our name is Northwind. Every frame has a 5-year warranty. Shipping is free on orders over $50.",
+    "rules": [
+     {
+      "id": "NW-T01",
+      "category": "terminology",
+      "kind": "terminology",
+      "key": "brand_name",
+      "value": "Northwind",
+      "canonical_term": "Northwind",
+      "forbidden_patterns": [
+       "North Wind",
+       "NorthWind"
+      ],
+      "evidence_quote": "Our name is Northwind."
+     },
+     {
+      "id": "NW-F01",
+      "category": "facts_claims",
+      "kind": "fact",
+      "key": "warranty",
+      "value": "5-year warranty",
+      "approved_value": "5-year warranty",
+      "contradicted_values": [
+       "lifetime warranty",
+       "10-year warranty",
+       "3-year warranty"
+      ],
+      "evidence_quote": "Every frame has a 5-year warranty."
+     },
+     {
+      "id": "NW-F02",
+      "category": "facts_claims",
+      "kind": "fact",
+      "key": "shipping",
+      "value": "free on orders over $50",
+      "approved_value": "free on orders over $50",
+      "contradicted_values": [
+       "free shipping on all orders",
+       "free shipping on every order"
+      ],
+      "evidence_quote": "Shipping is free on orders over $50."
+     }
+    ]
+   }
+  ],
+  "expected_violations": 1,
+  "expected_findings": [
+   {
+    "category": "facts_claims",
+    "rule_id": "NW-F02",
+    "quote": "Free shipping on all orders",
+    "evidence_status": "contradicted",
+    "source_version_id": "src-v2-north"
+   }
+  ]
+ },
+ {
+  "id": "V2-11",
+  "split": "dev",
+  "template": "v2-dev-northwind-push",
+  "brand": "Northwind",
+  "format": "push",
+  "text": "Northwind: your service reminder is due in 30 days.",
+  "context": {
+   "channel": "push notification",
+   "audience": "Customers"
+  },
+  "sources": [
+   {
+    "id": "src-v2-north",
+    "title": "Northwind Bikes style sheet",
+    "text": "Our name is Northwind. Every frame has a 5-year warranty. Shipping is free on orders over $50.",
+    "rules": [
+     {
+      "id": "NW-T01",
+      "category": "terminology",
+      "kind": "terminology",
+      "key": "brand_name",
+      "value": "Northwind",
+      "canonical_term": "Northwind",
+      "forbidden_patterns": [
+       "North Wind",
+       "NorthWind"
+      ],
+      "evidence_quote": "Our name is Northwind."
+     },
+     {
+      "id": "NW-F01",
+      "category": "facts_claims",
+      "kind": "fact",
+      "key": "warranty",
+      "value": "5-year warranty",
+      "approved_value": "5-year warranty",
+      "contradicted_values": [
+       "lifetime warranty",
+       "10-year warranty",
+       "3-year warranty"
+      ],
+      "evidence_quote": "Every frame has a 5-year warranty."
+     },
+     {
+      "id": "NW-F02",
+      "category": "facts_claims",
+      "kind": "fact",
+      "key": "shipping",
+      "value": "free on orders over $50",
+      "approved_value": "free on orders over $50",
+      "contradicted_values": [
+       "free shipping on all orders",
+       "free shipping on every order"
+      ],
+      "evidence_quote": "Shipping is free on orders over $50."
+     }
+    ]
+   }
+  ],
+  "expected_violations": 0,
+  "expected_findings": []
+ },
+ {
+  "id": "V2-12",
+  "split": "dev",
+  "template": "v2-dev-northwind-sms",
+  "brand": "Northwind",
+  "format": "sms",
+  "text": "NorthWind sale ends tonight. Shipping free on orders over $50.",
+  "context": {
+   "channel": "sms",
+   "audience": "Customers"
+  },
+  "sources": [
+   {
+    "id": "src-v2-north",
+    "title": "Northwind Bikes style sheet",
+    "text": "Our name is Northwind. Every frame has a 5-year warranty. Shipping is free on orders over $50.",
+    "rules": [
+     {
+      "id": "NW-T01",
+      "category": "terminology",
+      "kind": "terminology",
+      "key": "brand_name",
+      "value": "Northwind",
+      "canonical_term": "Northwind",
+      "forbidden_patterns": [
+       "North Wind",
+       "NorthWind"
+      ],
+      "evidence_quote": "Our name is Northwind."
+     },
+     {
+      "id": "NW-F01",
+      "category": "facts_claims",
+      "kind": "fact",
+      "key": "warranty",
+      "value": "5-year warranty",
+      "approved_value": "5-year warranty",
+      "contradicted_values": [
+       "lifetime warranty",
+       "10-year warranty",
+       "3-year warranty"
+      ],
+      "evidence_quote": "Every frame has a 5-year warranty."
+     },
+     {
+      "id": "NW-F02",
+      "category": "facts_claims",
+      "kind": "fact",
+      "key": "shipping",
+      "value": "free on orders over $50",
+      "approved_value": "free on orders over $50",
+      "contradicted_values": [
+       "free shipping on all orders",
+       "free shipping on every order"
+      ],
+      "evidence_quote": "Shipping is free on orders over $50."
+     }
+    ]
+   }
+  ],
+  "expected_violations": 1,
+  "expected_findings": [
+   {
+    "category": "terminology",
+    "rule_id": "NW-T01",
+    "quote": "NorthWind",
+    "evidence_status": "supported_violation",
+    "source_version_id": "src-v2-north"
+   }
+  ]
+ },
+ {
+  "id": "V2-13",
+  "split": "dev",
+  "template": "v2-dev-northwind-banner",
+  "brand": "Northwind",
+  "format": "banner",
+  "text": "Northwind. Built to last, with a 10-year warranty.",
+  "context": {
+   "channel": "display banner",
+   "audience": "Customers"
+  },
+  "sources": [
+   {
+    "id": "src-v2-north",
+    "title": "Northwind Bikes style sheet",
+    "text": "Our name is Northwind. Every frame has a 5-year warranty. Shipping is free on orders over $50.",
+    "rules": [
+     {
+      "id": "NW-T01",
+      "category": "terminology",
+      "kind": "terminology",
+      "key": "brand_name",
+      "value": "Northwind",
+      "canonical_term": "Northwind",
+      "forbidden_patterns": [
+       "North Wind",
+       "NorthWind"
+      ],
+      "evidence_quote": "Our name is Northwind."
+     },
+     {
+      "id": "NW-F01",
+      "category": "facts_claims",
+      "kind": "fact",
+      "key": "warranty",
+      "value": "5-year warranty",
+      "approved_value": "5-year warranty",
+      "contradicted_values": [
+       "lifetime warranty",
+       "10-year warranty",
+       "3-year warranty"
+      ],
+      "evidence_quote": "Every frame has a 5-year warranty."
+     },
+     {
+      "id": "NW-F02",
+      "category": "facts_claims",
+      "kind": "fact",
+      "key": "shipping",
+      "value": "free on orders over $50",
+      "approved_value": "free on orders over $50",
+      "contradicted_values": [
+       "free shipping on all orders",
+       "free shipping on every order"
+      ],
+      "evidence_quote": "Shipping is free on orders over $50."
+     }
+    ]
+   }
+  ],
+  "expected_violations": 1,
+  "expected_findings": [
+   {
+    "category": "facts_claims",
+    "rule_id": "NW-F01",
+    "quote": "10-year warranty",
+    "evidence_status": "contradicted",
+    "source_version_id": "src-v2-north"
+   }
+  ]
+ },
+ {
+  "id": "V2-14",
+  "split": "dev",
+  "template": "v2-dev-saltwater-email",
+  "brand": "Saltwater",
+  "format": "email",
+  "text": "Saltwater Coffee subscribers save 15% on every bag.",
+  "context": {
+   "channel": "email",
+   "audience": "Customers"
+  },
+  "sources": [
+   {
+    "id": "src-v2-salt",
+    "title": "Saltwater Coffee voice and offers",
+    "text": "Write Saltwater Coffee in full, two words. Subscribers save 15% on every bag. New subscribers get a 7-day free trial of the tasting box.",
+    "rules": [
+     {
+      "id": "SC-T01",
+      "category": "terminology",
+      "kind": "terminology",
+      "key": "company_name",
+      "value": "Saltwater Coffee",
+      "canonical_term": "Saltwater Coffee",
+      "forbidden_patterns": [
+       "Salt Water Coffee",
+       "SaltWater Coffee"
+      ],
+      "evidence_quote": "Write Saltwater Coffee in full, two words."
+     },
+     {
+      "id": "SC-F01",
+      "category": "facts_claims",
+      "kind": "fact",
+      "key": "subscription_discount",
+      "value": "15%",
+      "approved_value": "save 15%",
+      "contradicted_values": [
+       "save 20%",
+       "save 25%",
+       "30% off every bag"
+      ],
+      "evidence_quote": "Subscribers save 15% on every bag."
+     },
+     {
+      "id": "SC-F02",
+      "category": "facts_claims",
+      "kind": "fact",
+      "key": "trial_duration",
+      "value": "7 days",
+      "approved_value": "7 days",
+      "evidence_quote": "New subscribers get a 7-day free trial of the tasting box."
+     }
+    ]
+   }
+  ],
+  "expected_violations": 0,
+  "expected_findings": []
+ },
+ {
+  "id": "V2-15",
+  "split": "dev",
+  "template": "v2-dev-saltwater-social",
+  "brand": "Saltwater",
+  "format": "social",
+  "text": "Salt Water Coffee just dropped a new roast. Subscribers save 20%.",
+  "context": {
+   "channel": "social",
+   "audience": "Customers"
+  },
+  "sources": [
+   {
+    "id": "src-v2-salt",
+    "title": "Saltwater Coffee voice and offers",
+    "text": "Write Saltwater Coffee in full, two words. Subscribers save 15% on every bag. New subscribers get a 7-day free trial of the tasting box.",
+    "rules": [
+     {
+      "id": "SC-T01",
+      "category": "terminology",
+      "kind": "terminology",
+      "key": "company_name",
+      "value": "Saltwater Coffee",
+      "canonical_term": "Saltwater Coffee",
+      "forbidden_patterns": [
+       "Salt Water Coffee",
+       "SaltWater Coffee"
+      ],
+      "evidence_quote": "Write Saltwater Coffee in full, two words."
+     },
+     {
+      "id": "SC-F01",
+      "category": "facts_claims",
+      "kind": "fact",
+      "key": "subscription_discount",
+      "value": "15%",
+      "approved_value": "save 15%",
+      "contradicted_values": [
+       "save 20%",
+       "save 25%",
+       "30% off every bag"
+      ],
+      "evidence_quote": "Subscribers save 15% on every bag."
+     },
+     {
+      "id": "SC-F02",
+      "category": "facts_claims",
+      "kind": "fact",
+      "key": "trial_duration",
+      "value": "7 days",
+      "approved_value": "7 days",
+      "evidence_quote": "New subscribers get a 7-day free trial of the tasting box."
+     }
+    ]
+   }
+  ],
+  "expected_violations": 2,
+  "expected_findings": [
+   {
+    "category": "terminology",
+    "rule_id": "SC-T01",
+    "quote": "Salt Water Coffee",
+    "evidence_status": "supported_violation",
+    "source_version_id": "src-v2-salt"
+   },
+   {
+    "category": "facts_claims",
+    "rule_id": "SC-F01",
+    "quote": "save 20%",
+    "evidence_status": "contradicted",
+    "source_version_id": "src-v2-salt"
+   }
+  ]
+ },
+ {
+  "id": "V2-16",
+  "split": "dev",
+  "template": "v2-dev-saltwater-landing",
+  "brand": "Saltwater",
+  "format": "landing",
+  "text": "Try the Saltwater Coffee tasting box with a 14-day free trial.",
+  "context": {
+   "channel": "landing page",
+   "audience": "Customers"
+  },
+  "sources": [
+   {
+    "id": "src-v2-salt",
+    "title": "Saltwater Coffee voice and offers",
+    "text": "Write Saltwater Coffee in full, two words. Subscribers save 15% on every bag. New subscribers get a 7-day free trial of the tasting box.",
+    "rules": [
+     {
+      "id": "SC-T01",
+      "category": "terminology",
+      "kind": "terminology",
+      "key": "company_name",
+      "value": "Saltwater Coffee",
+      "canonical_term": "Saltwater Coffee",
+      "forbidden_patterns": [
+       "Salt Water Coffee",
+       "SaltWater Coffee"
+      ],
+      "evidence_quote": "Write Saltwater Coffee in full, two words."
+     },
+     {
+      "id": "SC-F01",
+      "category": "facts_claims",
+      "kind": "fact",
+      "key": "subscription_discount",
+      "value": "15%",
+      "approved_value": "save 15%",
+      "contradicted_values": [
+       "save 20%",
+       "save 25%",
+       "30% off every bag"
+      ],
+      "evidence_quote": "Subscribers save 15% on every bag."
+     },
+     {
+      "id": "SC-F02",
+      "category": "facts_claims",
+      "kind": "fact",
+      "key": "trial_duration",
+      "value": "7 days",
+      "approved_value": "7 days",
+      "evidence_quote": "New subscribers get a 7-day free trial of the tasting box."
+     }
+    ]
+   }
+  ],
+  "expected_violations": 1,
+  "expected_findings": [
+   {
+    "category": "facts_claims",
+    "rule_id": "SC-F02",
+    "quote": "14-day",
+    "evidence_status": "contradicted",
+    "source_version_id": "src-v2-salt"
+   }
+  ]
+ },
+ {
+  "id": "V2-17",
+  "split": "dev",
+  "template": "v2-dev-saltwater-push",
+  "brand": "Saltwater",
+  "format": "push",
+  "text": "Your Saltwater Coffee order ships today.",
+  "context": {
+   "channel": "push notification",
+   "audience": "Customers"
+  },
+  "sources": [
+   {
+    "id": "src-v2-salt",
+    "title": "Saltwater Coffee voice and offers",
+    "text": "Write Saltwater Coffee in full, two words. Subscribers save 15% on every bag. New subscribers get a 7-day free trial of the tasting box.",
+    "rules": [
+     {
+      "id": "SC-T01",
+      "category": "terminology",
+      "kind": "terminology",
+      "key": "company_name",
+      "value": "Saltwater Coffee",
+      "canonical_term": "Saltwater Coffee",
+      "forbidden_patterns": [
+       "Salt Water Coffee",
+       "SaltWater Coffee"
+      ],
+      "evidence_quote": "Write Saltwater Coffee in full, two words."
+     },
+     {
+      "id": "SC-F01",
+      "category": "facts_claims",
+      "kind": "fact",
+      "key": "subscription_discount",
+      "value": "15%",
+      "approved_value": "save 15%",
+      "contradicted_values": [
+       "save 20%",
+       "save 25%",
+       "30% off every bag"
+      ],
+      "evidence_quote": "Subscribers save 15% on every bag."
+     },
+     {
+      "id": "SC-F02",
+      "category": "facts_claims",
+      "kind": "fact",
+      "key": "trial_duration",
+      "value": "7 days",
+      "approved_value": "7 days",
+      "evidence_quote": "New subscribers get a 7-day free trial of the tasting box."
+     }
+    ]
+   }
+  ],
+  "expected_violations": 0,
+  "expected_findings": []
+ },
+ {
+  "id": "V2-18",
+  "split": "dev",
+  "template": "v2-dev-saltwater-sms",
+  "brand": "Saltwater",
+  "format": "sms",
+  "text": "Saltwater Coffee: 7-day free trial of the tasting box for new subscribers.",
+  "context": {
+   "channel": "sms",
+   "audience": "Customers"
+  },
+  "sources": [
+   {
+    "id": "src-v2-salt",
+    "title": "Saltwater Coffee voice and offers",
+    "text": "Write Saltwater Coffee in full, two words. Subscribers save 15% on every bag. New subscribers get a 7-day free trial of the tasting box.",
+    "rules": [
+     {
+      "id": "SC-T01",
+      "category": "terminology",
+      "kind": "terminology",
+      "key": "company_name",
+      "value": "Saltwater Coffee",
+      "canonical_term": "Saltwater Coffee",
+      "forbidden_patterns": [
+       "Salt Water Coffee",
+       "SaltWater Coffee"
+      ],
+      "evidence_quote": "Write Saltwater Coffee in full, two words."
+     },
+     {
+      "id": "SC-F01",
+      "category": "facts_claims",
+      "kind": "fact",
+      "key": "subscription_discount",
+      "value": "15%",
+      "approved_value": "save 15%",
+      "contradicted_values": [
+       "save 20%",
+       "save 25%",
+       "30% off every bag"
+      ],
+      "evidence_quote": "Subscribers save 15% on every bag."
+     },
+     {
+      "id": "SC-F02",
+      "category": "facts_claims",
+      "kind": "fact",
+      "key": "trial_duration",
+      "value": "7 days",
+      "approved_value": "7 days",
+      "evidence_quote": "New subscribers get a 7-day free trial of the tasting box."
+     }
+    ]
+   }
+  ],
+  "expected_violations": 0,
+  "expected_findings": []
+ },
+ {
+  "id": "V2-19",
+  "split": "dev",
+  "template": "v2-dev-saltwater-banner",
+  "brand": "Saltwater",
+  "format": "banner",
+  "text": "SaltWater Coffee. Fresh every week.",
+  "context": {
+   "channel": "display banner",
+   "audience": "Customers"
+  },
+  "sources": [
+   {
+    "id": "src-v2-salt",
+    "title": "Saltwater Coffee voice and offers",
+    "text": "Write Saltwater Coffee in full, two words. Subscribers save 15% on every bag. New subscribers get a 7-day free trial of the tasting box.",
+    "rules": [
+     {
+      "id": "SC-T01",
+      "category": "terminology",
+      "kind": "terminology",
+      "key": "company_name",
+      "value": "Saltwater Coffee",
+      "canonical_term": "Saltwater Coffee",
+      "forbidden_patterns": [
+       "Salt Water Coffee",
+       "SaltWater Coffee"
+      ],
+      "evidence_quote": "Write Saltwater Coffee in full, two words."
+     },
+     {
+      "id": "SC-F01",
+      "category": "facts_claims",
+      "kind": "fact",
+      "key": "subscription_discount",
+      "value": "15%",
+      "approved_value": "save 15%",
+      "contradicted_values": [
+       "save 20%",
+       "save 25%",
+       "30% off every bag"
+      ],
+      "evidence_quote": "Subscribers save 15% on every bag."
+     },
+     {
+      "id": "SC-F02",
+      "category": "facts_claims",
+      "kind": "fact",
+      "key": "trial_duration",
+      "value": "7 days",
+      "approved_value": "7 days",
+      "evidence_quote": "New subscribers get a 7-day free trial of the tasting box."
+     }
+    ]
+   }
+  ],
+  "expected_violations": 1,
+  "expected_findings": [
+   {
+    "category": "terminology",
+    "rule_id": "SC-T01",
+    "quote": "SaltWater Coffee",
+    "evidence_status": "supported_violation",
+    "source_version_id": "src-v2-salt"
+   }
+  ]
+ },
+ {
+  "id": "V2-20",
+  "split": "dev",
+  "template": "v2-dev-lumadesk-social",
+  "brand": "LumaDesk",
+  "format": "social",
+  "text": "Hot desks, sorted. LumaDesk is the calm way to plan the office week.",
+  "context": {
+   "channel": "social",
+   "audience": "Customers"
+  },
+  "sources": [
+   {
+    "id": "src-v2-luma",
+    "title": "LumaDesk brand and product guide",
+    "text": "Write LumaDesk as one word with a capital D. The free trial lasts 14 days. Team plans cost $12 per seat per month.",
+    "rules": [
+     {
+      "id": "LD-T01",
+      "category": "terminology",
+      "kind": "terminology",
+      "key": "brand_name",
+      "value": "LumaDesk",
+      "canonical_term": "LumaDesk",
+      "forbidden_patterns": [
+       "Luma Desk"
+      ],
+      "evidence_quote": "Write LumaDesk as one word with a capital D."
+     },
+     {
+      "id": "LD-F01",
+      "category": "facts_claims",
+      "kind": "fact",
+      "key": "trial_duration",
+      "value": "14 days",
+      "approved_value": "14 days",
+      "evidence_quote": "The free trial lasts 14 days."
+     },
+     {
+      "id": "LD-F02",
+      "category": "facts_claims",
+      "kind": "fact",
+      "key": "seat_price",
+      "value": "$12 per seat",
+      "approved_value": "$12 per seat",
+      "contradicted_values": [
+       "$10 per seat",
+       "$15 per seat",
+       "$9 per seat"
+      ],
+      "evidence_quote": "Team plans cost $12 per seat per month."
+     }
+    ]
+   }
+  ],
+  "expected_violations": 0,
+  "expected_findings": []
+ },
+ {
+  "id": "V2-21",
+  "split": "test",
+  "template": "v2-test-lumadesk-email",
+  "brand": "LumaDesk",
+  "format": "email",
+  "text": "Welcome to LumaDesk! Your 14-day free trial starts now.",
+  "context": {
+   "channel": "email",
+   "audience": "Customers"
+  },
+  "sources": [
+   {
+    "id": "src-v2-luma",
+    "title": "LumaDesk brand and product guide",
+    "text": "Write LumaDesk as one word with a capital D. The free trial lasts 14 days. Team plans cost $12 per seat per month.",
+    "rules": [
+     {
+      "id": "LD-T01",
+      "category": "terminology",
+      "kind": "terminology",
+      "key": "brand_name",
+      "value": "LumaDesk",
+      "canonical_term": "LumaDesk",
+      "forbidden_patterns": [
+       "Luma Desk"
+      ],
+      "evidence_quote": "Write LumaDesk as one word with a capital D."
+     },
+     {
+      "id": "LD-F01",
+      "category": "facts_claims",
+      "kind": "fact",
+      "key": "trial_duration",
+      "value": "14 days",
+      "approved_value": "14 days",
+      "evidence_quote": "The free trial lasts 14 days."
+     },
+     {
+      "id": "LD-F02",
+      "category": "facts_claims",
+      "kind": "fact",
+      "key": "seat_price",
+      "value": "$12 per seat",
+      "approved_value": "$12 per seat",
+      "contradicted_values": [
+       "$10 per seat",
+       "$15 per seat",
+       "$9 per seat"
+      ],
+      "evidence_quote": "Team plans cost $12 per seat per month."
+     }
+    ]
+   }
+  ],
+  "expected_violations": 0,
+  "expected_findings": []
+ },
+ {
+  "id": "V2-22",
+  "split": "test",
+  "template": "v2-test-lumadesk-email",
+  "brand": "LumaDesk",
+  "format": "email",
+  "text": "Upgrade to LumaDesk Team for just $9 per seat per month.",
+  "context": {
+   "channel": "email",
+   "audience": "Customers"
+  },
+  "sources": [
+   {
+    "id": "src-v2-luma",
+    "title": "LumaDesk brand and product guide",
+    "text": "Write LumaDesk as one word with a capital D. The free trial lasts 14 days. Team plans cost $12 per seat per month.",
+    "rules": [
+     {
+      "id": "LD-T01",
+      "category": "terminology",
+      "kind": "terminology",
+      "key": "brand_name",
+      "value": "LumaDesk",
+      "canonical_term": "LumaDesk",
+      "forbidden_patterns": [
+       "Luma Desk"
+      ],
+      "evidence_quote": "Write LumaDesk as one word with a capital D."
+     },
+     {
+      "id": "LD-F01",
+      "category": "facts_claims",
+      "kind": "fact",
+      "key": "trial_duration",
+      "value": "14 days",
+      "approved_value": "14 days",
+      "evidence_quote": "The free trial lasts 14 days."
+     },
+     {
+      "id": "LD-F02",
+      "category": "facts_claims",
+      "kind": "fact",
+      "key": "seat_price",
+      "value": "$12 per seat",
+      "approved_value": "$12 per seat",
+      "contradicted_values": [
+       "$10 per seat",
+       "$15 per seat",
+       "$9 per seat"
+      ],
+      "evidence_quote": "Team plans cost $12 per seat per month."
+     }
+    ]
+   }
+  ],
+  "expected_violations": 1,
+  "expected_findings": [
+   {
+    "category": "facts_claims",
+    "rule_id": "LD-F02",
+    "quote": "$9 per seat",
+    "evidence_status": "contradicted",
+    "source_version_id": "src-v2-luma"
+   }
+  ]
+ },
+ {
+  "id": "V2-23",
+  "split": "test",
+  "template": "v2-test-lumadesk-social",
+  "brand": "LumaDesk",
+  "format": "social",
+  "text": "LumaDesc helps teams find a desk fast.",
+  "context": {
+   "channel": "social",
+   "audience": "Customers"
+  },
+  "sources": [
+   {
+    "id": "src-v2-luma",
+    "title": "LumaDesk brand and product guide",
+    "text": "Write LumaDesk as one word with a capital D. The free trial lasts 14 days. Team plans cost $12 per seat per month.",
+    "rules": [
+     {
+      "id": "LD-T01",
+      "category": "terminology",
+      "kind": "terminology",
+      "key": "brand_name",
+      "value": "LumaDesk",
+      "canonical_term": "LumaDesk",
+      "forbidden_patterns": [
+       "Luma Desk"
+      ],
+      "evidence_quote": "Write LumaDesk as one word with a capital D."
+     },
+     {
+      "id": "LD-F01",
+      "category": "facts_claims",
+      "kind": "fact",
+      "key": "trial_duration",
+      "value": "14 days",
+      "approved_value": "14 days",
+      "evidence_quote": "The free trial lasts 14 days."
+     },
+     {
+      "id": "LD-F02",
+      "category": "facts_claims",
+      "kind": "fact",
+      "key": "seat_price",
+      "value": "$12 per seat",
+      "approved_value": "$12 per seat",
+      "contradicted_values": [
+       "$10 per seat",
+       "$15 per seat",
+       "$9 per seat"
+      ],
+      "evidence_quote": "Team plans cost $12 per seat per month."
+     }
+    ]
+   }
+  ],
+  "expected_violations": 1,
+  "expected_findings": [
+   {
+    "category": "terminology",
+    "rule_id": "LD-T01",
+    "quote": "LumaDesc",
+    "evidence_status": "supported_violation",
+    "source_version_id": "src-v2-luma"
+   }
+  ]
+ },
+ {
+  "id": "V2-24",
+  "split": "test",
+  "template": "v2-test-lumadesk-social",
+  "brand": "LumaDesk",
+  "format": "social",
+  "text": "Teams love LumaDesk. Try it free: the trial lasts 21 days.",
+  "context": {
+   "channel": "social",
+   "audience": "Customers"
+  },
+  "sources": [
+   {
+    "id": "src-v2-luma",
+    "title": "LumaDesk brand and product guide",
+    "text": "Write LumaDesk as one word with a capital D. The free trial lasts 14 days. Team plans cost $12 per seat per month.",
+    "rules": [
+     {
+      "id": "LD-T01",
+      "category": "terminology",
+      "kind": "terminology",
+      "key": "brand_name",
+      "value": "LumaDesk",
+      "canonical_term": "LumaDesk",
+      "forbidden_patterns": [
+       "Luma Desk"
+      ],
+      "evidence_quote": "Write LumaDesk as one word with a capital D."
+     },
+     {
+      "id": "LD-F01",
+      "category": "facts_claims",
+      "kind": "fact",
+      "key": "trial_duration",
+      "value": "14 days",
+      "approved_value": "14 days",
+      "evidence_quote": "The free trial lasts 14 days."
+     },
+     {
+      "id": "LD-F02",
+      "category": "facts_claims",
+      "kind": "fact",
+      "key": "seat_price",
+      "value": "$12 per seat",
+      "approved_value": "$12 per seat",
+      "contradicted_values": [
+       "$10 per seat",
+       "$15 per seat",
+       "$9 per seat"
+      ],
+      "evidence_quote": "Team plans cost $12 per seat per month."
+     }
+    ]
+   }
+  ],
+  "expected_violations": 1,
+  "expected_findings": [
+   {
+    "category": "facts_claims",
+    "rule_id": "LD-F01",
+    "quote": "21 days",
+    "evidence_status": "contradicted",
+    "source_version_id": "src-v2-luma"
+   }
+  ]
+ },
+ {
+  "id": "V2-25",
+  "split": "test",
+  "template": "v2-test-lumadesk-landing",
+  "brand": "LumaDesk",
+  "format": "landing",
+  "text": "Plan the week in LumaDesk. Pricing: $12 per seat per month, billed monthly.",
+  "context": {
+   "channel": "landing page",
+   "audience": "Customers"
+  },
+  "sources": [
+   {
+    "id": "src-v2-luma",
+    "title": "LumaDesk brand and product guide",
+    "text": "Write LumaDesk as one word with a capital D. The free trial lasts 14 days. Team plans cost $12 per seat per month.",
+    "rules": [
+     {
+      "id": "LD-T01",
+      "category": "terminology",
+      "kind": "terminology",
+      "key": "brand_name",
+      "value": "LumaDesk",
+      "canonical_term": "LumaDesk",
+      "forbidden_patterns": [
+       "Luma Desk"
+      ],
+      "evidence_quote": "Write LumaDesk as one word with a capital D."
+     },
+     {
+      "id": "LD-F01",
+      "category": "facts_claims",
+      "kind": "fact",
+      "key": "trial_duration",
+      "value": "14 days",
+      "approved_value": "14 days",
+      "evidence_quote": "The free trial lasts 14 days."
+     },
+     {
+      "id": "LD-F02",
+      "category": "facts_claims",
+      "kind": "fact",
+      "key": "seat_price",
+      "value": "$12 per seat",
+      "approved_value": "$12 per seat",
+      "contradicted_values": [
+       "$10 per seat",
+       "$15 per seat",
+       "$9 per seat"
+      ],
+      "evidence_quote": "Team plans cost $12 per seat per month."
+     }
+    ]
+   }
+  ],
+  "expected_violations": 0,
+  "expected_findings": []
+ },
+ {
+  "id": "V2-26",
+  "split": "test",
+  "template": "v2-test-lumadesk-landing",
+  "brand": "LumaDesk",
+  "format": "landing",
+  "text": "luma desk works with your calendar. Free trial for 14 days.",
+  "context": {
+   "channel": "landing page",
+   "audience": "Customers"
+  },
+  "sources": [
+   {
+    "id": "src-v2-luma",
+    "title": "LumaDesk brand and product guide",
+    "text": "Write LumaDesk as one word with a capital D. The free trial lasts 14 days. Team plans cost $12 per seat per month.",
+    "rules": [
+     {
+      "id": "LD-T01",
+      "category": "terminology",
+      "kind": "terminology",
+      "key": "brand_name",
+      "value": "LumaDesk",
+      "canonical_term": "LumaDesk",
+      "forbidden_patterns": [
+       "Luma Desk"
+      ],
+      "evidence_quote": "Write LumaDesk as one word with a capital D."
+     },
+     {
+      "id": "LD-F01",
+      "category": "facts_claims",
+      "kind": "fact",
+      "key": "trial_duration",
+      "value": "14 days",
+      "approved_value": "14 days",
+      "evidence_quote": "The free trial lasts 14 days."
+     },
+     {
+      "id": "LD-F02",
+      "category": "facts_claims",
+      "kind": "fact",
+      "key": "seat_price",
+      "value": "$12 per seat",
+      "approved_value": "$12 per seat",
+      "contradicted_values": [
+       "$10 per seat",
+       "$15 per seat",
+       "$9 per seat"
+      ],
+      "evidence_quote": "Team plans cost $12 per seat per month."
+     }
+    ]
+   }
+  ],
+  "expected_violations": 1,
+  "expected_findings": [
+   {
+    "category": "terminology",
+    "rule_id": "LD-T01",
+    "quote": "luma desk",
+    "evidence_status": "supported_violation",
+    "source_version_id": "src-v2-luma"
+   }
+  ]
+ },
+ {
+  "id": "V2-27",
+  "split": "test",
+  "template": "v2-test-lumadesk-push",
+  "brand": "LumaDesk",
+  "format": "push",
+  "text": "LumaDesk: 2 desks left on floor 3 for Thursday.",
+  "context": {
+   "channel": "push notification",
+   "audience": "Customers"
+  },
+  "sources": [
+   {
+    "id": "src-v2-luma",
+    "title": "LumaDesk brand and product guide",
+    "text": "Write LumaDesk as one word with a capital D. The free trial lasts 14 days. Team plans cost $12 per seat per month.",
+    "rules": [
+     {
+      "id": "LD-T01",
+      "category": "terminology",
+      "kind": "terminology",
+      "key": "brand_name",
+      "value": "LumaDesk",
+      "canonical_term": "LumaDesk",
+      "forbidden_patterns": [
+       "Luma Desk"
+      ],
+      "evidence_quote": "Write LumaDesk as one word with a capital D."
+     },
+     {
+      "id": "LD-F01",
+      "category": "facts_claims",
+      "kind": "fact",
+      "key": "trial_duration",
+      "value": "14 days",
+      "approved_value": "14 days",
+      "evidence_quote": "The free trial lasts 14 days."
+     },
+     {
+      "id": "LD-F02",
+      "category": "facts_claims",
+      "kind": "fact",
+      "key": "seat_price",
+      "value": "$12 per seat",
+      "approved_value": "$12 per seat",
+      "contradicted_values": [
+       "$10 per seat",
+       "$15 per seat",
+       "$9 per seat"
+      ],
+      "evidence_quote": "Team plans cost $12 per seat per month."
+     }
+    ]
+   }
+  ],
+  "expected_violations": 0,
+  "expected_findings": []
+ },
+ {
+  "id": "V2-28",
+  "split": "test",
+  "template": "v2-test-lumadesk-push",
+  "brand": "LumaDesk",
+  "format": "push",
+  "text": "Lumadesk reminder: check in to your desk by 10:00.",
+  "context": {
+   "channel": "push notification",
+   "audience": "Customers"
+  },
+  "sources": [
+   {
+    "id": "src-v2-luma",
+    "title": "LumaDesk brand and product guide",
+    "text": "Write LumaDesk as one word with a capital D. The free trial lasts 14 days. Team plans cost $12 per seat per month.",
+    "rules": [
+     {
+      "id": "LD-T01",
+      "category": "terminology",
+      "kind": "terminology",
+      "key": "brand_name",
+      "value": "LumaDesk",
+      "canonical_term": "LumaDesk",
+      "forbidden_patterns": [
+       "Luma Desk"
+      ],
+      "evidence_quote": "Write LumaDesk as one word with a capital D."
+     },
+     {
+      "id": "LD-F01",
+      "category": "facts_claims",
+      "kind": "fact",
+      "key": "trial_duration",
+      "value": "14 days",
+      "approved_value": "14 days",
+      "evidence_quote": "The free trial lasts 14 days."
+     },
+     {
+      "id": "LD-F02",
+      "category": "facts_claims",
+      "kind": "fact",
+      "key": "seat_price",
+      "value": "$12 per seat",
+      "approved_value": "$12 per seat",
+      "contradicted_values": [
+       "$10 per seat",
+       "$15 per seat",
+       "$9 per seat"
+      ],
+      "evidence_quote": "Team plans cost $12 per seat per month."
+     }
+    ]
+   }
+  ],
+  "expected_violations": 1,
+  "expected_findings": [
+   {
+    "category": "terminology",
+    "rule_id": "LD-T01",
+    "quote": "Lumadesk",
+    "evidence_status": "supported_violation",
+    "source_version_id": "src-v2-luma"
+   }
+  ]
+ },
+ {
+  "id": "V2-29",
+  "split": "test",
+  "template": "v2-test-lumadesk-sms",
+  "brand": "LumaDesk",
+  "format": "sms",
+  "text": "LumaDesk 60-day free trial for nonprofits. Reply YES.",
+  "context": {
+   "channel": "sms",
+   "audience": "Customers"
+  },
+  "sources": [
+   {
+    "id": "src-v2-luma",
+    "title": "LumaDesk brand and product guide",
+    "text": "Write LumaDesk as one word with a capital D. The free trial lasts 14 days. Team plans cost $12 per seat per month.",
+    "rules": [
+     {
+      "id": "LD-T01",
+      "category": "terminology",
+      "kind": "terminology",
+      "key": "brand_name",
+      "value": "LumaDesk",
+      "canonical_term": "LumaDesk",
+      "forbidden_patterns": [
+       "Luma Desk"
+      ],
+      "evidence_quote": "Write LumaDesk as one word with a capital D."
+     },
+     {
+      "id": "LD-F01",
+      "category": "facts_claims",
+      "kind": "fact",
+      "key": "trial_duration",
+      "value": "14 days",
+      "approved_value": "14 days",
+      "evidence_quote": "The free trial lasts 14 days."
+     },
+     {
+      "id": "LD-F02",
+      "category": "facts_claims",
+      "kind": "fact",
+      "key": "seat_price",
+      "value": "$12 per seat",
+      "approved_value": "$12 per seat",
+      "contradicted_values": [
+       "$10 per seat",
+       "$15 per seat",
+       "$9 per seat"
+      ],
+      "evidence_quote": "Team plans cost $12 per seat per month."
+     }
+    ]
+   }
+  ],
+  "expected_violations": 1,
+  "expected_findings": [
+   {
+    "category": "facts_claims",
+    "rule_id": "LD-F01",
+    "quote": "60-day",
+    "evidence_status": "contradicted",
+    "source_version_id": "src-v2-luma"
+   }
+  ]
+ },
+ {
+  "id": "V2-30",
+  "split": "test",
+  "template": "v2-test-lumadesk-sms",
+  "brand": "LumaDesk",
+  "format": "sms",
+  "text": "LumaDesk onboarding takes 30 days on average. We are here to help.",
+  "context": {
+   "channel": "sms",
+   "audience": "Customers"
+  },
+  "sources": [
+   {
+    "id": "src-v2-luma",
+    "title": "LumaDesk brand and product guide",
+    "text": "Write LumaDesk as one word with a capital D. The free trial lasts 14 days. Team plans cost $12 per seat per month.",
+    "rules": [
+     {
+      "id": "LD-T01",
+      "category": "terminology",
+      "kind": "terminology",
+      "key": "brand_name",
+      "value": "LumaDesk",
+      "canonical_term": "LumaDesk",
+      "forbidden_patterns": [
+       "Luma Desk"
+      ],
+      "evidence_quote": "Write LumaDesk as one word with a capital D."
+     },
+     {
+      "id": "LD-F01",
+      "category": "facts_claims",
+      "kind": "fact",
+      "key": "trial_duration",
+      "value": "14 days",
+      "approved_value": "14 days",
+      "evidence_quote": "The free trial lasts 14 days."
+     },
+     {
+      "id": "LD-F02",
+      "category": "facts_claims",
+      "kind": "fact",
+      "key": "seat_price",
+      "value": "$12 per seat",
+      "approved_value": "$12 per seat",
+      "contradicted_values": [
+       "$10 per seat",
+       "$15 per seat",
+       "$9 per seat"
+      ],
+      "evidence_quote": "Team plans cost $12 per seat per month."
+     }
+    ]
+   }
+  ],
+  "expected_violations": 0,
+  "expected_findings": []
+ },
+ {
+  "id": "V2-31",
+  "split": "test",
+  "template": "v2-test-lumadesk-banner",
+  "brand": "LumaDesk",
+  "format": "banner",
+  "text": "LUMADESK. Book smarter.",
+  "context": {
+   "channel": "display banner",
+   "audience": "Customers"
+  },
+  "sources": [
+   {
+    "id": "src-v2-luma",
+    "title": "LumaDesk brand and product guide",
+    "text": "Write LumaDesk as one word with a capital D. The free trial lasts 14 days. Team plans cost $12 per seat per month.",
+    "rules": [
+     {
+      "id": "LD-T01",
+      "category": "terminology",
+      "kind": "terminology",
+      "key": "brand_name",
+      "value": "LumaDesk",
+      "canonical_term": "LumaDesk",
+      "forbidden_patterns": [
+       "Luma Desk"
+      ],
+      "evidence_quote": "Write LumaDesk as one word with a capital D."
+     },
+     {
+      "id": "LD-F01",
+      "category": "facts_claims",
+      "kind": "fact",
+      "key": "trial_duration",
+      "value": "14 days",
+      "approved_value": "14 days",
+      "evidence_quote": "The free trial lasts 14 days."
+     },
+     {
+      "id": "LD-F02",
+      "category": "facts_claims",
+      "kind": "fact",
+      "key": "seat_price",
+      "value": "$12 per seat",
+      "approved_value": "$12 per seat",
+      "contradicted_values": [
+       "$10 per seat",
+       "$15 per seat",
+       "$9 per seat"
+      ],
+      "evidence_quote": "Team plans cost $12 per seat per month."
+     }
+    ]
+   }
+  ],
+  "expected_violations": 1,
+  "expected_findings": [
+   {
+    "category": "terminology",
+    "rule_id": "LD-T01",
+    "quote": "LUMADESK",
+    "evidence_status": "supported_violation",
+    "source_version_id": "src-v2-luma"
+   }
+  ]
+ },
+ {
+  "id": "V2-32",
+  "split": "test",
+  "template": "v2-test-lumadesk-banner",
+  "brand": "LumaDesk",
+  "format": "banner",
+  "text": "LumaDesk Team $15 per seat. Start free.",
+  "context": {
+   "channel": "display banner",
+   "audience": "Customers"
+  },
+  "sources": [
+   {
+    "id": "src-v2-luma",
+    "title": "LumaDesk brand and product guide",
+    "text": "Write LumaDesk as one word with a capital D. The free trial lasts 14 days. Team plans cost $12 per seat per month.",
+    "rules": [
+     {
+      "id": "LD-T01",
+      "category": "terminology",
+      "kind": "terminology",
+      "key": "brand_name",
+      "value": "LumaDesk",
+      "canonical_term": "LumaDesk",
+      "forbidden_patterns": [
+       "Luma Desk"
+      ],
+      "evidence_quote": "Write LumaDesk as one word with a capital D."
+     },
+     {
+      "id": "LD-F01",
+      "category": "facts_claims",
+      "kind": "fact",
+      "key": "trial_duration",
+      "value": "14 days",
+      "approved_value": "14 days",
+      "evidence_quote": "The free trial lasts 14 days."
+     },
+     {
+      "id": "LD-F02",
+      "category": "facts_claims",
+      "kind": "fact",
+      "key": "seat_price",
+      "value": "$12 per seat",
+      "approved_value": "$12 per seat",
+      "contradicted_values": [
+       "$10 per seat",
+       "$15 per seat",
+       "$9 per seat"
+      ],
+      "evidence_quote": "Team plans cost $12 per seat per month."
+     }
+    ]
+   }
+  ],
+  "expected_violations": 1,
+  "expected_findings": [
+   {
+    "category": "facts_claims",
+    "rule_id": "LD-F02",
+    "quote": "$15 per seat",
+    "evidence_status": "contradicted",
+    "source_version_id": "src-v2-luma"
+   }
+  ]
+ },
+ {
+  "id": "V2-33",
+  "split": "test",
+  "template": "v2-test-lumadesk-email",
+  "brand": "LumaDesk",
+  "format": "email",
+  "text": "Your LumaDesk invoice for 40 seats at $12 per seat is ready.",
+  "context": {
+   "channel": "email",
+   "audience": "Customers"
+  },
+  "sources": [
+   {
+    "id": "src-v2-luma",
+    "title": "LumaDesk brand and product guide",
+    "text": "Write LumaDesk as one word with a capital D. The free trial lasts 14 days. Team plans cost $12 per seat per month.",
+    "rules": [
+     {
+      "id": "LD-T01",
+      "category": "terminology",
+      "kind": "terminology",
+      "key": "brand_name",
+      "value": "LumaDesk",
+      "canonical_term": "LumaDesk",
+      "forbidden_patterns": [
+       "Luma Desk"
+      ],
+      "evidence_quote": "Write LumaDesk as one word with a capital D."
+     },
+     {
+      "id": "LD-F01",
+      "category": "facts_claims",
+      "kind": "fact",
+      "key": "trial_duration",
+      "value": "14 days",
+      "approved_value": "14 days",
+      "evidence_quote": "The free trial lasts 14 days."
+     },
+     {
+      "id": "LD-F02",
+      "category": "facts_claims",
+      "kind": "fact",
+      "key": "seat_price",
+      "value": "$12 per seat",
+      "approved_value": "$12 per seat",
+      "contradicted_values": [
+       "$10 per seat",
+       "$15 per seat",
+       "$9 per seat"
+      ],
+      "evidence_quote": "Team plans cost $12 per seat per month."
+     }
+    ]
+   }
+  ],
+  "expected_violations": 0,
+  "expected_findings": []
+ },
+ {
+  "id": "V2-34",
+  "split": "test",
+  "template": "v2-test-northwind-email",
+  "brand": "Northwind",
+  "format": "email",
+  "text": "Every Northwind frame is covered by a 5-year warranty.",
+  "context": {
+   "channel": "email",
+   "audience": "Customers"
+  },
+  "sources": [
+   {
+    "id": "src-v2-north",
+    "title": "Northwind Bikes style sheet",
+    "text": "Our name is Northwind. Every frame has a 5-year warranty. Shipping is free on orders over $50.",
+    "rules": [
+     {
+      "id": "NW-T01",
+      "category": "terminology",
+      "kind": "terminology",
+      "key": "brand_name",
+      "value": "Northwind",
+      "canonical_term": "Northwind",
+      "forbidden_patterns": [
+       "North Wind",
+       "NorthWind"
+      ],
+      "evidence_quote": "Our name is Northwind."
+     },
+     {
+      "id": "NW-F01",
+      "category": "facts_claims",
+      "kind": "fact",
+      "key": "warranty",
+      "value": "5-year warranty",
+      "approved_value": "5-year warranty",
+      "contradicted_values": [
+       "lifetime warranty",
+       "10-year warranty",
+       "3-year warranty"
+      ],
+      "evidence_quote": "Every frame has a 5-year warranty."
+     },
+     {
+      "id": "NW-F02",
+      "category": "facts_claims",
+      "kind": "fact",
+      "key": "shipping",
+      "value": "free on orders over $50",
+      "approved_value": "free on orders over $50",
+      "contradicted_values": [
+       "free shipping on all orders",
+       "free shipping on every order"
+      ],
+      "evidence_quote": "Shipping is free on orders over $50."
+     }
+    ]
+   }
+  ],
+  "expected_violations": 0,
+  "expected_findings": []
+ },
+ {
+  "id": "V2-35",
+  "split": "test",
+  "template": "v2-test-northwind-email",
+  "brand": "Northwind",
+  "format": "email",
+  "text": "Northwind e-bikes: now with a 3-year warranty on batteries and frames.",
+  "context": {
+   "channel": "email",
+   "audience": "Customers"
+  },
+  "sources": [
+   {
+    "id": "src-v2-north",
+    "title": "Northwind Bikes style sheet",
+    "text": "Our name is Northwind. Every frame has a 5-year warranty. Shipping is free on orders over $50.",
+    "rules": [
+     {
+      "id": "NW-T01",
+      "category": "terminology",
+      "kind": "terminology",
+      "key": "brand_name",
+      "value": "Northwind",
+      "canonical_term": "Northwind",
+      "forbidden_patterns": [
+       "North Wind",
+       "NorthWind"
+      ],
+      "evidence_quote": "Our name is Northwind."
+     },
+     {
+      "id": "NW-F01",
+      "category": "facts_claims",
+      "kind": "fact",
+      "key": "warranty",
+      "value": "5-year warranty",
+      "approved_value": "5-year warranty",
+      "contradicted_values": [
+       "lifetime warranty",
+       "10-year warranty",
+       "3-year warranty"
+      ],
+      "evidence_quote": "Every frame has a 5-year warranty."
+     },
+     {
+      "id": "NW-F02",
+      "category": "facts_claims",
+      "kind": "fact",
+      "key": "shipping",
+      "value": "free on orders over $50",
+      "approved_value": "free on orders over $50",
+      "contradicted_values": [
+       "free shipping on all orders",
+       "free shipping on every order"
+      ],
+      "evidence_quote": "Shipping is free on orders over $50."
+     }
+    ]
+   }
+  ],
+  "expected_violations": 1,
+  "expected_findings": [
+   {
+    "category": "facts_claims",
+    "rule_id": "NW-F01",
+    "quote": "3-year warranty",
+    "evidence_status": "contradicted",
+    "source_version_id": "src-v2-north"
+   }
+  ]
+ },
+ {
+  "id": "V2-36",
+  "split": "test",
+  "template": "v2-test-northwind-social",
+  "brand": "Northwind",
+  "format": "social",
+  "text": "Northwind riders, free shipping on every order this weekend!",
+  "context": {
+   "channel": "social",
+   "audience": "Customers"
+  },
+  "sources": [
+   {
+    "id": "src-v2-north",
+    "title": "Northwind Bikes style sheet",
+    "text": "Our name is Northwind. Every frame has a 5-year warranty. Shipping is free on orders over $50.",
+    "rules": [
+     {
+      "id": "NW-T01",
+      "category": "terminology",
+      "kind": "terminology",
+      "key": "brand_name",
+      "value": "Northwind",
+      "canonical_term": "Northwind",
+      "forbidden_patterns": [
+       "North Wind",
+       "NorthWind"
+      ],
+      "evidence_quote": "Our name is Northwind."
+     },
+     {
+      "id": "NW-F01",
+      "category": "facts_claims",
+      "kind": "fact",
+      "key": "warranty",
+      "value": "5-year warranty",
+      "approved_value": "5-year warranty",
+      "contradicted_values": [
+       "lifetime warranty",
+       "10-year warranty",
+       "3-year warranty"
+      ],
+      "evidence_quote": "Every frame has a 5-year warranty."
+     },
+     {
+      "id": "NW-F02",
+      "category": "facts_claims",
+      "kind": "fact",
+      "key": "shipping",
+      "value": "free on orders over $50",
+      "approved_value": "free on orders over $50",
+      "contradicted_values": [
+       "free shipping on all orders",
+       "free shipping on every order"
+      ],
+      "evidence_quote": "Shipping is free on orders over $50."
+     }
+    ]
+   }
+  ],
+  "expected_violations": 1,
+  "expected_findings": [
+   {
+    "category": "facts_claims",
+    "rule_id": "NW-F02",
+    "quote": "free shipping on every order",
+    "evidence_status": "contradicted",
+    "source_version_id": "src-v2-north"
+   }
+  ]
+ },
+ {
+  "id": "V2-37",
+  "split": "test",
+  "template": "v2-test-northwind-social",
+  "brand": "Northwind",
+  "format": "social",
+  "text": "Meet the new Northwind Trail 2. Shipping is free on orders over $50.",
+  "context": {
+   "channel": "social",
+   "audience": "Customers"
+  },
+  "sources": [
+   {
+    "id": "src-v2-north",
+    "title": "Northwind Bikes style sheet",
+    "text": "Our name is Northwind. Every frame has a 5-year warranty. Shipping is free on orders over $50.",
+    "rules": [
+     {
+      "id": "NW-T01",
+      "category": "terminology",
+      "kind": "terminology",
+      "key": "brand_name",
+      "value": "Northwind",
+      "canonical_term": "Northwind",
+      "forbidden_patterns": [
+       "North Wind",
+       "NorthWind"
+      ],
+      "evidence_quote": "Our name is Northwind."
+     },
+     {
+      "id": "NW-F01",
+      "category": "facts_claims",
+      "kind": "fact",
+      "key": "warranty",
+      "value": "5-year warranty",
+      "approved_value": "5-year warranty",
+      "contradicted_values": [
+       "lifetime warranty",
+       "10-year warranty",
+       "3-year warranty"
+      ],
+      "evidence_quote": "Every frame has a 5-year warranty."
+     },
+     {
+      "id": "NW-F02",
+      "category": "facts_claims",
+      "kind": "fact",
+      "key": "shipping",
+      "value": "free on orders over $50",
+      "approved_value": "free on orders over $50",
+      "contradicted_values": [
+       "free shipping on all orders",
+       "free shipping on every order"
+      ],
+      "evidence_quote": "Shipping is free on orders over $50."
+     }
+    ]
+   }
+  ],
+  "expected_violations": 0,
+  "expected_findings": []
+ },
+ {
+  "id": "V2-38",
+  "split": "test",
+  "template": "v2-test-northwind-landing",
+  "brand": "Northwind",
+  "format": "landing",
+  "text": "North Wind Bikes: handmade frames, lifetime warranty.",
+  "context": {
+   "channel": "landing page",
+   "audience": "Customers"
+  },
+  "sources": [
+   {
+    "id": "src-v2-north",
+    "title": "Northwind Bikes style sheet",
+    "text": "Our name is Northwind. Every frame has a 5-year warranty. Shipping is free on orders over $50.",
+    "rules": [
+     {
+      "id": "NW-T01",
+      "category": "terminology",
+      "kind": "terminology",
+      "key": "brand_name",
+      "value": "Northwind",
+      "canonical_term": "Northwind",
+      "forbidden_patterns": [
+       "North Wind",
+       "NorthWind"
+      ],
+      "evidence_quote": "Our name is Northwind."
+     },
+     {
+      "id": "NW-F01",
+      "category": "facts_claims",
+      "kind": "fact",
+      "key": "warranty",
+      "value": "5-year warranty",
+      "approved_value": "5-year warranty",
+      "contradicted_values": [
+       "lifetime warranty",
+       "10-year warranty",
+       "3-year warranty"
+      ],
+      "evidence_quote": "Every frame has a 5-year warranty."
+     },
+     {
+      "id": "NW-F02",
+      "category": "facts_claims",
+      "kind": "fact",
+      "key": "shipping",
+      "value": "free on orders over $50",
+      "approved_value": "free on orders over $50",
+      "contradicted_values": [
+       "free shipping on all orders",
+       "free shipping on every order"
+      ],
+      "evidence_quote": "Shipping is free on orders over $50."
+     }
+    ]
+   }
+  ],
+  "expected_violations": 2,
+  "expected_findings": [
+   {
+    "category": "terminology",
+    "rule_id": "NW-T01",
+    "quote": "North Wind",
+    "evidence_status": "supported_violation",
+    "source_version_id": "src-v2-north"
+   },
+   {
+    "category": "facts_claims",
+    "rule_id": "NW-F01",
+    "quote": "lifetime warranty",
+    "evidence_status": "contradicted",
+    "source_version_id": "src-v2-north"
+   }
+  ]
+ },
+ {
+  "id": "V2-39",
+  "split": "test",
+  "template": "v2-test-northwind-landing",
+  "brand": "Northwind",
+  "format": "landing",
+  "text": "Northwind service plans renew every 30 days.",
+  "context": {
+   "channel": "landing page",
+   "audience": "Customers"
+  },
+  "sources": [
+   {
+    "id": "src-v2-north",
+    "title": "Northwind Bikes style sheet",
+    "text": "Our name is Northwind. Every frame has a 5-year warranty. Shipping is free on orders over $50.",
+    "rules": [
+     {
+      "id": "NW-T01",
+      "category": "terminology",
+      "kind": "terminology",
+      "key": "brand_name",
+      "value": "Northwind",
+      "canonical_term": "Northwind",
+      "forbidden_patterns": [
+       "North Wind",
+       "NorthWind"
+      ],
+      "evidence_quote": "Our name is Northwind."
+     },
+     {
+      "id": "NW-F01",
+      "category": "facts_claims",
+      "kind": "fact",
+      "key": "warranty",
+      "value": "5-year warranty",
+      "approved_value": "5-year warranty",
+      "contradicted_values": [
+       "lifetime warranty",
+       "10-year warranty",
+       "3-year warranty"
+      ],
+      "evidence_quote": "Every frame has a 5-year warranty."
+     },
+     {
+      "id": "NW-F02",
+      "category": "facts_claims",
+      "kind": "fact",
+      "key": "shipping",
+      "value": "free on orders over $50",
+      "approved_value": "free on orders over $50",
+      "contradicted_values": [
+       "free shipping on all orders",
+       "free shipping on every order"
+      ],
+      "evidence_quote": "Shipping is free on orders over $50."
+     }
+    ]
+   }
+  ],
+  "expected_violations": 0,
+  "expected_findings": []
+ },
+ {
+  "id": "V2-40",
+  "split": "test",
+  "template": "v2-test-northwind-push",
+  "brand": "Northwind",
+  "format": "push",
+  "text": "Northwnd: your bike is ready for pickup.",
+  "context": {
+   "channel": "push notification",
+   "audience": "Customers"
+  },
+  "sources": [
+   {
+    "id": "src-v2-north",
+    "title": "Northwind Bikes style sheet",
+    "text": "Our name is Northwind. Every frame has a 5-year warranty. Shipping is free on orders over $50.",
+    "rules": [
+     {
+      "id": "NW-T01",
+      "category": "terminology",
+      "kind": "terminology",
+      "key": "brand_name",
+      "value": "Northwind",
+      "canonical_term": "Northwind",
+      "forbidden_patterns": [
+       "North Wind",
+       "NorthWind"
+      ],
+      "evidence_quote": "Our name is Northwind."
+     },
+     {
+      "id": "NW-F01",
+      "category": "facts_claims",
+      "kind": "fact",
+      "key": "warranty",
+      "value": "5-year warranty",
+      "approved_value": "5-year warranty",
+      "contradicted_values": [
+       "lifetime warranty",
+       "10-year warranty",
+       "3-year warranty"
+      ],
+      "evidence_quote": "Every frame has a 5-year warranty."
+     },
+     {
+      "id": "NW-F02",
+      "category": "facts_claims",
+      "kind": "fact",
+      "key": "shipping",
+      "value": "free on orders over $50",
+      "approved_value": "free on orders over $50",
+      "contradicted_values": [
+       "free shipping on all orders",
+       "free shipping on every order"
+      ],
+      "evidence_quote": "Shipping is free on orders over $50."
+     }
+    ]
+   }
+  ],
+  "expected_violations": 1,
+  "expected_findings": [
+   {
+    "category": "terminology",
+    "rule_id": "NW-T01",
+    "quote": "Northwnd",
+    "evidence_status": "supported_violation",
+    "source_version_id": "src-v2-north"
+   }
+  ]
+ },
+ {
+  "id": "V2-41",
+  "split": "test",
+  "template": "v2-test-northwind-push",
+  "brand": "Northwind",
+  "format": "push",
+  "text": "Northwind: the spring ride starts at 9:00 on Saturday.",
+  "context": {
+   "channel": "push notification",
+   "audience": "Customers"
+  },
+  "sources": [
+   {
+    "id": "src-v2-north",
+    "title": "Northwind Bikes style sheet",
+    "text": "Our name is Northwind. Every frame has a 5-year warranty. Shipping is free on orders over $50.",
+    "rules": [
+     {
+      "id": "NW-T01",
+      "category": "terminology",
+      "kind": "terminology",
+      "key": "brand_name",
+      "value": "Northwind",
+      "canonical_term": "Northwind",
+      "forbidden_patterns": [
+       "North Wind",
+       "NorthWind"
+      ],
+      "evidence_quote": "Our name is Northwind."
+     },
+     {
+      "id": "NW-F01",
+      "category": "facts_claims",
+      "kind": "fact",
+      "key": "warranty",
+      "value": "5-year warranty",
+      "approved_value": "5-year warranty",
+      "contradicted_values": [
+       "lifetime warranty",
+       "10-year warranty",
+       "3-year warranty"
+      ],
+      "evidence_quote": "Every frame has a 5-year warranty."
+     },
+     {
+      "id": "NW-F02",
+      "category": "facts_claims",
+      "kind": "fact",
+      "key": "shipping",
+      "value": "free on orders over $50",
+      "approved_value": "free on orders over $50",
+      "contradicted_values": [
+       "free shipping on all orders",
+       "free shipping on every order"
+      ],
+      "evidence_quote": "Shipping is free on orders over $50."
+     }
+    ]
+   }
+  ],
+  "expected_violations": 0,
+  "expected_findings": []
+ },
+ {
+  "id": "V2-42",
+  "split": "test",
+  "template": "v2-test-northwind-sms",
+  "brand": "Northwind",
+  "format": "sms",
+  "text": "Northwind: 10-year warranty on all steel frames. Shop now.",
+  "context": {
+   "channel": "sms",
+   "audience": "Customers"
+  },
+  "sources": [
+   {
+    "id": "src-v2-north",
+    "title": "Northwind Bikes style sheet",
+    "text": "Our name is Northwind. Every frame has a 5-year warranty. Shipping is free on orders over $50.",
+    "rules": [
+     {
+      "id": "NW-T01",
+      "category": "terminology",
+      "kind": "terminology",
+      "key": "brand_name",
+      "value": "Northwind",
+      "canonical_term": "Northwind",
+      "forbidden_patterns": [
+       "North Wind",
+       "NorthWind"
+      ],
+      "evidence_quote": "Our name is Northwind."
+     },
+     {
+      "id": "NW-F01",
+      "category": "facts_claims",
+      "kind": "fact",
+      "key": "warranty",
+      "value": "5-year warranty",
+      "approved_value": "5-year warranty",
+      "contradicted_values": [
+       "lifetime warranty",
+       "10-year warranty",
+       "3-year warranty"
+      ],
+      "evidence_quote": "Every frame has a 5-year warranty."
+     },
+     {
+      "id": "NW-F02",
+      "category": "facts_claims",
+      "kind": "fact",
+      "key": "shipping",
+      "value": "free on orders over $50",
+      "approved_value": "free on orders over $50",
+      "contradicted_values": [
+       "free shipping on all orders",
+       "free shipping on every order"
+      ],
+      "evidence_quote": "Shipping is free on orders over $50."
+     }
+    ]
+   }
+  ],
+  "expected_violations": 1,
+  "expected_findings": [
+   {
+    "category": "facts_claims",
+    "rule_id": "NW-F01",
+    "quote": "10-year warranty",
+    "evidence_status": "contradicted",
+    "source_version_id": "src-v2-north"
+   }
+  ]
+ },
+ {
+  "id": "V2-43",
+  "split": "test",
+  "template": "v2-test-northwind-sms",
+  "brand": "Northwind",
+  "format": "sms",
+  "text": "Northwind order #2041 shipped. Track it in the app.",
+  "context": {
+   "channel": "sms",
+   "audience": "Customers"
+  },
+  "sources": [
+   {
+    "id": "src-v2-north",
+    "title": "Northwind Bikes style sheet",
+    "text": "Our name is Northwind. Every frame has a 5-year warranty. Shipping is free on orders over $50.",
+    "rules": [
+     {
+      "id": "NW-T01",
+      "category": "terminology",
+      "kind": "terminology",
+      "key": "brand_name",
+      "value": "Northwind",
+      "canonical_term": "Northwind",
+      "forbidden_patterns": [
+       "North Wind",
+       "NorthWind"
+      ],
+      "evidence_quote": "Our name is Northwind."
+     },
+     {
+      "id": "NW-F01",
+      "category": "facts_claims",
+      "kind": "fact",
+      "key": "warranty",
+      "value": "5-year warranty",
+      "approved_value": "5-year warranty",
+      "contradicted_values": [
+       "lifetime warranty",
+       "10-year warranty",
+       "3-year warranty"
+      ],
+      "evidence_quote": "Every frame has a 5-year warranty."
+     },
+     {
+      "id": "NW-F02",
+      "category": "facts_claims",
+      "kind": "fact",
+      "key": "shipping",
+      "value": "free on orders over $50",
+      "approved_value": "free on orders over $50",
+      "contradicted_values": [
+       "free shipping on all orders",
+       "free shipping on every order"
+      ],
+      "evidence_quote": "Shipping is free on orders over $50."
+     }
+    ]
+   }
+  ],
+  "expected_violations": 0,
+  "expected_findings": []
+ },
+ {
+  "id": "V2-44",
+  "split": "test",
+  "template": "v2-test-northwind-banner",
+  "brand": "Northwind",
+  "format": "banner",
+  "text": "NORTHWIND. Ride the coast.",
+  "context": {
+   "channel": "display banner",
+   "audience": "Customers"
+  },
+  "sources": [
+   {
+    "id": "src-v2-north",
+    "title": "Northwind Bikes style sheet",
+    "text": "Our name is Northwind. Every frame has a 5-year warranty. Shipping is free on orders over $50.",
+    "rules": [
+     {
+      "id": "NW-T01",
+      "category": "terminology",
+      "kind": "terminology",
+      "key": "brand_name",
+      "value": "Northwind",
+      "canonical_term": "Northwind",
+      "forbidden_patterns": [
+       "North Wind",
+       "NorthWind"
+      ],
+      "evidence_quote": "Our name is Northwind."
+     },
+     {
+      "id": "NW-F01",
+      "category": "facts_claims",
+      "kind": "fact",
+      "key": "warranty",
+      "value": "5-year warranty",
+      "approved_value": "5-year warranty",
+      "contradicted_values": [
+       "lifetime warranty",
+       "10-year warranty",
+       "3-year warranty"
+      ],
+      "evidence_quote": "Every frame has a 5-year warranty."
+     },
+     {
+      "id": "NW-F02",
+      "category": "facts_claims",
+      "kind": "fact",
+      "key": "shipping",
+      "value": "free on orders over $50",
+      "approved_value": "free on orders over $50",
+      "contradicted_values": [
+       "free shipping on all orders",
+       "free shipping on every order"
+      ],
+      "evidence_quote": "Shipping is free on orders over $50."
+     }
+    ]
+   }
+  ],
+  "expected_violations": 1,
+  "expected_findings": [
+   {
+    "category": "terminology",
+    "rule_id": "NW-T01",
+    "quote": "NORTHWIND",
+    "evidence_status": "supported_violation",
+    "source_version_id": "src-v2-north"
+   }
+  ]
+ },
+ {
+  "id": "V2-45",
+  "split": "test",
+  "template": "v2-test-northwind-banner",
+  "brand": "Northwind",
+  "format": "banner",
+  "text": "Northwind. 5-year warranty. Free shipping over $50.",
+  "context": {
+   "channel": "display banner",
+   "audience": "Customers"
+  },
+  "sources": [
+   {
+    "id": "src-v2-north",
+    "title": "Northwind Bikes style sheet",
+    "text": "Our name is Northwind. Every frame has a 5-year warranty. Shipping is free on orders over $50.",
+    "rules": [
+     {
+      "id": "NW-T01",
+      "category": "terminology",
+      "kind": "terminology",
+      "key": "brand_name",
+      "value": "Northwind",
+      "canonical_term": "Northwind",
+      "forbidden_patterns": [
+       "North Wind",
+       "NorthWind"
+      ],
+      "evidence_quote": "Our name is Northwind."
+     },
+     {
+      "id": "NW-F01",
+      "category": "facts_claims",
+      "kind": "fact",
+      "key": "warranty",
+      "value": "5-year warranty",
+      "approved_value": "5-year warranty",
+      "contradicted_values": [
+       "lifetime warranty",
+       "10-year warranty",
+       "3-year warranty"
+      ],
+      "evidence_quote": "Every frame has a 5-year warranty."
+     },
+     {
+      "id": "NW-F02",
+      "category": "facts_claims",
+      "kind": "fact",
+      "key": "shipping",
+      "value": "free on orders over $50",
+      "approved_value": "free on orders over $50",
+      "contradicted_values": [
+       "free shipping on all orders",
+       "free shipping on every order"
+      ],
+      "evidence_quote": "Shipping is free on orders over $50."
+     }
+    ]
+   }
+  ],
+  "expected_violations": 0,
+  "expected_findings": []
+ },
+ {
+  "id": "V2-46",
+  "split": "test",
+  "template": "v2-test-northwind-email",
+  "brand": "Northwind",
+  "format": "email",
+  "text": "Thanks for riding with Northwind. Free returns within 30 days.",
+  "context": {
+   "channel": "email",
+   "audience": "Customers"
+  },
+  "sources": [
+   {
+    "id": "src-v2-north",
+    "title": "Northwind Bikes style sheet",
+    "text": "Our name is Northwind. Every frame has a 5-year warranty. Shipping is free on orders over $50.",
+    "rules": [
+     {
+      "id": "NW-T01",
+      "category": "terminology",
+      "kind": "terminology",
+      "key": "brand_name",
+      "value": "Northwind",
+      "canonical_term": "Northwind",
+      "forbidden_patterns": [
+       "North Wind",
+       "NorthWind"
+      ],
+      "evidence_quote": "Our name is Northwind."
+     },
+     {
+      "id": "NW-F01",
+      "category": "facts_claims",
+      "kind": "fact",
+      "key": "warranty",
+      "value": "5-year warranty",
+      "approved_value": "5-year warranty",
+      "contradicted_values": [
+       "lifetime warranty",
+       "10-year warranty",
+       "3-year warranty"
+      ],
+      "evidence_quote": "Every frame has a 5-year warranty."
+     },
+     {
+      "id": "NW-F02",
+      "category": "facts_claims",
+      "kind": "fact",
+      "key": "shipping",
+      "value": "free on orders over $50",
+      "approved_value": "free on orders over $50",
+      "contradicted_values": [
+       "free shipping on all orders",
+       "free shipping on every order"
+      ],
+      "evidence_quote": "Shipping is free on orders over $50."
+     }
+    ]
+   }
+  ],
+  "expected_violations": 0,
+  "expected_findings": []
+ },
+ {
+  "id": "V2-47",
+  "split": "test",
+  "template": "v2-test-saltwater-email",
+  "brand": "Saltwater",
+  "format": "email",
+  "text": "Saltwater Coffee subscribers now save 25% on every bag.",
+  "context": {
+   "channel": "email",
+   "audience": "Customers"
+  },
+  "sources": [
+   {
+    "id": "src-v2-salt",
+    "title": "Saltwater Coffee voice and offers",
+    "text": "Write Saltwater Coffee in full, two words. Subscribers save 15% on every bag. New subscribers get a 7-day free trial of the tasting box.",
+    "rules": [
+     {
+      "id": "SC-T01",
+      "category": "terminology",
+      "kind": "terminology",
+      "key": "company_name",
+      "value": "Saltwater Coffee",
+      "canonical_term": "Saltwater Coffee",
+      "forbidden_patterns": [
+       "Salt Water Coffee",
+       "SaltWater Coffee"
+      ],
+      "evidence_quote": "Write Saltwater Coffee in full, two words."
+     },
+     {
+      "id": "SC-F01",
+      "category": "facts_claims",
+      "kind": "fact",
+      "key": "subscription_discount",
+      "value": "15%",
+      "approved_value": "save 15%",
+      "contradicted_values": [
+       "save 20%",
+       "save 25%",
+       "30% off every bag"
+      ],
+      "evidence_quote": "Subscribers save 15% on every bag."
+     },
+     {
+      "id": "SC-F02",
+      "category": "facts_claims",
+      "kind": "fact",
+      "key": "trial_duration",
+      "value": "7 days",
+      "approved_value": "7 days",
+      "evidence_quote": "New subscribers get a 7-day free trial of the tasting box."
+     }
+    ]
+   }
+  ],
+  "expected_violations": 1,
+  "expected_findings": [
+   {
+    "category": "facts_claims",
+    "rule_id": "SC-F01",
+    "quote": "save 25%",
+    "evidence_status": "contradicted",
+    "source_version_id": "src-v2-salt"
+   }
+  ]
+ },
+ {
+  "id": "V2-48",
+  "split": "test",
+  "template": "v2-test-saltwater-email",
+  "brand": "Saltwater",
+  "format": "email",
+  "text": "From the Saltwater Coffee roastery: our autumn single origin is here.",
+  "context": {
+   "channel": "email",
+   "audience": "Customers"
+  },
+  "sources": [
+   {
+    "id": "src-v2-salt",
+    "title": "Saltwater Coffee voice and offers",
+    "text": "Write Saltwater Coffee in full, two words. Subscribers save 15% on every bag. New subscribers get a 7-day free trial of the tasting box.",
+    "rules": [
+     {
+      "id": "SC-T01",
+      "category": "terminology",
+      "kind": "terminology",
+      "key": "company_name",
+      "value": "Saltwater Coffee",
+      "canonical_term": "Saltwater Coffee",
+      "forbidden_patterns": [
+       "Salt Water Coffee",
+       "SaltWater Coffee"
+      ],
+      "evidence_quote": "Write Saltwater Coffee in full, two words."
+     },
+     {
+      "id": "SC-F01",
+      "category": "facts_claims",
+      "kind": "fact",
+      "key": "subscription_discount",
+      "value": "15%",
+      "approved_value": "save 15%",
+      "contradicted_values": [
+       "save 20%",
+       "save 25%",
+       "30% off every bag"
+      ],
+      "evidence_quote": "Subscribers save 15% on every bag."
+     },
+     {
+      "id": "SC-F02",
+      "category": "facts_claims",
+      "kind": "fact",
+      "key": "trial_duration",
+      "value": "7 days",
+      "approved_value": "7 days",
+      "evidence_quote": "New subscribers get a 7-day free trial of the tasting box."
+     }
+    ]
+   }
+  ],
+  "expected_violations": 0,
+  "expected_findings": []
+ },
+ {
+  "id": "V2-49",
+  "split": "test",
+  "template": "v2-test-saltwater-social",
+  "brand": "Saltwater",
+  "format": "social",
+  "text": "Salt Water Coffee x local bakers, this Sunday only.",
+  "context": {
+   "channel": "social",
+   "audience": "Customers"
+  },
+  "sources": [
+   {
+    "id": "src-v2-salt",
+    "title": "Saltwater Coffee voice and offers",
+    "text": "Write Saltwater Coffee in full, two words. Subscribers save 15% on every bag. New subscribers get a 7-day free trial of the tasting box.",
+    "rules": [
+     {
+      "id": "SC-T01",
+      "category": "terminology",
+      "kind": "terminology",
+      "key": "company_name",
+      "value": "Saltwater Coffee",
+      "canonical_term": "Saltwater Coffee",
+      "forbidden_patterns": [
+       "Salt Water Coffee",
+       "SaltWater Coffee"
+      ],
+      "evidence_quote": "Write Saltwater Coffee in full, two words."
+     },
+     {
+      "id": "SC-F01",
+      "category": "facts_claims",
+      "kind": "fact",
+      "key": "subscription_discount",
+      "value": "15%",
+      "approved_value": "save 15%",
+      "contradicted_values": [
+       "save 20%",
+       "save 25%",
+       "30% off every bag"
+      ],
+      "evidence_quote": "Subscribers save 15% on every bag."
+     },
+     {
+      "id": "SC-F02",
+      "category": "facts_claims",
+      "kind": "fact",
+      "key": "trial_duration",
+      "value": "7 days",
+      "approved_value": "7 days",
+      "evidence_quote": "New subscribers get a 7-day free trial of the tasting box."
+     }
+    ]
+   }
+  ],
+  "expected_violations": 1,
+  "expected_findings": [
+   {
+    "category": "terminology",
+    "rule_id": "SC-T01",
+    "quote": "Salt Water Coffee",
+    "evidence_status": "supported_violation",
+    "source_version_id": "src-v2-salt"
+   }
+  ]
+ },
+ {
+  "id": "V2-50",
+  "split": "test",
+  "template": "v2-test-saltwater-social",
+  "brand": "Saltwater",
+  "format": "social",
+  "text": "Saltwater Coffee tasting box: free trial lasts 7 days.",
+  "context": {
+   "channel": "social",
+   "audience": "Customers"
+  },
+  "sources": [
+   {
+    "id": "src-v2-salt",
+    "title": "Saltwater Coffee voice and offers",
+    "text": "Write Saltwater Coffee in full, two words. Subscribers save 15% on every bag. New subscribers get a 7-day free trial of the tasting box.",
+    "rules": [
+     {
+      "id": "SC-T01",
+      "category": "terminology",
+      "kind": "terminology",
+      "key": "company_name",
+      "value": "Saltwater Coffee",
+      "canonical_term": "Saltwater Coffee",
+      "forbidden_patterns": [
+       "Salt Water Coffee",
+       "SaltWater Coffee"
+      ],
+      "evidence_quote": "Write Saltwater Coffee in full, two words."
+     },
+     {
+      "id": "SC-F01",
+      "category": "facts_claims",
+      "kind": "fact",
+      "key": "subscription_discount",
+      "value": "15%",
+      "approved_value": "save 15%",
+      "contradicted_values": [
+       "save 20%",
+       "save 25%",
+       "30% off every bag"
+      ],
+      "evidence_quote": "Subscribers save 15% on every bag."
+     },
+     {
+      "id": "SC-F02",
+      "category": "facts_claims",
+      "kind": "fact",
+      "key": "trial_duration",
+      "value": "7 days",
+      "approved_value": "7 days",
+      "evidence_quote": "New subscribers get a 7-day free trial of the tasting box."
+     }
+    ]
+   }
+  ],
+  "expected_violations": 0,
+  "expected_findings": []
+ },
+ {
+  "id": "V2-51",
+  "split": "test",
+  "template": "v2-test-saltwater-landing",
+  "brand": "Saltwater",
+  "format": "landing",
+  "text": "Subscribe to Saltwater Coffee and get 30% off every bag, forever.",
+  "context": {
+   "channel": "landing page",
+   "audience": "Customers"
+  },
+  "sources": [
+   {
+    "id": "src-v2-salt",
+    "title": "Saltwater Coffee voice and offers",
+    "text": "Write Saltwater Coffee in full, two words. Subscribers save 15% on every bag. New subscribers get a 7-day free trial of the tasting box.",
+    "rules": [
+     {
+      "id": "SC-T01",
+      "category": "terminology",
+      "kind": "terminology",
+      "key": "company_name",
+      "value": "Saltwater Coffee",
+      "canonical_term": "Saltwater Coffee",
+      "forbidden_patterns": [
+       "Salt Water Coffee",
+       "SaltWater Coffee"
+      ],
+      "evidence_quote": "Write Saltwater Coffee in full, two words."
+     },
+     {
+      "id": "SC-F01",
+      "category": "facts_claims",
+      "kind": "fact",
+      "key": "subscription_discount",
+      "value": "15%",
+      "approved_value": "save 15%",
+      "contradicted_values": [
+       "save 20%",
+       "save 25%",
+       "30% off every bag"
+      ],
+      "evidence_quote": "Subscribers save 15% on every bag."
+     },
+     {
+      "id": "SC-F02",
+      "category": "facts_claims",
+      "kind": "fact",
+      "key": "trial_duration",
+      "value": "7 days",
+      "approved_value": "7 days",
+      "evidence_quote": "New subscribers get a 7-day free trial of the tasting box."
+     }
+    ]
+   }
+  ],
+  "expected_violations": 1,
+  "expected_findings": [
+   {
+    "category": "facts_claims",
+    "rule_id": "SC-F01",
+    "quote": "30% off every bag",
+    "evidence_status": "contradicted",
+    "source_version_id": "src-v2-salt"
+   }
+  ]
+ },
+ {
+  "id": "V2-52",
+  "split": "test",
+  "template": "v2-test-saltwater-landing",
+  "brand": "Saltwater",
+  "format": "landing",
+  "text": "Saltwater Coffee ships whole beans within 2 days of roasting.",
+  "context": {
+   "channel": "landing page",
+   "audience": "Customers"
+  },
+  "sources": [
+   {
+    "id": "src-v2-salt",
+    "title": "Saltwater Coffee voice and offers",
+    "text": "Write Saltwater Coffee in full, two words. Subscribers save 15% on every bag. New subscribers get a 7-day free trial of the tasting box.",
+    "rules": [
+     {
+      "id": "SC-T01",
+      "category": "terminology",
+      "kind": "terminology",
+      "key": "company_name",
+      "value": "Saltwater Coffee",
+      "canonical_term": "Saltwater Coffee",
+      "forbidden_patterns": [
+       "Salt Water Coffee",
+       "SaltWater Coffee"
+      ],
+      "evidence_quote": "Write Saltwater Coffee in full, two words."
+     },
+     {
+      "id": "SC-F01",
+      "category": "facts_claims",
+      "kind": "fact",
+      "key": "subscription_discount",
+      "value": "15%",
+      "approved_value": "save 15%",
+      "contradicted_values": [
+       "save 20%",
+       "save 25%",
+       "30% off every bag"
+      ],
+      "evidence_quote": "Subscribers save 15% on every bag."
+     },
+     {
+      "id": "SC-F02",
+      "category": "facts_claims",
+      "kind": "fact",
+      "key": "trial_duration",
+      "value": "7 days",
+      "approved_value": "7 days",
+      "evidence_quote": "New subscribers get a 7-day free trial of the tasting box."
+     }
+    ]
+   }
+  ],
+  "expected_violations": 0,
+  "expected_findings": []
+ },
+ {
+  "id": "V2-53",
+  "split": "test",
+  "template": "v2-test-saltwater-push",
+  "brand": "Saltwater",
+  "format": "push",
+  "text": "Saltwater Coffee: your 30-day free trial of the tasting box starts today.",
+  "context": {
+   "channel": "push notification",
+   "audience": "Customers"
+  },
+  "sources": [
+   {
+    "id": "src-v2-salt",
+    "title": "Saltwater Coffee voice and offers",
+    "text": "Write Saltwater Coffee in full, two words. Subscribers save 15% on every bag. New subscribers get a 7-day free trial of the tasting box.",
+    "rules": [
+     {
+      "id": "SC-T01",
+      "category": "terminology",
+      "kind": "terminology",
+      "key": "company_name",
+      "value": "Saltwater Coffee",
+      "canonical_term": "Saltwater Coffee",
+      "forbidden_patterns": [
+       "Salt Water Coffee",
+       "SaltWater Coffee"
+      ],
+      "evidence_quote": "Write Saltwater Coffee in full, two words."
+     },
+     {
+      "id": "SC-F01",
+      "category": "facts_claims",
+      "kind": "fact",
+      "key": "subscription_discount",
+      "value": "15%",
+      "approved_value": "save 15%",
+      "contradicted_values": [
+       "save 20%",
+       "save 25%",
+       "30% off every bag"
+      ],
+      "evidence_quote": "Subscribers save 15% on every bag."
+     },
+     {
+      "id": "SC-F02",
+      "category": "facts_claims",
+      "kind": "fact",
+      "key": "trial_duration",
+      "value": "7 days",
+      "approved_value": "7 days",
+      "evidence_quote": "New subscribers get a 7-day free trial of the tasting box."
+     }
+    ]
+   }
+  ],
+  "expected_violations": 1,
+  "expected_findings": [
+   {
+    "category": "facts_claims",
+    "rule_id": "SC-F02",
+    "quote": "30-day",
+    "evidence_status": "contradicted",
+    "source_version_id": "src-v2-salt"
+   }
+  ]
+ },
+ {
+  "id": "V2-54",
+  "split": "test",
+  "template": "v2-test-saltwater-push",
+  "brand": "Saltwater",
+  "format": "push",
+  "text": "Saltwater Coffee: your bag is out for delivery.",
+  "context": {
+   "channel": "push notification",
+   "audience": "Customers"
+  },
+  "sources": [
+   {
+    "id": "src-v2-salt",
+    "title": "Saltwater Coffee voice and offers",
+    "text": "Write Saltwater Coffee in full, two words. Subscribers save 15% on every bag. New subscribers get a 7-day free trial of the tasting box.",
+    "rules": [
+     {
+      "id": "SC-T01",
+      "category": "terminology",
+      "kind": "terminology",
+      "key": "company_name",
+      "value": "Saltwater Coffee",
+      "canonical_term": "Saltwater Coffee",
+      "forbidden_patterns": [
+       "Salt Water Coffee",
+       "SaltWater Coffee"
+      ],
+      "evidence_quote": "Write Saltwater Coffee in full, two words."
+     },
+     {
+      "id": "SC-F01",
+      "category": "facts_claims",
+      "kind": "fact",
+      "key": "subscription_discount",
+      "value": "15%",
+      "approved_value": "save 15%",
+      "contradicted_values": [
+       "save 20%",
+       "save 25%",
+       "30% off every bag"
+      ],
+      "evidence_quote": "Subscribers save 15% on every bag."
+     },
+     {
+      "id": "SC-F02",
+      "category": "facts_claims",
+      "kind": "fact",
+      "key": "trial_duration",
+      "value": "7 days",
+      "approved_value": "7 days",
+      "evidence_quote": "New subscribers get a 7-day free trial of the tasting box."
+     }
+    ]
+   }
+  ],
+  "expected_violations": 0,
+  "expected_findings": []
+ },
+ {
+  "id": "V2-55",
+  "split": "test",
+  "template": "v2-test-saltwater-sms",
+  "brand": "Saltwater",
+  "format": "sms",
+  "text": "SaltWater Coffee rewards: you have 3 free drinks.",
+  "context": {
+   "channel": "sms",
+   "audience": "Customers"
+  },
+  "sources": [
+   {
+    "id": "src-v2-salt",
+    "title": "Saltwater Coffee voice and offers",
+    "text": "Write Saltwater Coffee in full, two words. Subscribers save 15% on every bag. New subscribers get a 7-day free trial of the tasting box.",
+    "rules": [
+     {
+      "id": "SC-T01",
+      "category": "terminology",
+      "kind": "terminology",
+      "key": "company_name",
+      "value": "Saltwater Coffee",
+      "canonical_term": "Saltwater Coffee",
+      "forbidden_patterns": [
+       "Salt Water Coffee",
+       "SaltWater Coffee"
+      ],
+      "evidence_quote": "Write Saltwater Coffee in full, two words."
+     },
+     {
+      "id": "SC-F01",
+      "category": "facts_claims",
+      "kind": "fact",
+      "key": "subscription_discount",
+      "value": "15%",
+      "approved_value": "save 15%",
+      "contradicted_values": [
+       "save 20%",
+       "save 25%",
+       "30% off every bag"
+      ],
+      "evidence_quote": "Subscribers save 15% on every bag."
+     },
+     {
+      "id": "SC-F02",
+      "category": "facts_claims",
+      "kind": "fact",
+      "key": "trial_duration",
+      "value": "7 days",
+      "approved_value": "7 days",
+      "evidence_quote": "New subscribers get a 7-day free trial of the tasting box."
+     }
+    ]
+   }
+  ],
+  "expected_violations": 1,
+  "expected_findings": [
+   {
+    "category": "terminology",
+    "rule_id": "SC-T01",
+    "quote": "SaltWater Coffee",
+    "evidence_status": "supported_violation",
+    "source_version_id": "src-v2-salt"
+   }
+  ]
+ },
+ {
+  "id": "V2-56",
+  "split": "test",
+  "template": "v2-test-saltwater-sms",
+  "brand": "Saltwater",
+  "format": "sms",
+  "text": "Saltwater Coffee: subscribers save 15%. Reply STOP to opt out.",
+  "context": {
+   "channel": "sms",
+   "audience": "Customers"
+  },
+  "sources": [
+   {
+    "id": "src-v2-salt",
+    "title": "Saltwater Coffee voice and offers",
+    "text": "Write Saltwater Coffee in full, two words. Subscribers save 15% on every bag. New subscribers get a 7-day free trial of the tasting box.",
+    "rules": [
+     {
+      "id": "SC-T01",
+      "category": "terminology",
+      "kind": "terminology",
+      "key": "company_name",
+      "value": "Saltwater Coffee",
+      "canonical_term": "Saltwater Coffee",
+      "forbidden_patterns": [
+       "Salt Water Coffee",
+       "SaltWater Coffee"
+      ],
+      "evidence_quote": "Write Saltwater Coffee in full, two words."
+     },
+     {
+      "id": "SC-F01",
+      "category": "facts_claims",
+      "kind": "fact",
+      "key": "subscription_discount",
+      "value": "15%",
+      "approved_value": "save 15%",
+      "contradicted_values": [
+       "save 20%",
+       "save 25%",
+       "30% off every bag"
+      ],
+      "evidence_quote": "Subscribers save 15% on every bag."
+     },
+     {
+      "id": "SC-F02",
+      "category": "facts_claims",
+      "kind": "fact",
+      "key": "trial_duration",
+      "value": "7 days",
+      "approved_value": "7 days",
+      "evidence_quote": "New subscribers get a 7-day free trial of the tasting box."
+     }
+    ]
+   }
+  ],
+  "expected_violations": 0,
+  "expected_findings": []
+ },
+ {
+  "id": "V2-57",
+  "split": "test",
+  "template": "v2-test-saltwater-banner",
+  "brand": "Saltwater",
+  "format": "banner",
+  "text": "Saltwater Coffee. Roasted by the sea.",
+  "context": {
+   "channel": "display banner",
+   "audience": "Customers"
+  },
+  "sources": [
+   {
+    "id": "src-v2-salt",
+    "title": "Saltwater Coffee voice and offers",
+    "text": "Write Saltwater Coffee in full, two words. Subscribers save 15% on every bag. New subscribers get a 7-day free trial of the tasting box.",
+    "rules": [
+     {
+      "id": "SC-T01",
+      "category": "terminology",
+      "kind": "terminology",
+      "key": "company_name",
+      "value": "Saltwater Coffee",
+      "canonical_term": "Saltwater Coffee",
+      "forbidden_patterns": [
+       "Salt Water Coffee",
+       "SaltWater Coffee"
+      ],
+      "evidence_quote": "Write Saltwater Coffee in full, two words."
+     },
+     {
+      "id": "SC-F01",
+      "category": "facts_claims",
+      "kind": "fact",
+      "key": "subscription_discount",
+      "value": "15%",
+      "approved_value": "save 15%",
+      "contradicted_values": [
+       "save 20%",
+       "save 25%",
+       "30% off every bag"
+      ],
+      "evidence_quote": "Subscribers save 15% on every bag."
+     },
+     {
+      "id": "SC-F02",
+      "category": "facts_claims",
+      "kind": "fact",
+      "key": "trial_duration",
+      "value": "7 days",
+      "approved_value": "7 days",
+      "evidence_quote": "New subscribers get a 7-day free trial of the tasting box."
+     }
+    ]
+   }
+  ],
+  "expected_violations": 0,
+  "expected_findings": []
+ },
+ {
+  "id": "V2-58",
+  "split": "test",
+  "template": "v2-test-saltwater-banner",
+  "brand": "Saltwater",
+  "format": "banner",
+  "text": "Saltwater Coffee. Subscribers save 20% today only.",
+  "context": {
+   "channel": "display banner",
+   "audience": "Customers"
+  },
+  "sources": [
+   {
+    "id": "src-v2-salt",
+    "title": "Saltwater Coffee voice and offers",
+    "text": "Write Saltwater Coffee in full, two words. Subscribers save 15% on every bag. New subscribers get a 7-day free trial of the tasting box.",
+    "rules": [
+     {
+      "id": "SC-T01",
+      "category": "terminology",
+      "kind": "terminology",
+      "key": "company_name",
+      "value": "Saltwater Coffee",
+      "canonical_term": "Saltwater Coffee",
+      "forbidden_patterns": [
+       "Salt Water Coffee",
+       "SaltWater Coffee"
+      ],
+      "evidence_quote": "Write Saltwater Coffee in full, two words."
+     },
+     {
+      "id": "SC-F01",
+      "category": "facts_claims",
+      "kind": "fact",
+      "key": "subscription_discount",
+      "value": "15%",
+      "approved_value": "save 15%",
+      "contradicted_values": [
+       "save 20%",
+       "save 25%",
+       "30% off every bag"
+      ],
+      "evidence_quote": "Subscribers save 15% on every bag."
+     },
+     {
+      "id": "SC-F02",
+      "category": "facts_claims",
+      "kind": "fact",
+      "key": "trial_duration",
+      "value": "7 days",
+      "approved_value": "7 days",
+      "evidence_quote": "New subscribers get a 7-day free trial of the tasting box."
+     }
+    ]
+   }
+  ],
+  "expected_violations": 1,
+  "expected_findings": [
+   {
+    "category": "facts_claims",
+    "rule_id": "SC-F01",
+    "quote": "save 20%",
+    "evidence_status": "contradicted",
+    "source_version_id": "src-v2-salt"
+   }
+  ]
+ },
+ {
+  "id": "V2-59",
+  "split": "test",
+  "template": "v2-test-saltwater-email",
+  "brand": "Saltwater",
+  "format": "email",
+  "text": "Your Saltwater Coffee tasting box trial lasts 10 days, then switches to monthly.",
+  "context": {
+   "channel": "email",
+   "audience": "Customers"
+  },
+  "sources": [
+   {
+    "id": "src-v2-salt",
+    "title": "Saltwater Coffee voice and offers",
+    "text": "Write Saltwater Coffee in full, two words. Subscribers save 15% on every bag. New subscribers get a 7-day free trial of the tasting box.",
+    "rules": [
+     {
+      "id": "SC-T01",
+      "category": "terminology",
+      "kind": "terminology",
+      "key": "company_name",
+      "value": "Saltwater Coffee",
+      "canonical_term": "Saltwater Coffee",
+      "forbidden_patterns": [
+       "Salt Water Coffee",
+       "SaltWater Coffee"
+      ],
+      "evidence_quote": "Write Saltwater Coffee in full, two words."
+     },
+     {
+      "id": "SC-F01",
+      "category": "facts_claims",
+      "kind": "fact",
+      "key": "subscription_discount",
+      "value": "15%",
+      "approved_value": "save 15%",
+      "contradicted_values": [
+       "save 20%",
+       "save 25%",
+       "30% off every bag"
+      ],
+      "evidence_quote": "Subscribers save 15% on every bag."
+     },
+     {
+      "id": "SC-F02",
+      "category": "facts_claims",
+      "kind": "fact",
+      "key": "trial_duration",
+      "value": "7 days",
+      "approved_value": "7 days",
+      "evidence_quote": "New subscribers get a 7-day free trial of the tasting box."
+     }
+    ]
+   }
+  ],
+  "expected_violations": 1,
+  "expected_findings": [
+   {
+    "category": "facts_claims",
+    "rule_id": "SC-F02",
+    "quote": "10 days",
+    "evidence_status": "contradicted",
+    "source_version_id": "src-v2-salt"
+   }
+  ]
+ },
+ {
+  "id": "V2-60",
+  "split": "test",
+  "template": "v2-test-lumadesk-landing",
+  "brand": "LumaDesk",
+  "format": "landing",
+  "text": "Compare plans: LumaDesk Starter is free, Team is $12 per seat per month.",
+  "context": {
+   "channel": "landing page",
+   "audience": "Customers"
+  },
+  "sources": [
+   {
+    "id": "src-v2-luma",
+    "title": "LumaDesk brand and product guide",
+    "text": "Write LumaDesk as one word with a capital D. The free trial lasts 14 days. Team plans cost $12 per seat per month.",
+    "rules": [
+     {
+      "id": "LD-T01",
+      "category": "terminology",
+      "kind": "terminology",
+      "key": "brand_name",
+      "value": "LumaDesk",
+      "canonical_term": "LumaDesk",
+      "forbidden_patterns": [
+       "Luma Desk"
+      ],
+      "evidence_quote": "Write LumaDesk as one word with a capital D."
+     },
+     {
+      "id": "LD-F01",
+      "category": "facts_claims",
+      "kind": "fact",
+      "key": "trial_duration",
+      "value": "14 days",
+      "approved_value": "14 days",
+      "evidence_quote": "The free trial lasts 14 days."
+     },
+     {
+      "id": "LD-F02",
+      "category": "facts_claims",
+      "kind": "fact",
+      "key": "seat_price",
+      "value": "$12 per seat",
+      "approved_value": "$12 per seat",
+      "contradicted_values": [
+       "$10 per seat",
+       "$15 per seat",
+       "$9 per seat"
+      ],
+      "evidence_quote": "Team plans cost $12 per seat per month."
+     }
+    ]
+   }
+  ],
+  "expected_violations": 0,
+  "expected_findings": []
+ }
+]
