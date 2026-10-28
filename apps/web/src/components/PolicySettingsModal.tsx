@@ -4,6 +4,7 @@ import { getProcessingPolicy, updateProcessingPolicy, ApiResponseError } from '.
 import type { PolicyOut } from '../api/types';
 import { Alert, Spinner } from './Primitives';
 import { RetentionSettings } from './RetentionSettings';
+import { ProviderStatusCard } from './ProviderStatusCard';
 
 interface PolicySettingsModalProps {
   isOpen: boolean;
@@ -99,6 +100,7 @@ export function PolicySettingsModal({
           </div>
         ) : (
           <form onSubmit={handleSubmit} className="modal-body">
+            <ProviderStatusCard />
             {error && <Alert kind="error">{error}</Alert>}
             {success && <Alert kind="success">Processing policy updated successfully.</Alert>}
 

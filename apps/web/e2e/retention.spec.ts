@@ -29,3 +29,21 @@ test('an admin sets how long inactive campaigns are kept from Processing policy'
   const axe = await new AxeBuilder({ page }).include('.retention-settings').withTags(['wcag2a', 'wcag2aa', 'wcag21aa']).analyze();
   expect(axe.violations).toEqual([]);
 });
+
+test('the Processing policy dialog shows how the AI provider behaved in the last 24 hours', async ({ page }) => {
+  await page.route('**/api/v1/**', async route => {
+    const path = new URL(route.request().url()).pathname;
+    if (path.endsWith('/me')) return route.fulfill({ json: { ...FIXTURE_ME_CREATOR, role: 'admin' } });
+    if (path.endsWith('/processing-policy')) return route.fulfill({ json: FIXTURE_POLICY });
+    if (path.endsWith('/provider-status')) return route.fulfill({ json: { model: 'Qwen/Qwen3-235B-A22B-Instruct-2507', runs_24h: 12,
+      errors_24h: 1, error_rate_24h: 0.083, p95_latency_ms_24h: 8400, last_success_at: '2026-10-28T05:00:00Z' } });
+    if (path.endsWith('/retention')) return route.fulfill({ json: { retention_days: null, purged_campaigns: 0, last_purge_at: null } });
+    return route.fulfill({ json: [] });
+  });
+  await page.goto('/verify');
+  await page.getByRole('button', { name: 'Processing policy' }).click();
+  const card = page.getByRole('region', { name: 'AI provider status' });
+  await expect(card).toContainText('12');
+  await expect(card).toContainText('1 (8%)');
+  await expect(card).toContainText('8.4 s');
+});

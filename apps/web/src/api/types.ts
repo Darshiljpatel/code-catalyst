@@ -931,3 +931,12 @@ export interface RuleDraftOut {
   warnings: string[];
   metadata: Record<string, unknown>;
 }
+
+export interface ProviderStatusOut {
+  model: string;
+  runs_24h: number;
+  errors_24h: number;
+  error_rate_24h: number | null;
+  p95_latency_ms_24h: number | null;
+  last_success_at: string | null;
+}

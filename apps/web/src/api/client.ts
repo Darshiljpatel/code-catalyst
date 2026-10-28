@@ -66,6 +66,7 @@ import type {
   VerificationOut,
   RetentionOut,
   RuleDraftOut,
+  ProviderStatusOut,
   VersionResponse,
 } from './types';
 import { retryStarted, retryFinished } from './serverStatus';
@@ -668,4 +669,8 @@ export async function getRuleDraftingStatus(): Promise<{ enabled: boolean }> {
 
 export async function draftRules(brandId: string, documentImportId: string): Promise<RuleDraftOut> {
   return request<RuleDraftOut>('POST', `/brands/${brandId}/rule-drafts`, { document_import_id: documentImportId, external_processing_consent: true });
+}
+
+export async function getProviderStatus(): Promise<ProviderStatusOut> {
+  return request<ProviderStatusOut>('GET', '/provider-status');
 }
