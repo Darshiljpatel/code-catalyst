@@ -1,5 +1,42 @@
 # Morning TODO
 
+## Day session update (28 Oct, 07:16 onwards)
+
+**Test status:** `pytest apps/api/tests tests` 247 tests, all passing apart from the flaky race test in item 4
+(it passes on re-run). `alembic upgrade head` + `alembic check` clean at `0012_retention_examples`. Web build and lint clean.
+Playwright was not re-run today; the only web change is one table cell on the request page.
+
+1. **Retention now covers guideline-request examples** (81cfbc5, a5be48c). When the hourly purge deletes a
+   campaign, request examples copied from it are redacted (text, excerpt and context blanked, `redacted_at` set;
+   the row and its label stay so the request history still adds up). Example-set cases copied from it are deleted,
+   and comparison results and summaries lose that case's text and quotes. The `retention.purged` ledger now lists
+   `redacted_examples` and `redacted_cases`, and `infra/restore.py` re-applies both. New migration
+   `0012_retention_examples` adds a column; 0011 was not edited because it may already be applied on staging.
+   Also fixed: `extract_tombstones` treated `retention.updated` and `retention.purged_imports` events as deleting
+   the workspace itself, so a restore would have dropped the organisation row.
+2. **Impact benchmark (Improvement 1)** (78095a4): `python -m evaluation.impact_benchmark` (needs no database; it
+   uses in-memory SQLite and the real `impact.compute_impact`). The dataset is 30 synthetic LumaDesk campaigns
+   (17 approved, 4 in review, 9 needing changes) × 5 changes = 150 scenarios. The changes are: trial 14→30 days,
+   seat price $12→$15, LUMADESK allowed, discount rule retired, new DeskMap rule. It is frozen with SHA-256 `23c20cf6…`,
+   and the labels were written before the first run. Local checks only. Results (Wilson 95% intervals):
+   - **Impact recall 1.0 (0.82–1.0)** against full re-analysis (target met): every campaign whose findings change
+     is listed. Precision of the listing is only 0.11 (0.07–0.17), because every campaign is listed for every change.
+   - The "confirmed" level: precision 0.81 (0.60–0.92), recall 1.0 against re-analysis. Against the human labels,
+     recall is 0.85 (0.64–0.95). The misses ("free for 30 days", "14-day LumaDesk trial", "Two weeks free") are
+     wordings the local engine can't read at all, under the old or new rules.
+   - **Re-reviews avoided compared with brand-wide invalidation: 0 of 85 under the routing as shipped.** Every run
+     snapshots *all* active guidelines of the brand, so every analysed campaign relied on the changed source. Every
+     listed approval goes back to a reviewer after its recheck, even at the "possible" level. If routing used the
+     "confirmed" level, 79 of 85 (93%) would be avoided, with 1 labelled approval missed ("Two weeks free"). That
+     alternative is **not shipped** and needs a product decision. Don't quote a re-reviews-avoided headline until
+     then.
+3. **OCR benchmark (Improvement 2): skipped.** Tesseract is still not installed on this machine (`which tesseract`
+   finds nothing, and there is no dpkg package or sudo). Install it (`sudo apt install tesseract-ocr`) and build the
+   benchmark in a later session.
+4. **Flaky test (already there before today):**
+   `apps/api/tests/test_workflow.py::test_source_change_racing_approval_cannot_leave_export_eligible` sometimes hits
+   a Postgres deadlock on the `brands` row (about 1 run in 12, also at `15ddfbb`). Re-run it if it fails; not fixed.
+
 ## Summary of the overnight run (branch `ONE-FINAL-SCORE`, 42 commits ahead of `master`, all pushed)
 
 **Test status at the end (06:10, 28 Oct):** `pytest apps/api/tests tests` **245 passed**; Playwright against the real
@@ -30,10 +67,11 @@ the production CSP. `alembic upgrade head` + `alembic check` clean (head `0011_r
 - Small P1 follow-on: sign-in no longer needs the workspace ID when the account has one workspace.
 
 **Partial / not done:**
-- Row 16: the OCR benchmark (needs Tesseract, not installed here), impact benchmark, label-agreement study and
-  prompt-injection set were not built. Benchmark v2 labels were written by the agent — see "Things to review".
+- Row 16: the OCR benchmark (needs Tesseract, still not installed here), label-agreement study and prompt-injection
+  set were not built. The impact benchmark was built in the day session (see above). Benchmark v2 and impact labels
+  were written by the agent — see "Things to review".
+- Impact routing: every listed approval still returns to a reviewer, so re-reviews avoided is 0 today (see above).
 - Row 5: nightly reset of the shared Round 2 accounts was skipped (private sandboxes replace them).
-- Retention does not yet purge guideline-request example copies.
 - Out of scope by instruction: docs, PDF, video, README, user study (rows 10, 11, 18).
 
 **Failed:** nothing is left broken. One mid-run Playwright failure was an artefact (trace file removed by a
@@ -91,7 +129,9 @@ only uvicorn. It no longer runs migrations, the seed or a background worker on s
 - **Benchmark v2 labels** (`evaluation/fixtures/benchmark_v2.json`, 60 campaigns) were written by the overnight
   agent from the guideline intent, not by the team. Review the labels (the plan says "labels by all") before
   quoting numbers; if you change any, re-freeze the SHA in `evaluation/benchmark_v2.py`. It measures the
-  local engine package; the AI side needs a live key. OCR, impact and comparison benchmarks were not built.
+  local engine package; the AI side needs a live key. The OCR benchmark was not built.
+- **Impact benchmark labels** (`evaluation/fixtures/impact_benchmark.json`, `human_affected_by`) were also written by
+  the agent. Review them; if you change any, re-freeze the SHA in `evaluation/impact_benchmark.py`.
 - Retention (row 24) is off until an admin sets a period in Processing policy. It deletes campaigns with no activity
   for that many days (except ones in analysis/review) and writes `retention.purged` audit events that restore re-applies.
   Guideline-request examples copied from a purged campaign are redacted (text blanked, label kept), example-set cases
