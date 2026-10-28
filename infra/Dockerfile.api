@@ -15,4 +15,5 @@ EXPOSE 8000
 HEALTHCHECK --interval=5s --timeout=5s --retries=10 CMD python -c "import os, urllib.request; p = os.environ.get('PORT', '8000'); urllib.request.urlopen(f'http://localhost:{p}/api/v1/health/ready', timeout=3)"
 # Migrations run once as the platform pre-deploy step (render.yaml); the worker is a separate service.
 # /app/entrypoint.sh remains available for the legacy single-container setup.
-CMD ["/app/entrypoint.sh"] # uvicorn brandguard.main:create_app
+# uvicorn brandguard.main:create_app
+CMD ["/app/entrypoint.sh"]
