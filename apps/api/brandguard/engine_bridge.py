@@ -3,6 +3,7 @@ import asyncio
 import hashlib
 import json
 import os
+import re
 from pathlib import Path
 import sys
 
@@ -82,6 +83,11 @@ def _check_text(payload):
                 evidence_status=finding.evidence_status, source_version_id=source['id'], rule_id=rule['id'],
                 evidence_quote=rule['evidence_quote'], start=start, end=end, content_quote=content_quote,
                 rationale=finding.rationale, suggested_edit=finding.suggested_edit))
+    if payload['context'].get('media') == 'image' and payload['context'].get('text_regions'):
+        visual_checks, visual_findings = image_colour_checks(text, payload['context'], sources)
+        for check_entry in checks:
+            check_entry.update(visual_checks.get(check_entry['category'], {}))
+        findings.extend(visual_findings)
     if len(findings) > 100:
         for c in checks:
             if c['status'] == 'complete':
@@ -89,6 +95,59 @@ def _check_text(payload):
         findings = findings[:100]
     return dict(checks=checks, findings=findings, metadata=dict(version=ENGINE_VERSION,
                 canonical_sha256=expected_hash, unsupported_categories=sorted(unsupported)))
+
+
+HEX = re.compile(r'#[0-9a-fA-F]{6}\b')
+LARGE_TEXT_PX = 32  # Roughly 24 px text plus the OCR box padding; WCAG large text is 18 pt (24 px).
+PALETTE_DISTANCE = 60  # RGB distance that still counts as the same brand colour after JPEG and anti-aliasing.
+
+
+def _rgb(value):
+    return tuple(int(value[i:i + 2], 16) for i in (1, 3, 5))
+
+
+def image_colour_checks(text, context, sources):
+    """Contrast (accessibility `contrast` rule) and brand palette (visual rule keyed `brand_palette`, value lists
+    hex colours) for each measured text region of an image campaign. Returns (check updates, findings)."""
+    contrast_rules = [(s, r) for s in sources for r in s['rules'] if r['category'] == 'accessibility' and r['kind'] == 'contrast']
+    palette_rules = [(s, r) for s in sources for r in s['rules'] if r['category'] == 'visual' and r['key'] == 'brand_palette'
+                     and HEX.search(r['value'])]
+    updates, findings = {}, []
+    regions = [r for r in context['text_regions'] if 0 <= r['start'] < r['end'] <= len(text)]
+    if not regions:
+        return updates, findings
+    if contrast_rules:
+        source, rule = contrast_rules[0]
+        number = re.search(r'\d+(?:\.\d+)?', rule['value'])
+        minimum = float(number.group(0)) if number else 4.5
+        for region in regions:
+            large = region['text_height_px'] >= LARGE_TEXT_PX
+            required = min(minimum, 3.0) if large else minimum
+            if region['contrast_ratio'] < required:
+                findings.append(dict(category='accessibility', severity='warning', evidence_status='supported_violation',
+                    source_version_id=source['id'], rule_id=rule['id'], evidence_quote=rule['evidence_quote'],
+                    start=region['start'], end=region['end'], content_quote=text[region['start']:region['end']],
+                    rationale=(f"Estimated text contrast is {region['contrast_ratio']}:1 ({region['foreground']} on {region['background']}); "
+                               f"{'large' if large else 'normal'} text needs at least {required}:1. Measured from the image, so check by eye."),
+                    suggested_edit=None))
+        updates['accessibility'] = dict(status='needs_manual_review', reason=(
+            'Text contrast was estimated for every text region from the image. Alt text, legibility and other '
+            'accessibility needs still need a look by eye. Not an accessibility certification.'))
+    if palette_rules:
+        source, rule = palette_rules[0]
+        palette = [_rgb(h) for h in HEX.findall(rule['value'])]
+        for region in regions:
+            colour = _rgb(region['foreground'])
+            distance = min(sum((a - b) ** 2 for a, b in zip(colour, p)) ** 0.5 for p in palette)
+            if distance > PALETTE_DISTANCE:
+                findings.append(dict(category='visual', severity='advisory', evidence_status='supported_violation',
+                    source_version_id=source['id'], rule_id=rule['id'], evidence_quote=rule['evidence_quote'],
+                    start=region['start'], end=region['end'], content_quote=text[region['start']:region['end']],
+                    rationale=f"Text colour {region['foreground']} is not close to any approved brand colour. Measured from the image.",
+                    suggested_edit=None))
+        updates['visual'] = dict(status='needs_manual_review', reason=(
+            'Text colours were compared with the approved brand palette. Logo, imagery and layout still need a look by eye.'))
+    return updates, findings
 
 
 async def check_text(review_input, *, timeout=10):

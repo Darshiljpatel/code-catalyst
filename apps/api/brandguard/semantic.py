@@ -302,6 +302,8 @@ class NebiusReviewer:
                 raise ModelFailure('external_processing_disabled')
             if not self.config.api_key:
                 raise ModelFailure('provider_not_configured')
+            # Colour measurements stay local; the model only needs the campaign context.
+            context = {k: v for k, v in context.items() if k != 'text_regions'}
             payload = dict(text=text, context=context, rules=rules, categories=categories,
                            output_schema=ModelOutput.model_json_schema())
             user_message = json.dumps(payload, ensure_ascii=False, separators=(',', ':'))

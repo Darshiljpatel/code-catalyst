@@ -249,6 +249,59 @@ def build_region_map(regions):
     return '\n'.join(text_parts), region_map
 
 
+def relative_luminance(rgb):
+    def linear(c):
+        c = c / 255
+        return c / 12.92 if c <= 0.03928 else ((c + 0.055) / 1.055) ** 2.4
+    r, g, b = (linear(c) for c in rgb)
+    return 0.2126 * r + 0.7152 * g + 0.0722 * b
+
+
+def contrast_ratio(a, b):
+    la, lb = sorted((relative_luminance(a), relative_luminance(b)), reverse=True)
+    return (la + 0.05) / (lb + 0.05)
+
+
+def hex_colour(rgb):
+    return '#%02x%02x%02x' % tuple(int(c) for c in rgb)
+
+
+def _median(values):
+    ordered = sorted(values)
+    return ordered[len(ordered) // 2]
+
+
+def measure_region_colours(image_bytes, region_map):
+    """Estimate text and background colour per text region: the background is the median of the box edge,
+    the text is the median of the pixels least like it. Approximate: gradients, outlines and photos
+    behind text need a human look, so the result is an estimate, never a certification."""
+    from PIL import Image
+    image = Image.open(io.BytesIO(image_bytes)).convert('RGB')
+    width, height = image.size
+    measured = []
+    for entry in region_map:
+        entry = dict(entry)
+        if entry.get('start') is not None:
+            box = entry['box']
+            left, top = int(box['x'] * width), int(box['y'] * height)
+            right, bottom = max(left + 2, int((box['x'] + box['w']) * width)), max(top + 2, int((box['y'] + box['h']) * height))
+            crop = image.crop((left, top, min(right, width), min(bottom, height)))
+            crop.thumbnail((240, 80))
+            w, h = crop.size
+            pixels = list(crop.getdata())
+            edge = [pixels[y * w + x] for y in range(h) for x in range(w) if x in (0, w - 1) or y in (0, h - 1)]
+            background = tuple(_median([p[i] for p in edge]) for i in range(3))
+            bg_lum = relative_luminance(background)
+            ranked = sorted(pixels, key=lambda p: abs(relative_luminance(p) - bg_lum), reverse=True)
+            ink = ranked[:max(1, len(ranked) // 10)]
+            foreground = tuple(_median([p[i] for p in ink]) for i in range(3))
+            entry['colours'] = dict(foreground=hex_colour(foreground), background=hex_colour(background),
+                                    contrast_ratio=round(contrast_ratio(foreground, background), 2),
+                                    text_height_px=bottom - top, method='edge_median.v1')
+        measured.append(entry)
+    return measured
+
+
 def regions_for(region_map, start, end):
     return [r['region_id'] for r in region_map or [] if r['start'] is not None and r['start'] < end and start < r['end']]
 

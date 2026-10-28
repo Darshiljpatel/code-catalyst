@@ -89,6 +89,9 @@ def claim_one(engine, *, run_id=None):
             # Text confirmed from an image: visual and accessibility need a look at the image itself.
             context['media']='image'
             context['unreadable_regions']=sum(r['origin']=='unreadable' for r in revision.region_map or [])
+            # Measured text colours per region, for the local contrast and palette checks only.
+            context['text_regions']=[dict(start=r['start'],end=r['end'],**r['colours']) for r in revision.region_map or []
+                                     if r.get('start') is not None and r.get('colours')]
         claim=ClaimedRun(job.id,run.id,run.org_id,token,revision.item_id,revision.id,at,
                          run.processing_snapshot,ReviewInput(revision.text,context,run.source_snapshot),exhausted)
         db.commit()

@@ -207,3 +207,51 @@ def test_line_grouping_reading_order_and_region_offsets_with_multibyte_text():
     assert text[c['start']:c['end']] == 'Trial 14 días'
     assert regions_for(region_map, text.index('14'), text.index('14') + 2) == ['c']
     assert regions_for(region_map, 0, len(text)) == ['a', 'c']
+
+
+def drawn_ad():
+    """White ad with dark navy headline at the top and pale grey small print lower down."""
+    from PIL import ImageDraw
+    image = Image.new('RGB', (400, 200), (255, 255, 255))
+    draw = ImageDraw.Draw(image)
+    draw.rectangle((50, 25, 270, 35), fill=(20, 40, 120))
+    draw.rectangle((50, 85, 300, 92), fill=(200, 200, 200))
+    out = io.BytesIO()
+    image.save(out, format='PNG')
+    return out.getvalue()
+
+
+def test_region_colours_are_measured_from_the_image():
+    from brandguard.imaging import measure_region_colours
+    _, region_map = build_region_map([
+        dict(region_id='r1', box=dict(x=0.1, y=0.1, w=0.6, h=0.1), text='LumaDesk for teams', origin='ocr'),
+        dict(region_id='r2', box=dict(x=0.1, y=0.4, w=0.7, h=0.1), text='Small print', origin='ocr'),
+        dict(region_id='a1', box=dict(x=0.1, y=0.7, w=0.3, h=0.08), text='', origin='unreadable')])
+    measured = {e['region_id']: e for e in measure_region_colours(drawn_ad(), region_map)}
+    assert measured['r1']['colours']['background'] == '#ffffff' and measured['r1']['colours']['foreground'] == '#142878'
+    assert measured['r1']['colours']['contrast_ratio'] > 10
+    assert measured['r2']['colours']['contrast_ratio'] < 2 and 'colours' not in measured['a1']
+
+
+def test_contrast_and_palette_checks_cite_rules_and_light_up_regions():
+    import asyncio
+    from brandguard.orchestration import ReviewInput, checked_engine_result
+    text = 'LumaDesk for teams\nSmall print'
+    source = dict(id='s1', text='Text needs a 4.5:1 contrast. Use navy #142878 and white #ffffff.', valid_from='2026-01-01T00:00:00+00:00',
+                  valid_until=None, rules=[
+        dict(id='A01', category='accessibility', kind='contrast', key='text_contrast', value='4.5', evidence_quote='Text needs a 4.5:1 contrast.'),
+        dict(id='V01', category='visual', kind='asset', key='brand_palette', value='#142878, #ffffff', evidence_quote='Use navy #142878 and white #ffffff.')])
+    regions = [dict(start=0, end=18, foreground='#142878', background='#ffffff', contrast_ratio=13.1, text_height_px=20),
+               dict(start=19, end=30, foreground='#c8c8c8', background='#ffffff', contrast_ratio=1.7, text_height_px=20)]
+    review_input = ReviewInput(text, dict(CONTEXT, media='image', text_regions=regions), [source])
+    result = asyncio.run(check_text(review_input))
+    checks, findings = checked_engine_result(result, review_input)
+    by_rule = {f['rule_id']: f for f in findings}
+    assert set(by_rule) == {'A01', 'V01'}
+    assert by_rule['A01']['content_quote'] == 'Small print' and by_rule['A01']['severity'] == 'warning'
+    assert '1.7:1' in by_rule['A01']['rationale'] and by_rule['V01']['severity'] == 'advisory'
+    status = {c['category']: c for c in checks}
+    assert status['accessibility']['status'] == 'needs_manual_review' and 'estimated' in status['accessibility']['reason']
+    # Without colour rules the image categories stay a manual look.
+    plain = ReviewInput(text, dict(CONTEXT, media='image', text_regions=regions), [dict(source, rules=[])])
+    assert not asyncio.run(check_text(plain)).findings

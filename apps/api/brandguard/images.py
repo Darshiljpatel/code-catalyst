@@ -7,7 +7,7 @@ from pydantic import BaseModel, Field, field_validator
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 from .core import db, identity, Problem, digest
-from .imaging import ImageRejected, normalise_upload, build_region_map, sha256, LOW_CONFIDENCE, MAX_UPLOAD_BYTES
+from .imaging import ImageRejected, normalise_upload, build_region_map, measure_region_colours, sha256, LOW_CONFIDENCE, MAX_UPLOAD_BYTES
 from .models import Asset, OcrResult, Job, ContentItem, ContentRevision, Membership
 from .review import brand_for, item_for, content_out, audit
 from . import quota
@@ -185,6 +185,10 @@ def confirm_image_text(item_id: str, body: ImageRevisionInput, member=Depends(id
     text, region_map = build_region_map(regions)
     if not text.strip():
         raise Problem(422, 'no_text', 'Type the text shown in the image, or draw a box around it, before checking.')
+    try:
+        region_map = measure_region_colours(asset.bytes, region_map)
+    except Exception:
+        pass  # Colour checks then fall back to a manual look; the text check still runs.
     at = utcnow()
     item.current_revision += 1
     item.workflow_version += 1
