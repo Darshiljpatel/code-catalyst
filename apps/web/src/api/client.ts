@@ -64,6 +64,7 @@ import type {
   RegionInput,
   DocumentImportOut,
   VerificationOut,
+  RetentionOut,
   VersionResponse,
 } from './types';
 import { retryStarted, retryFinished } from './serverStatus';
@@ -626,4 +627,12 @@ export async function getVersion(): Promise<VersionResponse> {
 
 export async function verifyApprovalRecord(record: unknown): Promise<VerificationOut> {
   return request<VerificationOut>('POST', '/verify/approval-record', record);
+}
+
+export async function getRetention(): Promise<RetentionOut> {
+  return request<RetentionOut>('GET', '/retention');
+}
+
+export async function updateRetention(payload: { retention_days: number | null; rationale: string }): Promise<RetentionOut> {
+  return request<RetentionOut>('PUT', '/retention', payload);
 }

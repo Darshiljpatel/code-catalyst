@@ -921,3 +921,5 @@ export interface VerificationOut {
   content_id: string | null;
   checks: VerificationCheck[];
 }
+
+export interface RetentionOut { retention_days: number | null; purged_campaigns: number; last_purge_at: string | null }

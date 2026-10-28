@@ -3,6 +3,7 @@ import React from 'react';
 import { getProcessingPolicy, updateProcessingPolicy, ApiResponseError } from '../api/client';
 import type { PolicyOut } from '../api/types';
 import { Alert, Spinner } from './Primitives';
+import { RetentionSettings } from './RetentionSettings';
 
 interface PolicySettingsModalProps {
   isOpen: boolean;
@@ -177,6 +178,7 @@ export function PolicySettingsModal({
             </div>
           </form>
         )}
+        {!loading && <div className="modal-body" style={{ paddingTop: 0 }}><RetentionSettings /></div>}
       </div>
     </div>
   );
