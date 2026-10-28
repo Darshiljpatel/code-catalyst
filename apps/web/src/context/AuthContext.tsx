@@ -1,7 +1,7 @@
 /**
  * AuthContext — holds the authenticated user's identity, derived entirely from
  * server responses. Never stores role in localStorage or infers it client-side.
- * Authorisation is always enforced server-side (CLAUDE.md, CONTRACTS.md).
+ * Authorisation is always enforced server-side (CONTRACTS.md).
  */
 import React, { createContext, useContext, useEffect, useReducer } from 'react';
 import { getMe, login, logout, createSandbox, switchDemoRole, ApiResponseError } from '../api/client';

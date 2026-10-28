@@ -1,7 +1,7 @@
 /**
  * BrandGuard API client — thin fetch wrapper.
  *
- * Rules (CONTRACTS.md + CLAUDE.md):
+ * Rules (CONTRACTS.md):
  * - All mutations send x-csrf-token from session state; never store in localStorage.
  * - Cookies are same-origin + HttpOnly; client never reads the session cookie.
  * - Origin header is set by the browser; we never forge it.
