@@ -185,10 +185,10 @@ export function RequestPage() {
 
       <section className="card" aria-labelledby="examples-title">
         <h2 id="examples-title">1 · Examples</h2>
-        {request.examples.length === 0 ? <p>No disputed campaigns were linked. Add hand-written examples to the saved set below.</p> : (
+        {request.examples.length === 0 ? <p>No disputes or ambiguity reports were linked. Add hand-written examples to the saved set below.</p> : (
           <div className="table-scroll">
             <table className="recheck-table">
-              <thead><tr><th scope="col">Excerpt</th><th scope="col">Who disputed it and why</th><th scope="col">Should the rule flag it?</th></tr></thead>
+              <thead><tr><th scope="col">Excerpt</th><th scope="col">Who raised it and why</th><th scope="col">Should the rule flag it?</th></tr></thead>
               <tbody>
                 {request.examples.map(example => (
                   <tr key={example.id}>

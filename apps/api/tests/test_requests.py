@@ -191,3 +191,24 @@ def test_comparison_needs_examples_and_a_draft_and_requests_are_tenant_scoped(se
     r = c.put(f"/api/v1/guideline-requests/{request['id']}/draft", json=dict(expected_version=request['version'],
         title='x', text=GUIDE_TEXT, rules=[bad]), headers=mh)
     assert r.status_code == 422
+
+
+def test_ambiguity_reports_mark_the_rule_unclear_and_join_its_request(setup):
+    c, engine, orgs, _ = setup
+    mh = login(c, orgs[0])
+    bid = c.post('/api/v1/brands', json={'name': 'LumaDesk'}, headers=mh).json()['id']
+    source = c.post(f'/api/v1/brands/{bid}/sources', json=guide_body(), headers=mh).json()
+    assert activate(c, source['id'], mh).status_code == 200
+    item, h = campaign(c, orgs, bid, 'Headline ad', 'LUMADESK. Your desk, sorted.')
+    report = dict(rule_id='T01', revision_id=item['revisions'][0]['id'],
+                  rationale='Unclear whether an all-caps headline counts as the brand name.')
+    assert c.post(f"/api/v1/sources/{source['id']}/ambiguity-reports", json=report, headers=h).status_code == 201
+    other = dict(rule_id='F01', rationale='Unclear whether the trial length includes weekends at all.')
+    assert c.post(f"/api/v1/sources/{source['id']}/ambiguity-reports", json=other, headers=h).status_code == 201
+    health = c.get(f'/api/v1/brands/{bid}/guideline-health', headers=mh).json()
+    row = next(r for r in health['rules'] if r['rule_id'] == 'T01')
+    assert row['disputed_items'] == 0 and row['ambiguity_reports'] == 1 and row['likely_unclear']
+    mh, _, request = start_request(c, orgs, bid, source)
+    # Only this rule's report joins, with the campaign it was raised on.
+    assert [(e['kind'], e['dispute']['action']) for e in request['examples']] == [('ambiguity', 'ambiguity_report')]
+    assert request['examples'][0]['excerpt'].startswith('LUMADESK') and request['examples'][0]['dispute']['rationale'] == report['rationale']

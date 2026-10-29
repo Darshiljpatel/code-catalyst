@@ -44,9 +44,10 @@ export function GuidelineHealthPage() {
         source_id: rule.source_id,
         rule_id: rule.rule_id,
         title: `Clarify ${rule.rule_id}: ${rule.value}`.slice(0, 200),
-        problem: rule.disputed_items > 0
-          ? `${rule.disputed_items} campaign${rule.disputed_items === 1 ? '' : 's'} disputed this rule in the last ${health?.window_days ?? 30} days.`
-          : 'This rule needs clearer wording.',
+        problem: [
+          rule.disputed_items > 0 && `${rule.disputed_items} campaign${rule.disputed_items === 1 ? '' : 's'} disputed this rule in the last ${health?.window_days ?? 30} days.`,
+          rule.ambiguity_reports > 0 && `${rule.ambiguity_reports} ambiguity report${rule.ambiguity_reports === 1 ? '' : 's'} say${rule.ambiguity_reports === 1 ? 's' : ''} it is unclear.`,
+        ].filter(Boolean).join(' ') || 'This rule needs clearer wording.',
       });
       navigate(`/requests/${created.id}`);
     } catch (err) {
@@ -65,7 +66,7 @@ export function GuidelineHealthPage() {
       <h1>Guideline health</h1>
       <p className="rechecks-page__lede">
         How often each active rule is confirmed or disputed. A rule disputed in {health.unclear_threshold} or more campaigns within
-        {' '}{health.window_days} days is marked likely unclear. {health.dispute_definition}
+        {' '}{health.window_days} days, or reported as unclear by anyone, is marked likely unclear. {health.dispute_definition}
       </p>
       {error && <Alert kind="error">{error}</Alert>}
 

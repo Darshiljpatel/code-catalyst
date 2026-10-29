@@ -390,7 +390,8 @@ def guideline_health(brand_id: str, member=Depends(manager), session: Session = 
                 rule_id=rule['id'], category=rule['category'], kind=rule['kind'], value=rule['value'],
                 flagged_items=n_flagged, confirmed_items=len(confirmed[key]), disputed_items=n_disputed,
                 ambiguity_reports=len(reports[key]), dispute_rate=round(n_disputed / n_flagged, 3) if n_flagged else None,
-                likely_unclear=n_disputed >= UNCLEAR_THRESHOLD, open_request_id=by_rule.get(key)))
+                # Someone explicitly reporting the rule as unclear is a signal on its own, without waiting for disputes.
+                likely_unclear=n_disputed >= UNCLEAR_THRESHOLD or bool(reports[key]), open_request_id=by_rule.get(key)))
     rows.sort(key=lambda r: (not r.likely_unclear, -(r.dispute_rate or 0), r.source_key, r.rule_id))
     return GuidelineHealthOut(brand_id=brand_id, window_days=WINDOW_DAYS, unclear_threshold=UNCLEAR_THRESHOLD,
         dispute_definition=('A creator dismissal or exception request, or a reviewer dismissal or granted exception, '
@@ -428,11 +429,20 @@ def create_request(body: RequestInput, member=Depends(manager), session: Session
                 dispute=dict(actor_id=entry.actor_id, action=entry.action, rationale=entry.rationale),
                 expected='unsure', external_ok=bool(run.processing_snapshot.get('consent')), created_at=at))
             examples += 1
-    if body.ambiguity_report_id:
+    reports = []
+    if body.rule_id:
+        # Every report that this rule is unclear, against any version of the guideline, joins the request.
+        reports = list(session.scalars(select(AuditEvent).join(SourceVersion, AuditEvent.object_id == SourceVersion.id).where(
+            AuditEvent.org_id == member.org_id, AuditEvent.action == 'source.ambiguity_reported',
+            SourceVersion.brand_id == body.brand_id, SourceVersion.source_key == source.source_key).order_by(AuditEvent.created_at)))
+        reports = [r for r in reports if r.details.get('rule_id') == body.rule_id]
+    if body.ambiguity_report_id and body.ambiguity_report_id not in {r.id for r in reports}:
         report = session.scalar(select(AuditEvent).where(AuditEvent.org_id == member.org_id,
             AuditEvent.id == body.ambiguity_report_id, AuditEvent.action == 'source.ambiguity_reported'))
         if report is None:
             raise Problem(404, 'not_found', 'Ambiguity report not found.')
+        reports.append(report)
+    for report in reports:
         revision = session.get(ContentRevision, report.details['revision_id']) if report.details.get('revision_id') else None
         session.add(RequestExample(org_id=member.org_id, request_id=found.id, item_id=revision.item_id if revision else None,
             revision_id=revision.id if revision else None, kind='ambiguity', excerpt=(revision.text[:300] if revision else ''),
@@ -440,7 +450,8 @@ def create_request(body: RequestInput, member=Depends(manager), session: Session
             purpose=revision.purpose) if revision else {}, dispute=dict(actor_id=report.actor_id, action='ambiguity_report',
             rationale=report.details.get('rationale', '')), expected='unsure', created_at=at))
         examples += 1
-    found.signals = dict(linked_examples=examples, created_from='ambiguity_report' if body.ambiguity_report_id else 'rule')
+    found.signals = dict(linked_examples=examples, ambiguity_reports=len(reports),
+                         created_from='ambiguity_report' if body.ambiguity_report_id else 'rule')
     audit(session, member, 'guideline_request.created', found.id, rule_id=body.rule_id, source_id=source.id, examples=examples)
     session.commit()
     return request_out(session, member, found)
