@@ -201,3 +201,25 @@ def test_policy_classification_is_assigned_by_server(kind,expected_status):
     assert result.findings[0]['severity']=='blocker'
     assert result.findings[0]['evidence_status']==expected_status
     assert result.metadata['classification_policy']=='source_rule.v1'
+
+
+@pytest.mark.parametrize('edit',[
+    "Consider rephrasing to a more neutral tone, such as 'You may want to try LumaDesk.'",
+    "Either remove the claim or add approved evidence.",
+])
+def test_advice_is_kept_as_rationale_not_applied_as_an_edit(edit):
+    result,_=review(response(dict(FINDING,suggested_edit=edit)))
+    finding=result.findings[0]
+    assert finding['suggested_edit'] is None and finding['rationale'].endswith(f'Suggestion: {edit}')
+
+
+def test_edit_repeating_a_sentence_outside_the_quote_is_not_applied():
+    text='Sign up NOW!!! You can try it during the 14-day free trial to see how it helps.'
+    edit='Sign up today. You can try it during the 14-day free trial to see how it helps.'
+    result,_=review(response(dict(FINDING,content_quote='Sign up NOW!!!',suggested_edit=edit)),text=text)
+    assert result.findings[0]['suggested_edit'] is None
+
+
+def test_drop_in_rewrite_is_kept():
+    result,_=review()
+    assert result.findings[0]['suggested_edit']=='Start your trial.'

@@ -11,6 +11,7 @@ import { resolutionActions } from '../api/resolutionActions';
 import { RecheckBanner } from '../components/RecheckBanner';
 import React from 'react';
 import { workingDraft, changeDraftText, stageDraftEdit, projectDraftRange, undoDraftChange } from '../api/draftEdits';
+import { isReplacementText } from '../api/textEdits';
 import { incompleteCategories, submissionIssues } from '../api/reviewReadiness';
 import { CoverageNotice } from '../components/CoverageNotice';
 import { useParams, useNavigate, useLocation } from 'react-router-dom';
@@ -352,7 +353,7 @@ function CampaignWorkspace() {
   const findingFilterValues = findingFilterState.runId === run?.id ? findingFilterState.values : ALL_FINDINGS;
   const visibleFindings = filterFindings(run?.findings || [], findingFilterValues);
   const findingFiltersActive = Object.values(findingFilterValues).some(value => value !== 'all');
-  const availableFixCount = visibleFindings.filter(finding => finding.suggested_edit &&
+  const availableFixCount = visibleFindings.filter(finding => isReplacementText(finding.suggested_edit) &&
     !draft.changes.some(change => change.findingId === finding.id) &&
     projectDraftRange(draft, finding.location.start, finding.location.end) !== null).length;
   const issues = currentRevision ? submissionIssues(run, currentRevision.id) : [];
@@ -379,7 +380,7 @@ function CampaignWorkspace() {
     if (!run || !canEditDraft) return;
     let next = draft, applied = 0, skipped = 0;
     for (const finding of visibleFindings) {
-      if (!finding.suggested_edit || next.changes.some(change => change.findingId === finding.id)) continue;
+      if (!isReplacementText(finding.suggested_edit) || next.changes.some(change => change.findingId === finding.id)) continue;
       try {
         const updated = stageDraftEdit(next, finding.id, finding.location.start, finding.location.end, finding.suggested_edit, finding.location.quote);
         if (updated !== next) applied++;
@@ -770,7 +771,7 @@ function CampaignWorkspace() {
           {run ? (
             <div>
               {hasDraftChanges && <p className="draft-findings-note">These findings describe the saved revision. Staged fixes are only confirmed after rechecking.</p>}
-              {canEditDraft && run.findings.some(f => f.suggested_edit) && <button className="btn btn--ghost btn--sm batch-apply" disabled={!availableFixCount} onClick={applyAvailableFixes}>{findingFiltersActive ? 'Apply visible fixes' : 'Apply available fixes'}</button>}
+              {canEditDraft && run.findings.some(f => isReplacementText(f.suggested_edit)) && <button className="btn btn--ghost btn--sm batch-apply" disabled={!availableFixCount} onClick={applyAvailableFixes}>{findingFiltersActive ? 'Apply visible fixes' : 'Apply available fixes'}</button>}
               {/* Check Status Chips */}
               <div className="check-coverage">
                 {run.checks.map(c => (
@@ -867,9 +868,9 @@ function CampaignWorkspace() {
                         {finding.suggested_edit && (
                           <div className="finding-suggestion">
                             <div style={{ fontSize: '0.8125rem', color: 'var(--color-success)' }}>
-                              Suggestion: <code>{finding.suggested_edit}</code>
+                              {isReplacementText(finding.suggested_edit) ? 'Suggestion' : 'Advice'}: <code>{finding.suggested_edit}</code>
                             </div>
-                            <div className="finding-card__actions finding-suggestion__actions">
+                            {isReplacementText(finding.suggested_edit) && <div className="finding-card__actions finding-suggestion__actions">
                               <button
                                 type="button"
                                 className="btn btn--ghost btn--sm"
@@ -893,7 +894,7 @@ function CampaignWorkspace() {
                               >
                                 Customize fix
                               </button>
-                            </div>
+                            </div>}
                           </div>
                         )}
                       </div>

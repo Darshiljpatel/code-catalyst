@@ -40,7 +40,12 @@ an actual promotional claim lacking evidence. The SERVER assigns category, sever
 evidence status from the cited approved rule. DO NOT output those classification fields.
 Before returning each finding, verify its rationale demonstrates a breach; otherwise omit it.
 Preserve purpose, never introduce factual claims; suggested_edit may be null. Suggestions
-are for human review. If unsure whether a rule applies, do not invent a violation.'''
+are for human review. If unsure whether a rule applies, do not invent a violation.
+suggested_edit is spliced into the draft verbatim in place of content_quote. It must be only
+the rewritten copy for that span, written in the draft's own voice: never advice or
+instructions ("Consider rephrasing...", "Either remove the claim...", "such as '...'"), no
+wrapping quotes, and no sentences from outside content_quote. If you cannot write a drop-in
+rewrite, set suggested_edit to null and put the advice in rationale.'''
 
 
 @dataclass(frozen=True)
@@ -142,6 +147,26 @@ def check_coverage(output, categories):
         raise ModelFailure('incomplete_coverage')
 
 
+ADVICE = re.compile(r'''^\W*(consider|either|rephrase|reword|replace|remove|avoid|ensure|you (should|could|may want to))\b'''
+                    r'''|\bsuch as ['"\u2018\u201c]|\bthe claim\b|\brephras''', re.IGNORECASE)
+
+
+def _words(value):
+    return ' '.join(re.findall(r'\w+', value.lower()))
+
+
+def is_drop_in_edit(edit, text, start, end):
+    """A suggested edit replaces content_quote verbatim: reject advice and sentences already outside the span."""
+    if ADVICE.search(edit):
+        return False
+    outside = _words(text[:start]) + ' | ' + _words(text[end:])
+    for sentence in re.split(r'(?<=[.!?])\s+', edit):
+        words = _words(sentence)
+        if len(words.split()) >= 5 and words in outside:
+            return False
+    return True
+
+
 def validate_finding(finding, text, rules, lookup, seen):
     """Locate and classify one proposed finding, or raise ModelFailure with a safe code."""
     rule = lookup.get((finding.source_version_id, finding.rule_id))
@@ -181,6 +206,9 @@ def validate_finding(finding, text, rules, lookup, seen):
     if key in seen:
         raise ModelFailure('duplicate_finding')
     seen.add(key)
+    if finding.suggested_edit and not is_drop_in_edit(finding.suggested_edit, text, start, end):
+        finding = finding.model_copy(update=dict(suggested_edit=None,
+            rationale=f'{finding.rationale} Suggestion: {finding.suggested_edit}'[:2000]))
     # Necessary but insufficient factual-preservation check; humans assess meaning.
     if finding.suggested_edit:
         allowed_numbers = set(re.findall(r'\d+(?:\.\d+)?', text + ' ' + ' '.join(r['value'] for r in rules)))

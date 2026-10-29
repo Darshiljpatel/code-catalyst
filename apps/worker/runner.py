@@ -38,6 +38,25 @@ def get_reviewer():
         return DisabledReviewer()
 
 
+def start_demo_pool(engine, interval: float = 60.0):
+    """Keep ready-made demo sandboxes in a side thread so building one never delays real review jobs."""
+    import threading
+    from brandguard.core import Settings
+    from brandguard.demo import fill_pool
+    settings = Settings(os.environ['DATABASE_URL'], os.getenv('PUBLIC_ORIGIN', 'http://localhost:8000'), os.getenv('APP_ENV', 'development'))
+
+    def loop():
+        while True:
+            try:
+                made = fill_pool(engine, settings)
+                if made:
+                    logger.info("Prepared %d demo sandbox(es) for instant sign-in.", made)
+            except Exception as e:
+                logger.warning("Demo pool refill failed: %s", type(e).__name__)
+            time.sleep(interval)
+    threading.Thread(target=loop, name='demo-pool', daemon=True).start()
+
+
 def run_worker_loop(engine, reviewer, checker, poll_interval: float = 1.0, once: bool = False):
     """
     Core worker execution loop.
@@ -71,6 +90,8 @@ def run_worker_loop(engine, reviewer, checker, poll_interval: float = 1.0, once:
     from brandguard.demo import purge_expired
     from brandguard.retention import purge_expired_content
     last_purge = 0.0
+    if not once and os.environ.get('DEMO_POOL_SIZE', '3') != '0':
+        start_demo_pool(engine)
     ocr_engine = TesseractEngine() if os.environ.get('OCR_ENABLED', '1') != '0' else None
 
     while running:

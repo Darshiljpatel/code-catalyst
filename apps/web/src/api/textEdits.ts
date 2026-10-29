@@ -7,3 +7,10 @@ export function replaceLocatedText(text: string, analysedText: string, start: un
   }
   return points.slice(0, start).join('') + replacement + points.slice(end).join('');
 }
+
+const ADVICE = /^\W*(consider|either|rephrase|reword|replace|remove|avoid|ensure|you (should|could|may want to))\b|\bsuch as ['"‘“]|\bthe claim\b|\brephras/i;
+
+/** True when a suggestion is drop-in copy for the flagged span, not reviewer advice about it. */
+export function isReplacementText(suggestion: string | null | undefined): suggestion is string {
+  return !!suggestion && !ADVICE.test(suggestion);
+}

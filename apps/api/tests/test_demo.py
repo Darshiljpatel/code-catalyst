@@ -125,3 +125,19 @@ def test_sandbox_limits_purge_and_switch_off(setup, monkeypatch):
         assert db.scalar(select(func.count()).select_from(ContentItem).where(ContentItem.org_id == body['org_id'])) == 0
         assert db.scalar(select(func.count()).select_from(User).where(User.id.in_(users))) == 0
     assert c.get('/api/v1/me').status_code == 401
+
+
+def test_pooled_sandbox_is_claimed_instantly_with_a_fresh_clock(setup):
+    from brandguard.demo import fill_pool, POOL_MARK
+    c, engine, _, _ = setup
+    settings = c.app.state.settings
+    assert fill_pool(engine, settings, size=1) == 1 and fill_pool(engine, settings, size=1) == 0
+    with Session(engine) as db:
+        pooled = db.scalar(select(Organisation.id).where(Organisation.created_ip_hash == POOL_MARK))
+    body, _ = sandbox(c, 'reviewer')
+    assert body['org_id'] == pooled and c.get('/api/v1/me').json()['label'] == 'Reviewer'
+    with Session(engine) as db:
+        org = db.get(Organisation, pooled)
+        assert org.created_ip_hash != POOL_MARK and org.expires_at - org.created_at == timedelta(hours=48)
+    # The pool is empty again, so the next judge gets a freshly provisioned workspace.
+    assert sandbox(c)[0]['org_id'] != pooled

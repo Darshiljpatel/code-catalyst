@@ -14,7 +14,7 @@ from datetime import datetime, timedelta, timezone
 from types import SimpleNamespace
 from fastapi import APIRouter, Depends, Request, Response
 from pydantic import BaseModel, Field
-from sqlalchemy import select, func, delete
+from sqlalchemy import select, func, delete, or_
 from sqlalchemy.orm import Session
 from .core import db, identity, trusted_origin, client_ip, digest, passwords, Problem, COOKIE
 from .schemas import StrictInput
@@ -24,6 +24,10 @@ SANDBOX_HOURS = 48
 PER_ADDRESS_PER_HOUR = 10
 MAX_ACTIVE = 300
 SANDBOX_RUN_LIMIT = 25
+# Provisioning drives about a dozen real analyses (over a minute on hosted Postgres), so the worker keeps
+# a few ready-made sandboxes and a judge's click only claims one. Unclaimed pool workspaces carry this mark.
+POOL_MARK = 'pool'
+POOL_HOURS = 24 * 7
 ROLES = (('creator', 'creator', 'Creator'), ('reviewer', 'reviewer', 'Reviewer'), ('manager', 'manager', 'Manager'),
          ('brand_lead', 'manager', 'Brand lead'), ('admin', 'admin', 'Admin'))
 
@@ -368,17 +372,53 @@ def create_sandbox(body: SandboxInput, request: Request, response: Response, ses
     if recent >= PER_ADDRESS_PER_HOUR:
         raise Problem(429, 'rate_limited', 'Too many demos from this network. Try again within the hour.')
     active = session.scalar(select(func.count()).select_from(Organisation).where(Organisation.is_demo == True,
-        Organisation.expires_at > at))
+        Organisation.expires_at > at, or_(Organisation.created_ip_hash.is_(None), Organisation.created_ip_hash != POOL_MARK)))
     if active >= MAX_ACTIVE:
         raise Problem(503, 'demo_capacity', 'All demo workspaces are in use. Try again shortly.')
     session.close()
-    org_id, members = provision(request.app.state.engine, request.app.state.settings, ip_hash=ip_hash)
+    claimed = claim_pooled(request.app.state.engine, ip_hash)
+    org_id, members = claimed or provision(request.app.state.engine, request.app.state.settings, ip_hash=ip_hash)
     with Session(request.app.state.engine) as fresh:
         csrf = start_session(fresh, response, request, members[body.role])
         org = fresh.get(Organisation, org_id)
         fresh.commit()
         return SandboxOut(org_id=org_id, role=body.role, membership_id=members[body.role], csrf_token=csrf,
                           expires_at=org.expires_at, members=demo_members(fresh, org_id))
+
+
+def claim_pooled(engine, ip_hash):
+    """Hand a ready-made sandbox to this judge, restarting its 48-hour clock. None when the pool is empty."""
+    from .models import Organisation, Membership
+    with Session(engine) as session:
+        org = session.scalar(select(Organisation).where(Organisation.is_demo == True, Organisation.created_ip_hash == POOL_MARK,
+            Organisation.expires_at > utcnow() + timedelta(hours=1)).order_by(Organisation.created_at)
+            .with_for_update(skip_locked=True).limit(1))
+        if org is None:
+            return None
+        at = utcnow()
+        org.created_ip_hash, org.created_at, org.expires_at = ip_hash, at, at + timedelta(hours=SANDBOX_HOURS)
+        labels = {label: key for key, _, label in ROLES}
+        members = {labels[m.label]: m.id for m in session.scalars(select(Membership).where(Membership.org_id == org.id))}
+        org_id = org.id
+        session.commit()
+        return org_id, members
+
+
+def fill_pool(engine, settings, size=None):
+    """Top the pool up to `size` unclaimed sandboxes (DEMO_POOL_SIZE, default 3). Returns how many were made."""
+    from .models import Organisation
+    size = int(os.getenv('DEMO_POOL_SIZE', '3')) if size is None else size
+    if not enabled():
+        return 0
+    made = 0
+    while True:
+        with Session(engine) as session:
+            ready = session.scalar(select(func.count()).select_from(Organisation).where(Organisation.is_demo == True,
+                Organisation.created_ip_hash == POOL_MARK, Organisation.expires_at > utcnow() + timedelta(hours=1)))
+        if ready >= size:
+            return made
+        provision(engine, settings, ip_hash=POOL_MARK, hours=POOL_HOURS)
+        made += 1
 
 
 @router.get('/members', response_model=list[DemoMemberOut])
