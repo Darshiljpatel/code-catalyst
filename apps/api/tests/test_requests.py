@@ -205,6 +205,7 @@ def test_ambiguity_reports_mark_the_rule_unclear_and_join_its_request(setup):
     assert c.post(f"/api/v1/sources/{source['id']}/ambiguity-reports", json=report, headers=h).status_code == 201
     other = dict(rule_id='F01', rationale='Unclear whether the trial length includes weekends at all.')
     assert c.post(f"/api/v1/sources/{source['id']}/ambiguity-reports", json=other, headers=h).status_code == 201
+    mh = login(c, orgs[0])
     health = c.get(f'/api/v1/brands/{bid}/guideline-health', headers=mh).json()
     row = next(r for r in health['rules'] if r['rule_id'] == 'T01')
     assert row['disputed_items'] == 0 and row['ambiguity_reports'] == 1 and row['likely_unclear']
