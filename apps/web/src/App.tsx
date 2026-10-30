@@ -37,6 +37,7 @@ import { GuidelineHealthPage } from './pages/GuidelineHealthPage';
 import { RequestPage } from './pages/RequestPage';
 import { JudgeGuide } from './components/JudgeGuide';
 import { ServerStatusBanner, BuildFooter } from './components/ServerStatusBanner';
+import { Analytics } from '@vercel/analytics/react';
 
 function ScrollToTop() {
   const { pathname } = useLocation();
@@ -81,6 +82,7 @@ function RootLayout() {
         <Outlet />
         <BuildFooter />
         <JudgeGuide />
+        <Analytics />
       </UnsavedChangesProvider>
     </AuthProvider>
   );
